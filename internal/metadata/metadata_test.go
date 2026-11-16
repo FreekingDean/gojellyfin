@@ -17,6 +17,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
+	"github.com/FreekingDean/gojellyfin/internal/localization"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	creditmodel "github.com/FreekingDean/gojellyfin/internal/store/credit"
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
@@ -196,6 +197,10 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 
 	provider := &stubProvider{enabled: enabled}
 	service := items.New(client)
+	ratings, err := localization.New()
+	if err != nil {
+		t.Fatalf("failed to load the localization data: %v", err)
+	}
 
 	t.Cleanup(func() {
 		ctx := context.Background()
@@ -225,7 +230,7 @@ func newFixtureEnabled(t *testing.T, enabled bool) *fixture {
 	return &fixture{
 		downloader: downloader.ID,
 		items:      service,
-		service:    New(provider, service),
+		service:    New(provider, service, ratings),
 		provider:   provider,
 		libraryID:  library.ID,
 		show:       newTmdbID(),
@@ -374,6 +379,9 @@ func TestService_IdentifyItems(t *testing.T) {
 		}
 		if identified.OfficialRating != "R" {
 			t.Errorf("OfficialRating = %q, want R", identified.OfficialRating)
+		}
+		if identified.ParentalRating == nil || *identified.ParentalRating != 17 {
+			t.Errorf("ParentalRating = %v, want the level of R", identified.ParentalRating)
 		}
 		if !strings.HasPrefix(identified.Overview, "Set in the 22nd century") {
 			t.Errorf("Overview = %q, want the fetched one", identified.Overview)

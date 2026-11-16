@@ -295,7 +295,22 @@ export type Person = {
   used: number;
   seen?: string;
   devices: { name: string; app: string; seen: string }[];
+  schedules?: { day: 'Everyday' | 'Weekday' | 'Weekend'; start: number; end: number }[];
+  grants?: { EnableLiveTvAccess?: boolean; EnableContentDownloading?: boolean };
+  rating?: { max: number; unrated: ('Movie' | 'Series' | 'Music')[] };
 };
+
+export const ratings = [
+  { Name: 'G', Value: 0 },
+  { Name: 'TV-Y', Value: 0 },
+  { Name: 'PG', Value: 10 },
+  { Name: 'TV-PG', Value: 10 },
+  { Name: 'PG-13', Value: 13 },
+  { Name: 'TV-14', Value: 14 },
+  { Name: 'R', Value: 17 },
+  { Name: 'TV-MA', Value: 17 },
+  { Name: 'NC-17', Value: 18 },
+];
 
 export const people: Person[] = [
   {
@@ -344,6 +359,12 @@ export const people: Person[] = [
     used: 2,
     seen: ago(20),
     devices: [{ name: 'iPhone', app: 'Swiftfin 1.3', seen: ago(20) }],
+    schedules: [
+      { day: 'Weekday', start: 16, end: 21 },
+      { day: 'Weekend', start: 9, end: 22 },
+    ],
+    grants: { EnableContentDownloading: false },
+    rating: { max: 13, unrated: ['Movie'] },
   },
   {
     id: 'u4',
@@ -373,6 +394,7 @@ export const people: Person[] = [
     used: 0,
     seen: ago(40 * DAY),
     devices: [],
+    grants: { EnableLiveTvAccess: false, EnableContentDownloading: false },
   },
 ];
 

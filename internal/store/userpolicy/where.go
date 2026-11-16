@@ -191,6 +191,16 @@ func EnableAllFolders(v bool) predicate.UserPolicy {
 	return predicate.UserPolicy(sql.FieldEQ(FieldEnableAllFolders, v))
 }
 
+// MaxParentalRating applies equality check predicate on the "max_parental_rating" field. It's identical to MaxParentalRatingEQ.
+func MaxParentalRating(v int) predicate.UserPolicy {
+	return predicate.UserPolicy(sql.FieldEQ(FieldMaxParentalRating, v))
+}
+
+// MaxParentalSubRating applies equality check predicate on the "max_parental_sub_rating" field. It's identical to MaxParentalSubRatingEQ.
+func MaxParentalSubRating(v int) predicate.UserPolicy {
+	return predicate.UserPolicy(sql.FieldEQ(FieldMaxParentalSubRating, v))
+}
+
 // InvalidLoginAttemptCount applies equality check predicate on the "invalid_login_attempt_count" field. It's identical to InvalidLoginAttemptCountEQ.
 func InvalidLoginAttemptCount(v int32) predicate.UserPolicy {
 	return predicate.UserPolicy(sql.FieldEQ(FieldInvalidLoginAttemptCount, v))
@@ -552,23 +562,43 @@ func EnableAllFoldersNEQ(v bool) predicate.UserPolicy {
 }
 
 // MaxParentalRatingEQ applies the EQ predicate on the "max_parental_rating" field.
-func MaxParentalRatingEQ(v MaxParentalRating) predicate.UserPolicy {
+func MaxParentalRatingEQ(v int) predicate.UserPolicy {
 	return predicate.UserPolicy(sql.FieldEQ(FieldMaxParentalRating, v))
 }
 
 // MaxParentalRatingNEQ applies the NEQ predicate on the "max_parental_rating" field.
-func MaxParentalRatingNEQ(v MaxParentalRating) predicate.UserPolicy {
+func MaxParentalRatingNEQ(v int) predicate.UserPolicy {
 	return predicate.UserPolicy(sql.FieldNEQ(FieldMaxParentalRating, v))
 }
 
 // MaxParentalRatingIn applies the In predicate on the "max_parental_rating" field.
-func MaxParentalRatingIn(vs ...MaxParentalRating) predicate.UserPolicy {
+func MaxParentalRatingIn(vs ...int) predicate.UserPolicy {
 	return predicate.UserPolicy(sql.FieldIn(FieldMaxParentalRating, vs...))
 }
 
 // MaxParentalRatingNotIn applies the NotIn predicate on the "max_parental_rating" field.
-func MaxParentalRatingNotIn(vs ...MaxParentalRating) predicate.UserPolicy {
+func MaxParentalRatingNotIn(vs ...int) predicate.UserPolicy {
 	return predicate.UserPolicy(sql.FieldNotIn(FieldMaxParentalRating, vs...))
+}
+
+// MaxParentalRatingGT applies the GT predicate on the "max_parental_rating" field.
+func MaxParentalRatingGT(v int) predicate.UserPolicy {
+	return predicate.UserPolicy(sql.FieldGT(FieldMaxParentalRating, v))
+}
+
+// MaxParentalRatingGTE applies the GTE predicate on the "max_parental_rating" field.
+func MaxParentalRatingGTE(v int) predicate.UserPolicy {
+	return predicate.UserPolicy(sql.FieldGTE(FieldMaxParentalRating, v))
+}
+
+// MaxParentalRatingLT applies the LT predicate on the "max_parental_rating" field.
+func MaxParentalRatingLT(v int) predicate.UserPolicy {
+	return predicate.UserPolicy(sql.FieldLT(FieldMaxParentalRating, v))
+}
+
+// MaxParentalRatingLTE applies the LTE predicate on the "max_parental_rating" field.
+func MaxParentalRatingLTE(v int) predicate.UserPolicy {
+	return predicate.UserPolicy(sql.FieldLTE(FieldMaxParentalRating, v))
 }
 
 // MaxParentalRatingIsNil applies the IsNil predicate on the "max_parental_rating" field.
@@ -582,23 +612,43 @@ func MaxParentalRatingNotNil() predicate.UserPolicy {
 }
 
 // MaxParentalSubRatingEQ applies the EQ predicate on the "max_parental_sub_rating" field.
-func MaxParentalSubRatingEQ(v MaxParentalSubRating) predicate.UserPolicy {
+func MaxParentalSubRatingEQ(v int) predicate.UserPolicy {
 	return predicate.UserPolicy(sql.FieldEQ(FieldMaxParentalSubRating, v))
 }
 
 // MaxParentalSubRatingNEQ applies the NEQ predicate on the "max_parental_sub_rating" field.
-func MaxParentalSubRatingNEQ(v MaxParentalSubRating) predicate.UserPolicy {
+func MaxParentalSubRatingNEQ(v int) predicate.UserPolicy {
 	return predicate.UserPolicy(sql.FieldNEQ(FieldMaxParentalSubRating, v))
 }
 
 // MaxParentalSubRatingIn applies the In predicate on the "max_parental_sub_rating" field.
-func MaxParentalSubRatingIn(vs ...MaxParentalSubRating) predicate.UserPolicy {
+func MaxParentalSubRatingIn(vs ...int) predicate.UserPolicy {
 	return predicate.UserPolicy(sql.FieldIn(FieldMaxParentalSubRating, vs...))
 }
 
 // MaxParentalSubRatingNotIn applies the NotIn predicate on the "max_parental_sub_rating" field.
-func MaxParentalSubRatingNotIn(vs ...MaxParentalSubRating) predicate.UserPolicy {
+func MaxParentalSubRatingNotIn(vs ...int) predicate.UserPolicy {
 	return predicate.UserPolicy(sql.FieldNotIn(FieldMaxParentalSubRating, vs...))
+}
+
+// MaxParentalSubRatingGT applies the GT predicate on the "max_parental_sub_rating" field.
+func MaxParentalSubRatingGT(v int) predicate.UserPolicy {
+	return predicate.UserPolicy(sql.FieldGT(FieldMaxParentalSubRating, v))
+}
+
+// MaxParentalSubRatingGTE applies the GTE predicate on the "max_parental_sub_rating" field.
+func MaxParentalSubRatingGTE(v int) predicate.UserPolicy {
+	return predicate.UserPolicy(sql.FieldGTE(FieldMaxParentalSubRating, v))
+}
+
+// MaxParentalSubRatingLT applies the LT predicate on the "max_parental_sub_rating" field.
+func MaxParentalSubRatingLT(v int) predicate.UserPolicy {
+	return predicate.UserPolicy(sql.FieldLT(FieldMaxParentalSubRating, v))
+}
+
+// MaxParentalSubRatingLTE applies the LTE predicate on the "max_parental_sub_rating" field.
+func MaxParentalSubRatingLTE(v int) predicate.UserPolicy {
+	return predicate.UserPolicy(sql.FieldLTE(FieldMaxParentalSubRating, v))
 }
 
 // MaxParentalSubRatingIsNil applies the IsNil predicate on the "max_parental_sub_rating" field.

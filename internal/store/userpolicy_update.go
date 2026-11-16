@@ -403,16 +403,23 @@ func (_u *UserPolicyUpdate) SetNillableEnableAllFolders(v *bool) *UserPolicyUpda
 }
 
 // SetMaxParentalRating sets the "max_parental_rating" field.
-func (_u *UserPolicyUpdate) SetMaxParentalRating(v userpolicy.MaxParentalRating) *UserPolicyUpdate {
+func (_u *UserPolicyUpdate) SetMaxParentalRating(v int) *UserPolicyUpdate {
+	_u.mutation.ResetMaxParentalRating()
 	_u.mutation.SetMaxParentalRating(v)
 	return _u
 }
 
 // SetNillableMaxParentalRating sets the "max_parental_rating" field if the given value is not nil.
-func (_u *UserPolicyUpdate) SetNillableMaxParentalRating(v *userpolicy.MaxParentalRating) *UserPolicyUpdate {
+func (_u *UserPolicyUpdate) SetNillableMaxParentalRating(v *int) *UserPolicyUpdate {
 	if v != nil {
 		_u.SetMaxParentalRating(*v)
 	}
+	return _u
+}
+
+// AddMaxParentalRating adds value to the "max_parental_rating" field.
+func (_u *UserPolicyUpdate) AddMaxParentalRating(v int) *UserPolicyUpdate {
+	_u.mutation.AddMaxParentalRating(v)
 	return _u
 }
 
@@ -423,16 +430,23 @@ func (_u *UserPolicyUpdate) ClearMaxParentalRating() *UserPolicyUpdate {
 }
 
 // SetMaxParentalSubRating sets the "max_parental_sub_rating" field.
-func (_u *UserPolicyUpdate) SetMaxParentalSubRating(v userpolicy.MaxParentalSubRating) *UserPolicyUpdate {
+func (_u *UserPolicyUpdate) SetMaxParentalSubRating(v int) *UserPolicyUpdate {
+	_u.mutation.ResetMaxParentalSubRating()
 	_u.mutation.SetMaxParentalSubRating(v)
 	return _u
 }
 
 // SetNillableMaxParentalSubRating sets the "max_parental_sub_rating" field if the given value is not nil.
-func (_u *UserPolicyUpdate) SetNillableMaxParentalSubRating(v *userpolicy.MaxParentalSubRating) *UserPolicyUpdate {
+func (_u *UserPolicyUpdate) SetNillableMaxParentalSubRating(v *int) *UserPolicyUpdate {
 	if v != nil {
 		_u.SetMaxParentalSubRating(*v)
 	}
+	return _u
+}
+
+// AddMaxParentalSubRating adds value to the "max_parental_sub_rating" field.
+func (_u *UserPolicyUpdate) AddMaxParentalSubRating(v int) *UserPolicyUpdate {
+	_u.mutation.AddMaxParentalSubRating(v)
 	return _u
 }
 
@@ -816,16 +830,6 @@ func (_u *UserPolicyUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserPolicyUpdate) check() error {
-	if v, ok := _u.mutation.MaxParentalRating(); ok {
-		if err := userpolicy.MaxParentalRatingValidator(v); err != nil {
-			return &ValidationError{Name: "max_parental_rating", err: fmt.Errorf(`store: validator failed for field "UserPolicy.max_parental_rating": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.MaxParentalSubRating(); ok {
-		if err := userpolicy.MaxParentalSubRatingValidator(v); err != nil {
-			return &ValidationError{Name: "max_parental_sub_rating", err: fmt.Errorf(`store: validator failed for field "UserPolicy.max_parental_sub_rating": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.AuthenticationProviderID(); ok {
 		if err := userpolicy.AuthenticationProviderIDValidator(v); err != nil {
 			return &ValidationError{Name: "authentication_provider_id", err: fmt.Errorf(`store: validator failed for field "UserPolicy.authentication_provider_id": %w`, err)}
@@ -938,16 +942,22 @@ func (_u *UserPolicyUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 		_spec.SetField(userpolicy.FieldEnableAllFolders, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.MaxParentalRating(); ok {
-		_spec.SetField(userpolicy.FieldMaxParentalRating, field.TypeEnum, value)
+		_spec.SetField(userpolicy.FieldMaxParentalRating, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMaxParentalRating(); ok {
+		_spec.AddField(userpolicy.FieldMaxParentalRating, field.TypeInt, value)
 	}
 	if _u.mutation.MaxParentalRatingCleared() {
-		_spec.ClearField(userpolicy.FieldMaxParentalRating, field.TypeEnum)
+		_spec.ClearField(userpolicy.FieldMaxParentalRating, field.TypeInt)
 	}
 	if value, ok := _u.mutation.MaxParentalSubRating(); ok {
-		_spec.SetField(userpolicy.FieldMaxParentalSubRating, field.TypeEnum, value)
+		_spec.SetField(userpolicy.FieldMaxParentalSubRating, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMaxParentalSubRating(); ok {
+		_spec.AddField(userpolicy.FieldMaxParentalSubRating, field.TypeInt, value)
 	}
 	if _u.mutation.MaxParentalSubRatingCleared() {
-		_spec.ClearField(userpolicy.FieldMaxParentalSubRating, field.TypeEnum)
+		_spec.ClearField(userpolicy.FieldMaxParentalSubRating, field.TypeInt)
 	}
 	if value, ok := _u.mutation.InvalidLoginAttemptCount(); ok {
 		_spec.SetField(userpolicy.FieldInvalidLoginAttemptCount, field.TypeInt32, value)
@@ -1512,16 +1522,23 @@ func (_u *UserPolicyUpdateOne) SetNillableEnableAllFolders(v *bool) *UserPolicyU
 }
 
 // SetMaxParentalRating sets the "max_parental_rating" field.
-func (_u *UserPolicyUpdateOne) SetMaxParentalRating(v userpolicy.MaxParentalRating) *UserPolicyUpdateOne {
+func (_u *UserPolicyUpdateOne) SetMaxParentalRating(v int) *UserPolicyUpdateOne {
+	_u.mutation.ResetMaxParentalRating()
 	_u.mutation.SetMaxParentalRating(v)
 	return _u
 }
 
 // SetNillableMaxParentalRating sets the "max_parental_rating" field if the given value is not nil.
-func (_u *UserPolicyUpdateOne) SetNillableMaxParentalRating(v *userpolicy.MaxParentalRating) *UserPolicyUpdateOne {
+func (_u *UserPolicyUpdateOne) SetNillableMaxParentalRating(v *int) *UserPolicyUpdateOne {
 	if v != nil {
 		_u.SetMaxParentalRating(*v)
 	}
+	return _u
+}
+
+// AddMaxParentalRating adds value to the "max_parental_rating" field.
+func (_u *UserPolicyUpdateOne) AddMaxParentalRating(v int) *UserPolicyUpdateOne {
+	_u.mutation.AddMaxParentalRating(v)
 	return _u
 }
 
@@ -1532,16 +1549,23 @@ func (_u *UserPolicyUpdateOne) ClearMaxParentalRating() *UserPolicyUpdateOne {
 }
 
 // SetMaxParentalSubRating sets the "max_parental_sub_rating" field.
-func (_u *UserPolicyUpdateOne) SetMaxParentalSubRating(v userpolicy.MaxParentalSubRating) *UserPolicyUpdateOne {
+func (_u *UserPolicyUpdateOne) SetMaxParentalSubRating(v int) *UserPolicyUpdateOne {
+	_u.mutation.ResetMaxParentalSubRating()
 	_u.mutation.SetMaxParentalSubRating(v)
 	return _u
 }
 
 // SetNillableMaxParentalSubRating sets the "max_parental_sub_rating" field if the given value is not nil.
-func (_u *UserPolicyUpdateOne) SetNillableMaxParentalSubRating(v *userpolicy.MaxParentalSubRating) *UserPolicyUpdateOne {
+func (_u *UserPolicyUpdateOne) SetNillableMaxParentalSubRating(v *int) *UserPolicyUpdateOne {
 	if v != nil {
 		_u.SetMaxParentalSubRating(*v)
 	}
+	return _u
+}
+
+// AddMaxParentalSubRating adds value to the "max_parental_sub_rating" field.
+func (_u *UserPolicyUpdateOne) AddMaxParentalSubRating(v int) *UserPolicyUpdateOne {
+	_u.mutation.AddMaxParentalSubRating(v)
 	return _u
 }
 
@@ -1938,16 +1962,6 @@ func (_u *UserPolicyUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserPolicyUpdateOne) check() error {
-	if v, ok := _u.mutation.MaxParentalRating(); ok {
-		if err := userpolicy.MaxParentalRatingValidator(v); err != nil {
-			return &ValidationError{Name: "max_parental_rating", err: fmt.Errorf(`store: validator failed for field "UserPolicy.max_parental_rating": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.MaxParentalSubRating(); ok {
-		if err := userpolicy.MaxParentalSubRatingValidator(v); err != nil {
-			return &ValidationError{Name: "max_parental_sub_rating", err: fmt.Errorf(`store: validator failed for field "UserPolicy.max_parental_sub_rating": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.AuthenticationProviderID(); ok {
 		if err := userpolicy.AuthenticationProviderIDValidator(v); err != nil {
 			return &ValidationError{Name: "authentication_provider_id", err: fmt.Errorf(`store: validator failed for field "UserPolicy.authentication_provider_id": %w`, err)}
@@ -2077,16 +2091,22 @@ func (_u *UserPolicyUpdateOne) sqlSave(ctx context.Context) (_node *UserPolicy, 
 		_spec.SetField(userpolicy.FieldEnableAllFolders, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.MaxParentalRating(); ok {
-		_spec.SetField(userpolicy.FieldMaxParentalRating, field.TypeEnum, value)
+		_spec.SetField(userpolicy.FieldMaxParentalRating, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMaxParentalRating(); ok {
+		_spec.AddField(userpolicy.FieldMaxParentalRating, field.TypeInt, value)
 	}
 	if _u.mutation.MaxParentalRatingCleared() {
-		_spec.ClearField(userpolicy.FieldMaxParentalRating, field.TypeEnum)
+		_spec.ClearField(userpolicy.FieldMaxParentalRating, field.TypeInt)
 	}
 	if value, ok := _u.mutation.MaxParentalSubRating(); ok {
-		_spec.SetField(userpolicy.FieldMaxParentalSubRating, field.TypeEnum, value)
+		_spec.SetField(userpolicy.FieldMaxParentalSubRating, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMaxParentalSubRating(); ok {
+		_spec.AddField(userpolicy.FieldMaxParentalSubRating, field.TypeInt, value)
 	}
 	if _u.mutation.MaxParentalSubRatingCleared() {
-		_spec.ClearField(userpolicy.FieldMaxParentalSubRating, field.TypeEnum)
+		_spec.ClearField(userpolicy.FieldMaxParentalSubRating, field.TypeInt)
 	}
 	if value, ok := _u.mutation.InvalidLoginAttemptCount(); ok {
 		_spec.SetField(userpolicy.FieldInvalidLoginAttemptCount, field.TypeInt32, value)

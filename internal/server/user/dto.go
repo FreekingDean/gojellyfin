@@ -113,6 +113,8 @@ func policyDto(policy *users.Policy) api.UserPolicy {
 		BlockedTags:                      &policy.BlockedTags,
 		AccessSchedules:                  &schedules,
 		BlockUnratedItems:                &unrated,
+		MaxParentalRating:                level(policy.MaxParentalRating),
+		MaxParentalSubRating:             level(policy.MaxParentalSubRating),
 		EnableContentDeletionFromFolders: &policy.EnableContentDeletionFromFolders,
 		EnabledDevices:                   &policy.EnabledDevices,
 		EnabledChannels:                  &policy.EnabledChannels,
@@ -229,6 +231,16 @@ func applyPolicy(update *users.PolicyUpdate, req *api.UserPolicy) {
 	if req.BlockedChannels != nil {
 		update.SetBlockedChannels(*req.BlockedChannels)
 	}
+	if req.MaxParentalRating == nil {
+		update.ClearMaxParentalRating()
+	} else {
+		update.SetMaxParentalRating(int(*req.MaxParentalRating))
+	}
+	if req.MaxParentalSubRating == nil {
+		update.ClearMaxParentalSubRating()
+	} else {
+		update.SetMaxParentalSubRating(int(*req.MaxParentalSubRating))
+	}
 	if req.BlockUnratedItems != nil {
 		unrated := make([]string, 0, len(*req.BlockUnratedItems))
 		for _, item := range *req.BlockUnratedItems {
@@ -247,4 +259,12 @@ func applyPolicy(update *users.PolicyUpdate, req *api.UserPolicy) {
 		}
 		update.SetAccessSchedules(schedules)
 	}
+}
+
+func level(value *int) *int32 {
+	if value == nil {
+		return nil
+	}
+
+	return apiutil.Ptr(int32(*value))
 }

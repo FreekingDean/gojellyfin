@@ -76,9 +76,9 @@ type UserPolicy struct {
 	// EnableAllFolders holds the value of the "enable_all_folders" field.
 	EnableAllFolders bool `json:"enable_all_folders,omitempty"`
 	// MaxParentalRating holds the value of the "max_parental_rating" field.
-	MaxParentalRating *userpolicy.MaxParentalRating `json:"max_parental_rating,omitempty"`
+	MaxParentalRating *int `json:"max_parental_rating,omitempty"`
 	// MaxParentalSubRating holds the value of the "max_parental_sub_rating" field.
-	MaxParentalSubRating *userpolicy.MaxParentalSubRating `json:"max_parental_sub_rating,omitempty"`
+	MaxParentalSubRating *int `json:"max_parental_sub_rating,omitempty"`
 	// InvalidLoginAttemptCount holds the value of the "invalid_login_attempt_count" field.
 	InvalidLoginAttemptCount int32 `json:"invalid_login_attempt_count,omitempty"`
 	// LoginAttemptsBeforeLockout holds the value of the "login_attempts_before_lockout" field.
@@ -149,9 +149,9 @@ func (*UserPolicy) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case userpolicy.FieldIsAdministrator, userpolicy.FieldIsHidden, userpolicy.FieldIsDisabled, userpolicy.FieldEnableCollectionManagement, userpolicy.FieldEnableSubtitleManagement, userpolicy.FieldEnableLyricManagement, userpolicy.FieldEnableUserPreferenceAccess, userpolicy.FieldEnableRemoteControlOfOtherUsers, userpolicy.FieldEnableSharedDeviceControl, userpolicy.FieldEnableRemoteAccess, userpolicy.FieldEnableLiveTvManagement, userpolicy.FieldEnableLiveTvAccess, userpolicy.FieldEnableMediaPlayback, userpolicy.FieldEnableAudioPlaybackTranscoding, userpolicy.FieldEnableVideoPlaybackTranscoding, userpolicy.FieldEnablePlaybackRemuxing, userpolicy.FieldForceRemoteSourceTranscoding, userpolicy.FieldEnableContentDeletion, userpolicy.FieldEnableContentDownloading, userpolicy.FieldEnableSyncTranscoding, userpolicy.FieldEnableMediaConversion, userpolicy.FieldEnablePublicSharing, userpolicy.FieldEnableAllDevices, userpolicy.FieldEnableAllChannels, userpolicy.FieldEnableAllFolders:
 			values[i] = new(sql.NullBool)
-		case userpolicy.FieldInvalidLoginAttemptCount, userpolicy.FieldLoginAttemptsBeforeLockout, userpolicy.FieldMaxActiveSessions, userpolicy.FieldRemoteClientBitrateLimit:
+		case userpolicy.FieldMaxParentalRating, userpolicy.FieldMaxParentalSubRating, userpolicy.FieldInvalidLoginAttemptCount, userpolicy.FieldLoginAttemptsBeforeLockout, userpolicy.FieldMaxActiveSessions, userpolicy.FieldRemoteClientBitrateLimit:
 			values[i] = new(sql.NullInt64)
-		case userpolicy.FieldMaxParentalRating, userpolicy.FieldMaxParentalSubRating, userpolicy.FieldAuthenticationProviderID, userpolicy.FieldPasswordResetProviderID, userpolicy.FieldSyncPlayAccess:
+		case userpolicy.FieldAuthenticationProviderID, userpolicy.FieldPasswordResetProviderID, userpolicy.FieldSyncPlayAccess:
 			values[i] = new(sql.NullString)
 		case userpolicy.FieldCreatedAt, userpolicy.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -343,18 +343,18 @@ func (_m *UserPolicy) assignValues(columns []string, values []any) error {
 				_m.EnableAllFolders = value.Bool
 			}
 		case userpolicy.FieldMaxParentalRating:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field max_parental_rating", values[i])
 			} else if value.Valid {
-				_m.MaxParentalRating = new(userpolicy.MaxParentalRating)
-				*_m.MaxParentalRating = userpolicy.MaxParentalRating(value.String)
+				_m.MaxParentalRating = new(int)
+				*_m.MaxParentalRating = int(value.Int64)
 			}
 		case userpolicy.FieldMaxParentalSubRating:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field max_parental_sub_rating", values[i])
 			} else if value.Valid {
-				_m.MaxParentalSubRating = new(userpolicy.MaxParentalSubRating)
-				*_m.MaxParentalSubRating = userpolicy.MaxParentalSubRating(value.String)
+				_m.MaxParentalSubRating = new(int)
+				*_m.MaxParentalSubRating = int(value.Int64)
 			}
 		case userpolicy.FieldInvalidLoginAttemptCount:
 			if value, ok := values[i].(*sql.NullInt64); !ok {

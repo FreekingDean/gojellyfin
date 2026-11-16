@@ -27,6 +27,7 @@ type Metadata struct {
 	SortName        *string
 	Overview        *string
 	OfficialRating  *consts.Rating
+	ParentalRating  *int
 	CommunityRating *float64
 	ProductionYear  *int32
 	PremiereDate    *time.Time
@@ -44,6 +45,20 @@ type Metadata struct {
 	Images          []RemoteImage
 }
 
+type RatingLevels interface {
+	RatingLevel(name string) (int, bool)
+}
+
+func (m *Metadata) Rate(levels RatingLevels) {
+	m.ParentalRating = nil
+	if m.OfficialRating == nil {
+		return
+	}
+	if level, found := levels.RatingLevel(string(*m.OfficialRating)); found {
+		m.ParentalRating = &level
+	}
+}
+
 func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Metadata) (*Item, error) {
 	update := s.store.Item.UpdateOneID(id).
 		SetNillableName(metadata.Name).
@@ -58,6 +73,10 @@ func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Met
 		SetNillableRunTimeTicks(metadata.RunTimeTicks).
 		SetNillableLockData(metadata.LockData)
 
+	if metadata.OfficialRating != nil && metadata.ParentalRating == nil {
+		update.ClearParentalRating()
+	}
+	update.SetNillableParentalRating(metadata.ParentalRating)
 	if metadata.Tags != nil {
 		update.SetTags(*metadata.Tags)
 	}

@@ -5,6 +5,9 @@ const { SERVER_LOG } = require('../setup/boot');
 // What a failed test leaves behind: what was on screen, what the app and the
 // server logged last, and a screenshot.
 async function reportFailure(device, PACKAGE, testInfo) {
+  for (const error of testInfo.errors) {
+    console.log(`"${testInfo.title}" failed: ${error.message}`);
+  }
   console.log(`On screen when "${testInfo.title}" ended:\n${device.summary()}`);
   console.log(`What the app logged:\n${appLog(device, PACKAGE)}`);
   if (fs.existsSync(SERVER_LOG)) {

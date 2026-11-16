@@ -1,50 +1,39 @@
 import { useEffect, useState } from 'preact/hooks';
 
 import { api } from '../api';
-import type { Schemas } from '../api';
 import * as mock from '../mock';
 import { Link, navigate } from '../router';
 import { Card, Cell, Page, Pill, notify, refused, since } from '../ui';
+import { Schedules, grantsOf, levels, permissions, ratingOf, saveAllowance, savePolicy, schedulesOf, syncPlay, unratedKinds, when } from './policy';
+import type { Device, Folder, Level, Person, SyncPlay } from './policy';
+import { Bulk } from './users-bulk';
 
-type Folder = { id: string; name: string };
-type Device = { id: string; name: string; app: string; seen?: string };
-type Person = {
-  id: string;
-  name: string;
-  admin: boolean;
-  disabled: boolean;
-  sso?: boolean;
-  password: boolean;
-  folders: string[] | 'all';
-  canRequest: boolean;
-  needsApproval: boolean;
-  quota?: number;
-  used: number;
-  seen?: string;
-  devices: Device[];
-  policy?: Schemas['UserPolicy'];
-};
-type Loaded = { people: Person[]; folders: Folder[] };
+type Loaded = { people: Person[]; folders: Folder[]; ratings: Level[] };
 
 function mocked(): Loaded {
   const folders = mock.libraries.map((library) => ({ id: library.id, name: library.name }));
 
   return {
     folders,
+    ratings: levels(mock.ratings),
     people: mock.people.map((person) => ({
       ...person,
       folders: person.libraries === 'all' ? 'all' : folders.filter((folder) => person.libraries.includes(folder.name)).map((folder) => folder.id),
       devices: person.devices.map((device) => ({ ...device, id: device.name })),
+      schedules: person.schedules ?? [],
+      grants: { ...grantsOf(), ...person.grants },
+      rating: person.rating ?? ratingOf(),
     })),
   };
 }
 
 async function fetched(): Promise<Loaded | undefined> {
-  const [users, allowances, devices, libraries] = await Promise.all([
+  const [users, allowances, devices, libraries, ratings] = await Promise.all([
     api.GET('/Users'),
     api.GET('/GoJellyfin/RequestUsers'),
     api.GET('/Devices'),
     api.GET('/Library/VirtualFolders'),
+    api.GET('/Localization/ParentalRatings'),
   ]);
   if (!users.data || !allowances.data || !devices.data || !libraries.data) {
     return undefined;
@@ -52,6 +41,7 @@ async function fetched(): Promise<Loaded | undefined> {
 
   return {
     folders: libraries.data.map((library) => ({ id: library.ItemId ?? '', name: library.Name ?? '' })),
+    ratings: levels(ratings.data ?? []),
     people: users.data.map((user) => {
       const allowance = allowances.data.find((each) => each.Id === user.Id);
 
@@ -68,6 +58,9 @@ async function fetched(): Promise<Loaded | undefined> {
         used: allowance?.Used ?? 0,
         seen: user.LastActivityDate ?? undefined,
         policy: user.Policy ?? undefined,
+        schedules: schedulesOf(user.Policy ?? undefined),
+        grants: grantsOf(user.Policy ?? undefined),
+        rating: ratingOf(user.Policy ?? undefined),
         devices: (devices.data.Items ?? [])
           .filter((device) => device.LastUserId === user.Id)
           .map((device) => ({
@@ -112,6 +105,8 @@ function signsInWith(person: Person): string {
 export function Users({ id }: { id?: string }) {
   const [loaded, setLoaded] = useState<Loaded | undefined>(mock.mocked ? mocked() : undefined);
   const [failure, setFailure] = useState('');
+  const [picked, setPicked] = useState<string[]>([]);
+  const [bulk, setBulk] = useState(false);
 
   async function load() {
     if (mock.mocked) {
@@ -143,7 +138,34 @@ export function Users({ id }: { id?: string }) {
 
   const person = loaded.people.find((each) => each.id === id);
   if (person) {
-    return <Detail key={person.id} person={person} folders={loaded.folders} reload={load} />;
+    return <Detail key={person.id} person={person} folders={loaded.folders} ratings={loaded.ratings} reload={load} />;
+  }
+
+  const chosen = loaded.people.filter((each) => picked.includes(each.id));
+  if (bulk && chosen.length > 0) {
+    return (
+      <Bulk
+        people={chosen}
+        folders={loaded.folders}
+        ratings={loaded.ratings}
+        cancel={() => setBulk(false)}
+        finish={async (failed, drafts) => {
+          if (mock.mocked) {
+            setLoaded({ ...loaded, people: loaded.people.map((each) => drafts.find((draft) => draft.id === each.id) ?? each) });
+          } else {
+            await load();
+          }
+          setPicked(failed);
+          setBulk(failed.length > 0);
+        }}
+      />
+    );
+  }
+
+  const everyone = picked.length > 0 && picked.length === loaded.people.length;
+
+  function pick(who: string, on: boolean) {
+    setPicked(on ? [...picked, who] : picked.filter((each) => each !== who));
   }
 
   return (
@@ -151,14 +173,25 @@ export function Users({ id }: { id?: string }) {
       title="Users"
       lead="Who can sign in, what they can see, and what they can ask for."
       action={
-        <Link to="/users/new" class="button primary">
-          Add user
-        </Link>
+        picked.length > 0 ? (
+          <span class="actions">
+            <span class="muted">{picked.length} selected</span>
+            <button onClick={() => setPicked([])}>Clear</button>
+            <button class="primary" onClick={() => setBulk(true)}>
+              Edit {chosen.length === 1 ? '1 user' : chosen.length + ' users'}
+            </button>
+          </span>
+        ) : (
+          <Link to="/users/new" class="button primary">
+            Add user
+          </Link>
+        )
       }
     >
       <div class="card flush">
         <table class="rows">
           <colgroup>
+            <col style="width:44px" />
             <col style="width:24%" />
             <col style="width:22%" />
             <col style="width:26%" />
@@ -167,6 +200,14 @@ export function Users({ id }: { id?: string }) {
           </colgroup>
           <thead>
             <tr>
+              <th>
+                <input
+                  type="checkbox"
+                  aria-label="Select everyone"
+                  checked={everyone}
+                  onChange={(event) => setPicked(event.currentTarget.checked ? loaded.people.map((each) => each.id) : [])}
+                />
+              </th>
               <th>User</th>
               <th>Can see</th>
               <th>Requests</th>
@@ -176,7 +217,10 @@ export function Users({ id }: { id?: string }) {
           </thead>
           <tbody>
             {loaded.people.map((each) => (
-              <tr key={each.id} class={each.disabled ? 'dim' : ''}>
+              <tr key={each.id} class={[each.disabled && 'dim', picked.includes(each.id) && 'picked'].filter(Boolean).join(' ')}>
+                <td>
+                  <input type="checkbox" aria-label={'Select ' + each.name} checked={picked.includes(each.id)} onChange={(event) => pick(each.id, event.currentTarget.checked)} />
+                </td>
                 <Cell
                   main={
                     <>
@@ -187,7 +231,7 @@ export function Users({ id }: { id?: string }) {
                   }
                   sub={signsInWith(each)}
                 />
-                <Cell main={access(each, loaded.folders)} />
+                <Cell main={access(each, loaded.folders)} sub={each.schedules.length > 0 ? when(each.schedules) : undefined} />
                 <Cell main={asking(each).main} sub={asking(each).sub} />
                 <Cell main={each.seen ? since(each.seen) : 'Never'} sub={each.devices.length + (each.devices.length === 1 ? ' device' : ' devices')} />
                 <td>
@@ -251,7 +295,7 @@ function Add({ reload }: { reload: () => Promise<void> }) {
   );
 }
 
-function Detail({ person, folders, reload }: { person: Person; folders: Folder[]; reload: () => Promise<void> }) {
+function Detail({ person, folders, ratings, reload }: { person: Person; folders: Folder[]; ratings: Level[]; reload: () => Promise<void> }) {
   const [draft, setDraft] = useState(person);
   const [password, setPassword] = useState<string | undefined>(undefined);
 
@@ -281,22 +325,11 @@ function Detail({ person, folders, reload }: { person: Person; folders: Folder[]
       navigate('/users');
       return;
     }
-    const [policy, allowance] = await Promise.all([
-      api.POST('/Users/{userId}/Policy', {
-        params: { path: { userId: person.id } },
-        body: {
-          ...person.policy,
-          IsAdministrator: draft.admin,
-          IsDisabled: draft.disabled,
-          EnableAllFolders: draft.folders === 'all',
-          EnabledFolders: draft.folders === 'all' ? [] : draft.folders,
-        },
-      }),
-      api.PUT('/GoJellyfin/RequestUsers/{userId}', {
-        params: { path: { userId: person.id } },
-        body: { CanRequest: draft.canRequest, NeedsApproval: draft.needsApproval, Quota: draft.quota ?? null },
-      }),
-    ]);
+    const [policy, allowance] = await Promise.all([savePolicy(person, draft), saveAllowance(draft)]);
+    if (!policy) {
+      navigate('/users');
+      return;
+    }
     const fallback = draft.disabled && draft.admin ? 'An administrator cannot be disabled. Take administrator away first.' : 'The changes to ' + person.name + ' could not be saved.';
     if (await finish(policy.response.ok ? allowance : policy, fallback, person.name + ' saved.')) {
       navigate('/users');
@@ -420,6 +453,75 @@ function Detail({ person, folders, reload }: { person: Person; folders: Folder[]
           ))}
         </Card>
 
+        <Card title="When they can sign in">
+          <Schedules schedules={draft.schedules} change={(schedules) => change({ schedules })} />
+        </Card>
+
+        <Card title="Permissions">
+          {permissions.map((permission) => (
+            <label class="check" key={permission.key}>
+              <input
+                type="checkbox"
+                checked={draft.grants[permission.key]}
+                onChange={(event) => change({ grants: { ...draft.grants, [permission.key]: event.currentTarget.checked } })}
+              />{' '}
+              {permission.label}
+            </label>
+          ))}
+          <div class="form one">
+            <label>
+              Watch parties
+              <select value={draft.grants.SyncPlayAccess} onChange={(event) => change({ grants: { ...draft.grants, SyncPlayAccess: event.currentTarget.value as SyncPlay } })}>
+                {syncPlay.map((each) => (
+                  <option key={each.value} value={each.value}>
+                    {each.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {draft.admin && <p class="muted small">An administrator can do all of these whatever is ticked.</p>}
+        </Card>
+
+        <Card title="Parental controls">
+          <div class="form one">
+            <label>
+              Highest rating they can see
+              <select
+                value={draft.rating.max === undefined ? '' : String(draft.rating.max)}
+                onChange={(event) =>
+                  change({ rating: { ...draft.rating, max: event.currentTarget.value === '' ? undefined : Number(event.currentTarget.value) } })
+                }
+              >
+                <option value="">No limit</option>
+                {ratings.map((level) => (
+                  <option key={level.value} value={String(level.value)}>
+                    {level.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {unratedKinds.map((each) => (
+            <label class="check" key={each.kind}>
+              <input
+                type="checkbox"
+                checked={draft.rating.unrated.includes(each.kind)}
+                onChange={(event) =>
+                  change({
+                    rating: {
+                      ...draft.rating,
+                      unrated: event.currentTarget.checked ? [...draft.rating.unrated, each.kind] : draft.rating.unrated.filter((kind) => kind !== each.kind),
+                    },
+                  })
+                }
+              />{' '}
+              Hide {each.label.toLowerCase()}
+            </label>
+          ))}
+          <p class="muted small">{draft.admin ? 'An administrator sees everything whatever is set here.' : 'An episode with no rating of its own takes its show\'s.'}</p>
+        </Card>
+
         <Card title="Devices">
           {person.devices.length === 0 ? (
             <p class="muted">Not signed in anywhere.</p>
@@ -451,3 +553,4 @@ function Detail({ person, folders, reload }: { person: Person; folders: Folder[]
     </Page>
   );
 }
+
