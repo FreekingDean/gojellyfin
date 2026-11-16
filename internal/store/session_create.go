@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
 	"github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -196,6 +197,20 @@ func (_c *SessionCreate) SetPlaybackPlan(v *entities.PlaybackPlan) *SessionCreat
 	return _c
 }
 
+// SetAPIKeyID sets the "api_key_id" field.
+func (_c *SessionCreate) SetAPIKeyID(v uuid.UUID) *SessionCreate {
+	_c.mutation.SetAPIKeyID(v)
+	return _c
+}
+
+// SetNillableAPIKeyID sets the "api_key_id" field if the given value is not nil.
+func (_c *SessionCreate) SetNillableAPIKeyID(v *uuid.UUID) *SessionCreate {
+	if v != nil {
+		_c.SetAPIKeyID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SessionCreate) SetID(v uuid.UUID) *SessionCreate {
 	_c.mutation.SetID(v)
@@ -246,6 +261,11 @@ func (_c *SessionCreate) SetNowPlaying(v *Item) *SessionCreate {
 // SetPlannedSource sets the "planned_source" edge to the ItemSource entity.
 func (_c *SessionCreate) SetPlannedSource(v *ItemSource) *SessionCreate {
 	return _c.SetPlannedSourceID(v.ID)
+}
+
+// SetAPIKey sets the "api_key" edge to the ApiKey entity.
+func (_c *SessionCreate) SetAPIKey(v *ApiKey) *SessionCreate {
+	return _c.SetAPIKeyID(v.ID)
 }
 
 // AddSyncPlayMembershipIDs adds the "sync_play_memberships" edge to the SyncPlayGroupMember entity by IDs.
@@ -485,6 +505,23 @@ func (_c *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.PlannedSourceID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.APIKeyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   session.APIKeyTable,
+			Columns: []string{session.APIKeyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apikey.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.APIKeyID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.SyncPlayMembershipsIDs(); len(nodes) > 0 {
@@ -762,6 +799,24 @@ func (u *SessionUpsert) UpdatePlaybackPlan() *SessionUpsert {
 // ClearPlaybackPlan clears the value of the "playback_plan" field.
 func (u *SessionUpsert) ClearPlaybackPlan() *SessionUpsert {
 	u.SetNull(session.FieldPlaybackPlan)
+	return u
+}
+
+// SetAPIKeyID sets the "api_key_id" field.
+func (u *SessionUpsert) SetAPIKeyID(v uuid.UUID) *SessionUpsert {
+	u.Set(session.FieldAPIKeyID, v)
+	return u
+}
+
+// UpdateAPIKeyID sets the "api_key_id" field to the value that was provided on create.
+func (u *SessionUpsert) UpdateAPIKeyID() *SessionUpsert {
+	u.SetExcluded(session.FieldAPIKeyID)
+	return u
+}
+
+// ClearAPIKeyID clears the value of the "api_key_id" field.
+func (u *SessionUpsert) ClearAPIKeyID() *SessionUpsert {
+	u.SetNull(session.FieldAPIKeyID)
 	return u
 }
 
@@ -1055,6 +1110,27 @@ func (u *SessionUpsertOne) UpdatePlaybackPlan() *SessionUpsertOne {
 func (u *SessionUpsertOne) ClearPlaybackPlan() *SessionUpsertOne {
 	return u.Update(func(s *SessionUpsert) {
 		s.ClearPlaybackPlan()
+	})
+}
+
+// SetAPIKeyID sets the "api_key_id" field.
+func (u *SessionUpsertOne) SetAPIKeyID(v uuid.UUID) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetAPIKeyID(v)
+	})
+}
+
+// UpdateAPIKeyID sets the "api_key_id" field to the value that was provided on create.
+func (u *SessionUpsertOne) UpdateAPIKeyID() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateAPIKeyID()
+	})
+}
+
+// ClearAPIKeyID clears the value of the "api_key_id" field.
+func (u *SessionUpsertOne) ClearAPIKeyID() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearAPIKeyID()
 	})
 }
 
@@ -1515,6 +1591,27 @@ func (u *SessionUpsertBulk) UpdatePlaybackPlan() *SessionUpsertBulk {
 func (u *SessionUpsertBulk) ClearPlaybackPlan() *SessionUpsertBulk {
 	return u.Update(func(s *SessionUpsert) {
 		s.ClearPlaybackPlan()
+	})
+}
+
+// SetAPIKeyID sets the "api_key_id" field.
+func (u *SessionUpsertBulk) SetAPIKeyID(v uuid.UUID) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetAPIKeyID(v)
+	})
+}
+
+// UpdateAPIKeyID sets the "api_key_id" field to the value that was provided on create.
+func (u *SessionUpsertBulk) UpdateAPIKeyID() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateAPIKeyID()
+	})
+}
+
+// ClearAPIKeyID clears the value of the "api_key_id" field.
+func (u *SessionUpsertBulk) ClearAPIKeyID() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.ClearAPIKeyID()
 	})
 }
 

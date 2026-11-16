@@ -13,6 +13,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
+	"github.com/FreekingDean/gojellyfin/internal/store/session"
+	"github.com/FreekingDean/gojellyfin/internal/store/user"
 	"github.com/google/uuid"
 )
 
@@ -78,10 +80,44 @@ func (_c *ApiKeyCreate) SetNillableRevokedAt(v *time.Time) *ApiKeyCreate {
 	return _c
 }
 
+// SetUserID sets the "user_id" field.
+func (_c *ApiKeyCreate) SetUserID(v uuid.UUID) *ApiKeyCreate {
+	_c.mutation.SetUserID(v)
+	return _c
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_c *ApiKeyCreate) SetNillableUserID(v *uuid.UUID) *ApiKeyCreate {
+	if v != nil {
+		_c.SetUserID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ApiKeyCreate) SetID(v uuid.UUID) *ApiKeyCreate {
 	_c.mutation.SetID(v)
 	return _c
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (_c *ApiKeyCreate) SetUser(v *User) *ApiKeyCreate {
+	return _c.SetUserID(v.ID)
+}
+
+// AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
+func (_c *ApiKeyCreate) AddSessionIDs(ids ...uuid.UUID) *ApiKeyCreate {
+	_c.mutation.AddSessionIDs(ids...)
+	return _c
+}
+
+// AddSessions adds the "sessions" edges to the Session entity.
+func (_c *ApiKeyCreate) AddSessions(v ...*Session) *ApiKeyCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSessionIDs(ids...)
 }
 
 // Mutation returns the ApiKeyMutation object of the builder.
@@ -199,6 +235,39 @@ func (_c *ApiKeyCreate) createSpec() (*ApiKey, *sqlgraph.CreateSpec) {
 		_spec.SetField(apikey.FieldRevokedAt, field.TypeTime, value)
 		_node.RevokedAt = &value
 	}
+	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   apikey.UserTable,
+			Columns: []string{apikey.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.UserID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   apikey.SessionsTable,
+			Columns: []string{apikey.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -314,6 +383,24 @@ func (u *ApiKeyUpsert) UpdateRevokedAt() *ApiKeyUpsert {
 // ClearRevokedAt clears the value of the "revoked_at" field.
 func (u *ApiKeyUpsert) ClearRevokedAt() *ApiKeyUpsert {
 	u.SetNull(apikey.FieldRevokedAt)
+	return u
+}
+
+// SetUserID sets the "user_id" field.
+func (u *ApiKeyUpsert) SetUserID(v uuid.UUID) *ApiKeyUpsert {
+	u.Set(apikey.FieldUserID, v)
+	return u
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *ApiKeyUpsert) UpdateUserID() *ApiKeyUpsert {
+	u.SetExcluded(apikey.FieldUserID)
+	return u
+}
+
+// ClearUserID clears the value of the "user_id" field.
+func (u *ApiKeyUpsert) ClearUserID() *ApiKeyUpsert {
+	u.SetNull(apikey.FieldUserID)
 	return u
 }
 
@@ -439,6 +526,27 @@ func (u *ApiKeyUpsertOne) UpdateRevokedAt() *ApiKeyUpsertOne {
 func (u *ApiKeyUpsertOne) ClearRevokedAt() *ApiKeyUpsertOne {
 	return u.Update(func(s *ApiKeyUpsert) {
 		s.ClearRevokedAt()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *ApiKeyUpsertOne) SetUserID(v uuid.UUID) *ApiKeyUpsertOne {
+	return u.Update(func(s *ApiKeyUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *ApiKeyUpsertOne) UpdateUserID() *ApiKeyUpsertOne {
+	return u.Update(func(s *ApiKeyUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// ClearUserID clears the value of the "user_id" field.
+func (u *ApiKeyUpsertOne) ClearUserID() *ApiKeyUpsertOne {
+	return u.Update(func(s *ApiKeyUpsert) {
+		s.ClearUserID()
 	})
 }
 
@@ -731,6 +839,27 @@ func (u *ApiKeyUpsertBulk) UpdateRevokedAt() *ApiKeyUpsertBulk {
 func (u *ApiKeyUpsertBulk) ClearRevokedAt() *ApiKeyUpsertBulk {
 	return u.Update(func(s *ApiKeyUpsert) {
 		s.ClearRevokedAt()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *ApiKeyUpsertBulk) SetUserID(v uuid.UUID) *ApiKeyUpsertBulk {
+	return u.Update(func(s *ApiKeyUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *ApiKeyUpsertBulk) UpdateUserID() *ApiKeyUpsertBulk {
+	return u.Update(func(s *ApiKeyUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// ClearUserID clears the value of the "user_id" field.
+func (u *ApiKeyUpsertBulk) ClearUserID() *ApiKeyUpsertBulk {
+	return u.Update(func(s *ApiKeyUpsert) {
+		s.ClearUserID()
 	})
 }
 

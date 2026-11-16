@@ -209,6 +209,12 @@ jobs:
       - name: Migrate
         run: atlas migrate apply --dir "file://internal/store/migrations" --url "$DATABASE_URL"
 
+      # make generate writes a migration for any change to the ent schema, so
+      # a schema change committed without one fails here rather than on the
+      # next fresh database.
+      - name: Every schema change has a migration
+        run: go run ./scripts/migrationdiff --check
+
       - name: Build
         run: go build ./...
 

@@ -5,9 +5,13 @@ import (
 	"fmt"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
+
+	"github.com/FreekingDean/gojellyfin/internal/sessions"
 
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	apikeymodel "github.com/FreekingDean/gojellyfin/internal/store/apikey"
+	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
 )
 
 type ApiKey = store.ApiKeyModel
@@ -31,8 +35,9 @@ func (s *Service) Keys(ctx context.Context) ([]*ApiKey, error) {
 	return keys, nil
 }
 
-func (s *Service) Create(ctx context.Context, appName, token string) (*ApiKey, error) {
+func (s *Service) Create(ctx context.Context, userID uuid.UUID, appName, token string) (*ApiKey, error) {
 	key, err := s.store.ApiKey.Create().
+		SetUserID(userID).
 		SetAppName(appName).
 		SetAccessToken(token).
 		SaveModel(ctx)
@@ -44,11 +49,24 @@ func (s *Service) Create(ctx context.Context, appName, token string) (*ApiKey, e
 }
 
 func (s *Service) Revoke(ctx context.Context, token string) error {
-	if _, err := s.store.ApiKey.Delete().
-		Where(apikeymodel.AccessToken(token)).
-		Exec(ctx); err != nil {
-		return fmt.Errorf("failed to delete api key: %w", err)
-	}
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
+		ids, err := tx.ApiKey.Query().Where(apikeymodel.AccessToken(token)).IDs(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to find api key: %w", err)
+		}
 
-	return nil
+		if _, err := tx.ApiKey.Delete().Where(apikeymodel.IDIn(ids...)).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to delete api key: %w", err)
+		}
+
+		clientIDs := make([]string, 0, len(ids))
+		for _, id := range ids {
+			clientIDs = append(clientIDs, sessions.KeyClientID(id))
+		}
+		if _, err := tx.Device.Delete().Where(devicemodel.ClientIDIn(clientIDs...)).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to delete the api key's device: %w", err)
+		}
+
+		return nil
+	})
 }

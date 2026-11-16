@@ -14,6 +14,7 @@ import (
 	apikeymodel "github.com/FreekingDean/gojellyfin/internal/store/apikey"
 	devicemodel "github.com/FreekingDean/gojellyfin/internal/store/device"
 	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
+	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 	configurationmodel "github.com/FreekingDean/gojellyfin/internal/store/userconfiguration"
 	datamodel "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
 	policymodel "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
@@ -297,6 +298,18 @@ func writeAPIKeys(ctx context.Context, tx *store.Tx, keys []APIKey, report *Repo
 		tokens[token] = true
 	}
 
+	owner, err := tx.User.Query().
+		Where(usermodel.HasPolicyWith(policymodel.IsAdministrator(true), policymodel.IsDisabled(false))).
+		Order(usermodel.ByCreatedAt(), usermodel.ByID()).
+		FirstID(ctx)
+	if err != nil && !store.IsNotFound(err) {
+		return fmt.Errorf("failed to find an administrator to own the api keys: %w", err)
+	}
+	var ownerID *uuid.UUID
+	if err == nil {
+		ownerID = &owner
+	}
+
 	for _, key := range keys {
 		if tokens[key.Token] {
 			report.IntegrationsAlreadyHere++
@@ -306,7 +319,7 @@ func writeAPIKeys(ctx context.Context, tx *store.Tx, keys []APIKey, report *Repo
 		tokens[key.Token] = true
 		report.IntegrationsCarried++
 
-		if err := tx.ApiKey.Create().SetAppName(key.Name).SetAccessToken(key.Token).Exec(ctx); err != nil {
+		if err := tx.ApiKey.Create().SetAppName(key.Name).SetAccessToken(key.Token).SetNillableUserID(ownerID).Exec(ctx); err != nil {
 			return fmt.Errorf("failed to carry the api key %q: %w", key.Name, err)
 		}
 	}

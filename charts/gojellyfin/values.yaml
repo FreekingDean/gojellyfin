@@ -91,6 +91,10 @@ oidc:
 # every request as coming from the gateway.
 trustedProxies: []
 
+# TZ. The time zone a user's access schedule is read in, such as
+# Europe/London. Empty is UTC.
+timeZone: ""
+
 # CORS_ORIGINS. Off allows only https://apps.jellyfin.org, the Google Cast
 # receiver, which the server always allows. Enabled adds one origin and needs
 # it — the chart refuses to render a restriction that would
@@ -334,6 +338,9 @@ web:
     - name: Request
       icon: add_circle
       url: /request
+    - name: Report a problem
+      icon: report_problem
+      url: /report
   # The unprivileged image listens on 8080 and owns the directories nginx
   # writes to, which is what lets runAsNonRoot hold.
   image:

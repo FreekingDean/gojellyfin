@@ -101,7 +101,7 @@ func newFixture(t *testing.T) *fixture {
 	shelved := shelves.New(catalogue, found, settings.New(client))
 
 	return &fixture{
-		server:    New(catalogue, cards.New(catalogue, libraries.New(client), shelved, users.New(client)), found, nil),
+		server:    New(catalogue, cards.New(catalogue, libraries.New(client), shelved, users.New(client)), found, nil, everyone{}),
 		client:    client,
 		itemID:    item.ID,
 		libraryID: library.ID,
@@ -404,4 +404,80 @@ func TestServer_GetItemImage_Library(t *testing.T) {
 			t.Errorf("response = %T, want a 404", response)
 		}
 	})
+}
+
+type everyone struct{}
+
+func (everyone) Access(context.Context, uuid.UUID) (users.Access, error) {
+	return users.Access{All: true}, nil
+}
+
+func TestServer_GetItemImage2(t *testing.T) {
+	fixture := newFixture(t)
+	fixture.store(t, imagemodel.KindBackdrop, 1, poster, "backdroptag")
+
+	response, err := fixture.server.GetItemImage2(context.Background(), api.GetItemImage2RequestObject{
+		ItemId:     fixture.itemID,
+		ImageType:  api.Backdrop,
+		ImageIndex: 1,
+		Tag:        "backdroptag",
+		MaxWidth:   1280,
+		MaxHeight:  720,
+	})
+	if err != nil {
+		t.Fatalf("failed to get the image: %v", err)
+	}
+
+	recorder := httptest.NewRecorder()
+	if err := response.VisitGetItemImage2Response(recorder); err != nil {
+		t.Fatalf("failed to write the response: %v", err)
+	}
+	if recorder.Code != http.StatusFound || recorder.Header().Get("Location") != poster {
+		t.Errorf("answered %d to %q, want a redirect to %q", recorder.Code, recorder.Header().Get("Location"), poster)
+	}
+
+	missing, err := fixture.server.HeadItemImage2(context.Background(), api.HeadItemImage2RequestObject{
+		ItemId:    fixture.itemID,
+		ImageType: api.Logo,
+	})
+	if err != nil {
+		t.Fatalf("failed to head the image: %v", err)
+	}
+	if _, ok := missing.(api.HeadItemImage2404JSONResponse); !ok {
+		t.Errorf("response = %T, want a 404", missing)
+	}
+}
+
+func TestServer_GetItemImageInfos(t *testing.T) {
+	fixture := newFixture(t)
+	fixture.store(t, imagemodel.KindPrimary, 0, poster, "postertag")
+	fixture.store(t, imagemodel.KindBackdrop, 0, unownedBackdrop, "backdroptag")
+
+	response, err := fixture.server.GetItemImageInfos(context.Background(), api.GetItemImageInfosRequestObject{ItemId: fixture.itemID})
+	if err != nil {
+		t.Fatalf("failed to list the images: %v", err)
+	}
+
+	infos, ok := response.(api.GetItemImageInfos200JSONResponse)
+	if !ok {
+		t.Fatalf("response = %T, want the list", response)
+	}
+	tags := map[api.ImageType]string{}
+	for _, info := range infos {
+		tags[*info.ImageType] = *info.ImageTag
+		if info.Path != nil {
+			t.Errorf("%s names a path", *info.ImageType)
+		}
+	}
+	if tags[api.Primary] != "postertag" || tags[api.Backdrop] != "backdroptag" || len(tags) != 2 {
+		t.Errorf("tags = %v, want the poster and the backdrop", tags)
+	}
+
+	unknown, err := fixture.server.GetItemImageInfos(context.Background(), api.GetItemImageInfosRequestObject{ItemId: uuid.New()})
+	if err != nil {
+		t.Fatalf("failed to list the images: %v", err)
+	}
+	if _, ok := unknown.(api.GetItemImageInfos404JSONResponse); !ok {
+		t.Errorf("an unknown item answered %T, want a 404", unknown)
+	}
 }

@@ -19,6 +19,7 @@ import (
 )
 
 type fixture struct {
+	client     *store.Client
 	service    *Service
 	activities *activity.Service
 	user       *User
@@ -76,6 +77,7 @@ func newFixture(t *testing.T) *fixture {
 	})
 
 	return &fixture{
+		client:     client,
 		service:    New(client, activities),
 		activities: activities,
 		user:       user,

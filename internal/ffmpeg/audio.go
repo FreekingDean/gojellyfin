@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"strconv"
 	"time"
+
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 const (
@@ -20,6 +22,9 @@ func (ffmpeg *FFMpeg) DecodeAudio(ctx context.Context, path string, length time.
 	if ffmpeg.decode == "" {
 		return nil, ErrNotAvailable
 	}
+
+	ctx, span := tracing.Start(ctx, "ffmpeg decode audio")
+	defer span.End()
 
 	ctx, cancel := context.WithTimeout(ctx, decodeTimeout)
 	defer cancel()
@@ -41,7 +46,10 @@ func (ffmpeg *FFMpeg) DecodeAudio(ctx context.Context, path string, length time.
 
 	output, err := cmd.Output()
 	if err != nil {
+		span.Failed()
 		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			span.Set(tracing.Bool("ffmpeg.timed_out", true))
+
 			return nil, fmt.Errorf("ffmpeg ran out of time decoding %s", path)
 		}
 
@@ -49,6 +57,7 @@ func (ffmpeg *FFMpeg) DecodeAudio(ctx context.Context, path string, length time.
 	}
 
 	samples := make([]int16, len(output)/2)
+	span.Set(tracing.Int("ffmpeg.samples", len(samples)))
 	if _, err := binary.Decode(output[:len(samples)*2], binary.LittleEndian, samples); err != nil {
 		return nil, err
 	}

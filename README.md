@@ -116,7 +116,8 @@ writes to it. Jellyfin 10.10 and 10.11 are both read. It carries:
   policy and their playback preferences. A Jellyfin password keeps working.
 - **Signed-in devices and their access tokens**, so a phone, a television and a
   browser that were signed in stay signed in.
-- **API keys.**
+- **API keys**, each owned by the oldest administrator, since Jellyfin records
+  no maker for one.
 - **Watch state**: played, play count, resume position, favourites and ratings.
   A title is matched by its TMDB id, then by its IMDb or TVDB id, then by its
   file path.

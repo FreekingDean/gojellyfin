@@ -32,28 +32,35 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/webhook"
 )
 
-var streamRoutes = []string{
-	"GET /Videos/{itemId}/stream",
-	"HEAD /Videos/{itemId}/stream",
-	"GET /Videos/{itemId}/stream.{container}",
-	"HEAD /Videos/{itemId}/stream.{container}",
-	"GET /Audio/{itemId}/stream",
-	"HEAD /Audio/{itemId}/stream",
-	"GET /Audio/{itemId}/stream.{container}",
-	"HEAD /Audio/{itemId}/stream.{container}",
+type streamRoute struct {
+	pattern   string
+	operation string
+	handler   func(*stream.Handler) http.HandlerFunc
 }
 
-var hlsRoutes = map[string]func(*stream.Handler) http.HandlerFunc{
-	"GET /Videos/{itemId}/master.m3u8":                               func(h *stream.Handler) http.HandlerFunc { return h.ServeMasterPlaylist },
-	"HEAD /Videos/{itemId}/master.m3u8":                              func(h *stream.Handler) http.HandlerFunc { return h.ServeMasterPlaylist },
-	"GET /Videos/{itemId}/main.m3u8":                                 func(h *stream.Handler) http.HandlerFunc { return h.ServeMediaPlaylist },
-	"GET /Videos/{itemId}/audio.m3u8":                                func(h *stream.Handler) http.HandlerFunc { return h.ServeAudioPlaylist },
-	"GET /Videos/{itemId}/hls1/{playlistId}/{segmentId}.{container}": func(h *stream.Handler) http.HandlerFunc { return h.ServeSegment },
-}
+func serve(h *stream.Handler) http.HandlerFunc          { return h.Serve }
+func serveUniversal(h *stream.Handler) http.HandlerFunc { return h.ServeUniversal }
+func serveMaster(h *stream.Handler) http.HandlerFunc    { return h.ServeMasterPlaylist }
+func serveMedia(h *stream.Handler) http.HandlerFunc     { return h.ServeMediaPlaylist }
+func serveAudio(h *stream.Handler) http.HandlerFunc     { return h.ServeAudioPlaylist }
+func serveSegment(h *stream.Handler) http.HandlerFunc   { return h.ServeSegment }
 
-var universalAudioRoutes = []string{
-	"GET /Audio/{itemId}/universal",
-	"HEAD /Audio/{itemId}/universal",
+var streamRoutes = []streamRoute{
+	{"GET /Videos/{itemId}/stream", "GetVideoStream", serve},
+	{"HEAD /Videos/{itemId}/stream", "HeadVideoStream", serve},
+	{"GET /Videos/{itemId}/stream.{container}", "GetVideoStreamByContainer", serve},
+	{"HEAD /Videos/{itemId}/stream.{container}", "HeadVideoStreamByContainer", serve},
+	{"GET /Audio/{itemId}/stream", "GetAudioStream", serve},
+	{"HEAD /Audio/{itemId}/stream", "HeadAudioStream", serve},
+	{"GET /Audio/{itemId}/stream.{container}", "GetAudioStreamByContainer", serve},
+	{"HEAD /Audio/{itemId}/stream.{container}", "HeadAudioStreamByContainer", serve},
+	{"GET /Videos/{itemId}/master.m3u8", "GetMasterHlsVideoPlaylist", serveMaster},
+	{"HEAD /Videos/{itemId}/master.m3u8", "HeadMasterHlsVideoPlaylist", serveMaster},
+	{"GET /Videos/{itemId}/main.m3u8", "GetVariantHlsVideoPlaylist", serveMedia},
+	{"GET /Videos/{itemId}/audio.m3u8", "GetVariantHlsAudioPlaylist", serveAudio},
+	{"GET /Videos/{itemId}/hls1/{playlistId}/{segmentId}.{container}", "GetHlsVideoSegment", serveSegment},
+	{"GET /Audio/{itemId}/universal", "GetUniversalAudioStream", serveUniversal},
+	{"HEAD /Audio/{itemId}/universal", "HeadUniversalAudioStream", serveUniversal},
 }
 
 var legacyRoutes = map[string]string{
@@ -219,6 +226,7 @@ func legacyRoute(m *mux.Mux, target string) http.HandlerFunc {
 type Server struct {
 	s *http.Server
 
+	tracing        *tracing.Tracing
 	httpMiddleware []middleware.HttpMiddleware
 	apiMiddleware  []api.StrictMiddlewareFunc
 	apiOptions     api.StrictHTTPServerOptions
@@ -250,6 +258,8 @@ func New(config env.Config, m *mux.Mux, authMiddleware *middleware.Auth, tracing
 		s: &http.Server{
 			Addr: fmt.Sprintf(":%d", config.HTTPPort),
 		},
+
+		tracing: tracing,
 
 		httpMiddleware: newHTTPMiddleware(config),
 
@@ -309,16 +319,10 @@ func Register(
 		m.HandleFunc(pattern, signOn.Serve)
 	}
 
-	for _, pattern := range streamRoutes {
-		m.HandleFunc(pattern, streams.Serve)
+	for _, route := range streamRoutes {
+		m.HandleFunc(route.pattern, middleware.StreamTracing(s.tracing, route.operation, route.handler(streams)))
 	}
 	m.HandleFunc("DELETE /Videos/ActiveEncodings", streams.StopEncodings)
-	for pattern, handler := range hlsRoutes {
-		m.HandleFunc(pattern, handler(streams))
-	}
-	for _, pattern := range universalAudioRoutes {
-		m.HandleFunc(pattern, streams.ServeUniversal)
-	}
 	finalHandler := api.HandlerWithOptions(h, api.StdHTTPServerOptions{
 		BaseRouter: m,
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {

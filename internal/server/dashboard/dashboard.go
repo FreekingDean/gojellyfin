@@ -12,9 +12,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 )
 
-//go:embed configpage.html
-var configPage []byte
-
 //go:embed requestspage.html
 var requestsPage []byte
 
@@ -32,7 +29,6 @@ type page struct {
 }
 
 var pages = []page{
-	{name: "media_downloaders", displayName: "Media Downloaders", icon: "download", body: configPage},
 	{name: "requests", displayName: "Requests and Reports", icon: "favorite", body: requestsPage},
 }
 

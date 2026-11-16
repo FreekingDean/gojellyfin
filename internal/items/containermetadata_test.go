@@ -2,7 +2,9 @@ package items
 
 import (
 	"context"
+	"errors"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -434,4 +436,87 @@ func TestService_DistinctOfficialRatings(t *testing.T) {
 			t.Errorf("genres = %v, want none for a viewer with no libraries", namesOf(named))
 		}
 	})
+}
+
+func TestService_ByName(t *testing.T) {
+	fixture := newMetadataFixture(t)
+	ctx := context.Background()
+	movie := fixture.item(t, "Movie")
+
+	fixture.seed(t, movie, seeded{
+		Genres:  []string{fixture.name("Comedy")},
+		Studios: []string{fixture.name("Studio")},
+		People:  []Credit{{Name: fixture.name("Actor"), Kind: creditmodel.KindActor, Role: "Lead"}},
+	})
+
+	allowed := MetadataQuery{Viewer: Viewer{Libraries: []uuid.UUID{fixture.libraryID}}}
+	hidden := MetadataQuery{Viewer: Viewer{Libraries: []uuid.UUID{uuid.New()}}}
+
+	lookups := map[string]func(MetadataQuery, string) (Named, error){
+		"genre": func(query MetadataQuery, name string) (Named, error) {
+			return fixture.service.GenreNamed(ctx, query, name)
+		},
+		"studio": func(query MetadataQuery, name string) (Named, error) {
+			return fixture.service.StudioNamed(ctx, query, name)
+		},
+		"person": func(query MetadataQuery, name string) (Named, error) {
+			return fixture.service.PersonNamed(ctx, query, name)
+		},
+	}
+	names := map[string]string{"genre": "Comedy", "studio": "Studio", "person": "Actor"}
+
+	for what, lookup := range lookups {
+		t.Run(what, func(t *testing.T) {
+			want := fixture.name(names[what])
+
+			found, err := lookup(allowed, strings.ToUpper(want))
+			if err != nil || found.Name != want {
+				t.Errorf("found %q, %v, want %q", found.Name, err, want)
+			}
+
+			if _, err := lookup(allowed, fixture.name("Nobody")); !errors.Is(err, ErrNotFound) {
+				t.Errorf("an unknown name answered %v, want ErrNotFound", err)
+			}
+
+			if _, err := lookup(hidden, want); !errors.Is(err, ErrNotFound) {
+				t.Errorf("a name only a hidden library holds answered %v, want ErrNotFound", err)
+			}
+		})
+	}
+}
+
+func TestService_SweepNames(t *testing.T) {
+	fixture := newMetadataFixture(t)
+	ctx := context.Background()
+	movie := fixture.item(t, "Movie")
+
+	fixture.seed(t, movie, seeded{
+		Genres:  []string{fixture.name("Old"), fixture.name("Kept")},
+		Studios: []string{fixture.name("Old")},
+		People:  []Credit{{Name: fixture.name("Old"), Kind: creditmodel.KindActor, Role: "Lead"}},
+	})
+	fixture.seed(t, movie, seeded{
+		Genres:  []string{fixture.name("Kept")},
+		Studios: []string{},
+		People:  []Credit{},
+	})
+
+	if err := fixture.service.SweepNames(ctx); err != nil {
+		t.Fatalf("SweepNames: %v", err)
+	}
+
+	client := fixture.service.store
+	genres, err := client.Genre.Query().Where(genremodel.NameHasPrefix(fixture.prefix)).All(ctx)
+	if err != nil {
+		t.Fatalf("failed to read the genres: %v", err)
+	}
+	if len(genres) != 1 || genres[0].Name != fixture.name("Kept") {
+		t.Errorf("genres left = %v, want only the one still on the movie", genres)
+	}
+	if left, _ := client.Studio.Query().Where(studiomodel.NameHasPrefix(fixture.prefix)).Count(ctx); left != 0 {
+		t.Errorf("%d studios nothing credits survived the sweep", left)
+	}
+	if left, _ := client.Person.Query().Where(personmodel.NameHasPrefix(fixture.prefix)).Count(ctx); left != 0 {
+		t.Errorf("%d people nothing credits survived the sweep", left)
+	}
 }
