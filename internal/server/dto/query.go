@@ -48,7 +48,7 @@ func ItemQuery(ctx context.Context, collections *libraries.Service, viewer items
 		Viewer:       viewer,
 		SearchTerm:   apiutil.Deref(params.SearchTerm),
 		StartIndex:   int(apiutil.Deref(params.StartIndex)),
-		Limit:        int(apiutil.Deref(params.Limit)),
+		Limit:        Limit(params.Limit),
 		Descending:   Descending(params.SortOrder),
 		SortBy:       SortFields(params.SortBy),
 		Kinds:        Kinds(params.IncludeItemTypes),
@@ -84,6 +84,14 @@ func ItemQuery(ctx context.Context, collections *libraries.Service, viewer items
 	}
 
 	return query
+}
+
+func Limit(limit *int32) *int {
+	if limit == nil {
+		return nil
+	}
+
+	return apiutil.Ptr(int(*limit))
 }
 
 func Descending(order *[]api.SortOrder) bool {

@@ -2,11 +2,13 @@ package items
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/auth"
+	"github.com/FreekingDean/gojellyfin/internal/channels"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
@@ -30,10 +32,11 @@ type Server struct {
 	discover  *discover.Service
 	requests  *requests.Service
 	cards     dto.Cards
+	channels  *channels.Service
 }
 
-func New(items *items.Service, libraries *libraries.Service, shelves *shelves.Service, discover *discover.Service, requests *requests.Service, policies dto.Access, cards dto.Cards) *Server {
-	return &Server{items: items, libraries: libraries, shelves: shelves, discover: discover, requests: requests, policies: policies, cards: cards}
+func New(items *items.Service, libraries *libraries.Service, shelves *shelves.Service, discover *discover.Service, requests *requests.Service, policies dto.Access, cards dto.Cards, channels *channels.Service) *Server {
+	return &Server{items: items, libraries: libraries, shelves: shelves, discover: discover, requests: requests, policies: policies, cards: cards, channels: channels}
 }
 
 func (s *Server) shelved(ctx context.Context, shelf shelves.Shelf, limit int, ungrouped bool) ([]api.BaseItemDto, error) {
@@ -43,6 +46,23 @@ func (s *Server) shelved(ctx context.Context, shelf shelves.Shelf, limit int, un
 	}
 
 	return dto.LatestDtos(ctx, s.items, latest)
+}
+
+func (s *Server) shelvedItems(ctx context.Context, shelf shelves.Shelf, limit *int32) (api.GetItemsResponseObject, error) {
+	wanted := int(apiutil.OrElse(limit, int32(shelfPage)))
+	converted, err := s.shelved(ctx, shelf, max(wanted, shelfPage), true)
+	if err != nil {
+		return nil, err
+	}
+
+	total := len(converted)
+	converted = converted[:min(max(wanted, 0), total)]
+
+	return api.GetItems200JSONResponse(api.BaseItemDtoQueryResult{
+		Items:            &converted,
+		StartIndex:       apiutil.Ptr(int32(0)),
+		TotalRecordCount: apiutil.Ptr(int32(total)),
+	}), nil
 }
 
 func (s *Server) unowned(ctx context.Context, id uuid.UUID) (api.BaseItemDto, bool, error) {
@@ -90,13 +110,53 @@ func (s *Server) view(ctx context.Context, id uuid.UUID) (api.BaseItemDto, bool,
 	}
 
 	shelf, found, err := s.shelf(ctx, &id)
-	if err != nil || !found {
-		return api.BaseItemDto{}, found, err
+	if err != nil {
+		return api.BaseItemDto{}, false, err
+	}
+	if !found {
+		return s.live(ctx, id)
 	}
 
 	view, err := dto.ShelfView(ctx, s.cards, shelf)
 
 	return view, true, err
+}
+
+func (s *Server) live(ctx context.Context, id uuid.UUID) (api.BaseItemDto, bool, error) {
+	if id == dto.LiveTvViewID {
+		return dto.LiveTvView(), true, nil
+	}
+
+	viewer, err := dto.ViewerFor(ctx, s.policies)
+	if err != nil {
+		return api.BaseItemDto{}, false, err
+	}
+
+	if channel, err := s.channels.Channel(ctx, viewer, id); err == nil {
+		converted, err := dto.ChannelDtos(ctx, s.items, []*channels.Channel{channel}, nil)
+		if err != nil {
+			return api.BaseItemDto{}, false, err
+		}
+
+		return converted[0], true, nil
+	} else if !errors.Is(err, channels.ErrNotFound) {
+		return api.BaseItemDto{}, false, err
+	}
+
+	program, err := s.channels.Program(ctx, viewer, id)
+	if errors.Is(err, channels.ErrNotFound) {
+		return api.BaseItemDto{}, false, nil
+	}
+	if err != nil {
+		return api.BaseItemDto{}, false, err
+	}
+
+	converted, err := dto.ProgramDtos(ctx, s.items, []channels.Program{program})
+	if err != nil {
+		return api.BaseItemDto{}, false, err
+	}
+
+	return converted[0], true, nil
 }
 
 func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject) (api.GetItemsResponseObject, error) {
@@ -105,16 +165,7 @@ func (s *Server) GetItems(ctx context.Context, request api.GetItemsRequestObject
 		return nil, err
 	}
 	if found {
-		converted, err := s.shelved(ctx, shelf, int(apiutil.OrElse(request.Params.Limit, int32(shelfPage))), true)
-		if err != nil {
-			return nil, err
-		}
-
-		return api.GetItems200JSONResponse(api.BaseItemDtoQueryResult{
-			Items:            &converted,
-			StartIndex:       apiutil.Ptr(int32(0)),
-			TotalRecordCount: apiutil.Ptr(int32(len(converted))),
-		}), nil
+		return s.shelvedItems(ctx, shelf, request.Params.Limit)
 	}
 
 	result, err := dto.QueryResult(ctx, s.items, s.libraries, s.policies, request.Params)

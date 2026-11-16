@@ -158,6 +158,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 			listed.Id = apiutil.Ptr(item.ID.String())
 			dto.MediaSources = &[]api.MediaSourceInfo{listed}
 			dto.MediaStreams = listed.MediaStreams
+			dto.Path = listed.Path
 		}
 		datum, ok := userData[item.ID]
 		if !ok {

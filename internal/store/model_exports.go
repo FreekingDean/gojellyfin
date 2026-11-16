@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
+	"github.com/FreekingDean/gojellyfin/internal/store/channel"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/displaypreferences"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
@@ -181,6 +182,152 @@ func (_q *ApiKeyQuery) AllModels(ctx context.Context) ([]*ApiKeyModel, error) {
 func (c *ApiKeyClient) GetModel(ctx context.Context, id uuid.UUID) (*ApiKeyModel, error) {
 	_m, err := c.Get(ctx, id)
 	return fromApiKey(_m), err
+}
+
+type ChannelModel struct {
+	ID uuid.UUID
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Number    int32
+	Name      string
+	Order     channel.Order
+	Seed      int64
+	Epoch     time.Time
+
+	Entries []*ChannelEntryModel
+}
+
+func fromAllChannel(_m []*Channel) []*ChannelModel {
+	models := make([]*ChannelModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromChannel(v)
+	}
+	return models
+}
+
+func fromChannel(_m *Channel) *ChannelModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &ChannelModel{
+		ID:        _m.ID,
+		CreatedAt: _m.CreatedAt,
+		UpdatedAt: _m.UpdatedAt,
+		Number:    _m.Number,
+		Name:      _m.Name,
+		Order:     _m.Order,
+		Seed:      _m.Seed,
+		Epoch:     _m.Epoch,
+
+		Entries: fromAllChannelEntry(_m.Edges.Entries),
+	}
+}
+
+func (_c *ChannelCreate) SaveModel(ctx context.Context) (*ChannelModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromChannel(_m), err
+}
+
+func (_u *ChannelUpdateOne) SaveModel(ctx context.Context) (*ChannelModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromChannel(_m), err
+}
+
+func (_q *ChannelQuery) OnlyModel(ctx context.Context) (*ChannelModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromChannel(_m), err
+}
+
+func (_q *ChannelQuery) FirstModel(ctx context.Context) (*ChannelModel, error) {
+	_m, err := _q.First(ctx)
+	return fromChannel(_m), err
+}
+
+func (_q *ChannelQuery) AllModels(ctx context.Context) ([]*ChannelModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllChannel(_m), nil
+}
+
+func (c *ChannelClient) GetModel(ctx context.Context, id uuid.UUID) (*ChannelModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromChannel(_m), err
+}
+
+type ChannelEntryModel struct {
+	ID uuid.UUID
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	ChannelID uuid.UUID
+	ItemID    uuid.UUID
+	Position  int32
+
+	Channel *ChannelModel
+	Item    *ItemModel
+}
+
+func fromAllChannelEntry(_m []*ChannelEntry) []*ChannelEntryModel {
+	models := make([]*ChannelEntryModel, len(_m))
+	for i, v := range _m {
+		models[i] = fromChannelEntry(v)
+	}
+	return models
+}
+
+func fromChannelEntry(_m *ChannelEntry) *ChannelEntryModel {
+	if _m == nil {
+		return nil
+	}
+
+	return &ChannelEntryModel{
+		ID:        _m.ID,
+		CreatedAt: _m.CreatedAt,
+		UpdatedAt: _m.UpdatedAt,
+		ChannelID: _m.ChannelID,
+		ItemID:    _m.ItemID,
+		Position:  _m.Position,
+
+		Channel: fromChannel(_m.Edges.Channel),
+		Item:    fromItem(_m.Edges.Item),
+	}
+}
+
+func (_c *ChannelEntryCreate) SaveModel(ctx context.Context) (*ChannelEntryModel, error) {
+	_m, err := _c.Save(ctx)
+	return fromChannelEntry(_m), err
+}
+
+func (_u *ChannelEntryUpdateOne) SaveModel(ctx context.Context) (*ChannelEntryModel, error) {
+	_m, err := _u.Save(ctx)
+	return fromChannelEntry(_m), err
+}
+
+func (_q *ChannelEntryQuery) OnlyModel(ctx context.Context) (*ChannelEntryModel, error) {
+	_m, err := _q.Only(ctx)
+	return fromChannelEntry(_m), err
+}
+
+func (_q *ChannelEntryQuery) FirstModel(ctx context.Context) (*ChannelEntryModel, error) {
+	_m, err := _q.First(ctx)
+	return fromChannelEntry(_m), err
+}
+
+func (_q *ChannelEntryQuery) AllModels(ctx context.Context) ([]*ChannelEntryModel, error) {
+	_m, err := _q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return fromAllChannelEntry(_m), nil
+}
+
+func (c *ChannelEntryClient) GetModel(ctx context.Context, id uuid.UUID) (*ChannelEntryModel, error) {
+	_m, err := c.Get(ctx, id)
+	return fromChannelEntry(_m), err
 }
 
 type ConfigurationModel struct {
@@ -689,6 +836,7 @@ type ItemModel struct {
 	Playlist           *PlaylistModel
 	PlaylistEntries    []*PlaylistEntryModel
 	SyncPlayEntries    []*SyncPlayQueueEntryModel
+	ChannelEntries     []*ChannelEntryModel
 	Genres             []*GenreModel
 	Studios            []*StudioModel
 }
@@ -747,6 +895,7 @@ func fromItem(_m *Item) *ItemModel {
 		Playlist:           fromPlaylist(_m.Edges.Playlist),
 		PlaylistEntries:    fromAllPlaylistEntry(_m.Edges.PlaylistEntries),
 		SyncPlayEntries:    fromAllSyncPlayQueueEntry(_m.Edges.SyncPlayEntries),
+		ChannelEntries:     fromAllChannelEntry(_m.Edges.ChannelEntries),
 		Genres:             fromAllGenre(_m.Edges.Genres),
 		Studios:            fromAllStudio(_m.Edges.Studios),
 	}

@@ -6,6 +6,7 @@ import type { Config } from './config';
 import * as mock from './mock';
 import { Link, navigate, useRoute } from './router';
 import { Activity } from './screens/activity';
+import { Channels } from './screens/channels';
 import { Jobs } from './screens/jobs';
 import { Libraries } from './screens/libraries';
 import { Overview } from './screens/overview';
@@ -23,12 +24,13 @@ type State =
   | { stage: 'refused'; user: User }
   | { stage: 'ready'; user: User };
 
-const wired = ['overview', 'requests', 'libraries', 'users', 'jobs', 'activity', 'settings'];
+const wired = ['overview', 'requests', 'libraries', 'channels', 'users', 'jobs', 'activity', 'settings'];
 
 const screens = [
   { path: 'overview', label: 'Overview' },
   { path: 'requests', label: 'Requests and Reports' },
   { path: 'libraries', label: 'Libraries' },
+  { path: 'channels', label: 'Channels' },
   { path: 'users', label: 'Users' },
   { path: 'jobs', label: 'Jobs' },
   { path: 'activity', label: 'Activity' },
@@ -43,6 +45,8 @@ function Screen({ route }: { route: string[] }) {
       return <Requests />;
     case 'libraries':
       return <Libraries id={route[1]} />;
+    case 'channels':
+      return <Channels id={route[1]} />;
     case 'users':
       return <Users id={route[1]} />;
     case 'jobs':

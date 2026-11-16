@@ -3,6 +3,7 @@ package userviews
 import (
 	"context"
 	"github.com/FreekingDean/gojellyfin/internal/cards"
+	"github.com/FreekingDean/gojellyfin/internal/channels"
 	"github.com/FreekingDean/gojellyfin/internal/discover"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"reflect"
@@ -61,7 +62,7 @@ func newFixture(t *testing.T) *fixture {
 	catalogue := items.New(client)
 	shown := shelves.New(catalogue, discover.New(noProvider{}, catalogue), config.New(client))
 
-	return &fixture{server: New(libraries.New(client), shown, allLibraries{}, cards.New(catalogue, libraries.New(client), shown, users.New(client))), client: client, prefix: prefix}
+	return &fixture{server: New(libraries.New(client), shown, channels.New(client, catalogue), users.New(client), allLibraries{}, cards.New(catalogue, libraries.New(client), shown, users.New(client))), client: client, prefix: prefix}
 }
 
 type noProvider struct{}

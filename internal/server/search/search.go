@@ -22,7 +22,7 @@ func (s *Server) GetSearchHints(ctx context.Context, request api.GetSearchHintsR
 		Viewer:     items.Everyone,
 		SearchTerm: request.Params.SearchTerm,
 		StartIndex: int(apiutil.Deref(request.Params.StartIndex)),
-		Limit:      int(apiutil.Deref(request.Params.Limit)),
+		Limit:      dto.Limit(request.Params.Limit),
 		SortBy:     []string{"SortName"},
 	}
 	query.Kinds = dto.Kinds(request.Params.IncludeItemTypes)
