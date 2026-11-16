@@ -282,6 +282,9 @@ func (s *Server) authenticate(ctx context.Context, user *users.User) (api.Authen
 	}
 
 	session, err := s.sessions.Create(ctx, user.ID, token, auth.AuthorizationFrom(ctx).ClientDevice())
+	if errors.Is(err, sessions.ErrOutsideSchedule) {
+		return api.AuthenticationResult{}, auth.ErrUnauthorized
+	}
 	if err != nil {
 		return api.AuthenticationResult{}, err
 	}

@@ -179,6 +179,10 @@ func (h *Handler) callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token, err := h.mint(r.Context(), user, r.UserAgent())
+	if errors.Is(err, sessions.ErrOutsideSchedule) {
+		h.fail(w, http.StatusForbidden, "This account cannot sign in at this time.")
+		return
+	}
 	if err != nil {
 		log.Printf("sso: %v", err)
 		h.fail(w, http.StatusInternalServerError, "The session could not be created.")
