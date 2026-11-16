@@ -30,6 +30,7 @@ type fixture struct {
 	library    uuid.UUID
 	downloader uuid.UUID
 	client     *store.Client
+	keyframes  *items.KeyframeIndex
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -90,7 +91,11 @@ func newFixture(t *testing.T) *fixture {
 
 	return &fixture{
 		downloader: downloader.ID,
-		client:     client, server: New(items.New(client), allLibraries{}, nil), library: library.ID}
+		client:     client,
+		server:     New(items.New(client), allLibraries{}, nil),
+		library:    library.ID,
+		keyframes:  &items.KeyframeIndex{Ticks: []int64{0, 60_000_000}},
+	}
 }
 
 func (f *fixture) addRip(t *testing.T, kind items.Kind, container, codec string) uuid.UUID {
@@ -133,6 +138,7 @@ func (f *fixture) addRipped(t *testing.T, kind items.Kind, container, video, cod
 			{Index: 0, Kind: streammodel.KindVideo, Codec: video, Height: apiutil.Ptr(int32(1080)), Width: apiutil.Ptr(int32(1920))},
 			{Index: 1, Kind: streammodel.KindAudio, Codec: codec},
 		},
+		Keyframes: f.keyframes,
 	})
 	if err != nil {
 		t.Fatalf("failed to probe the source: %v", err)
@@ -284,8 +290,83 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if !apiutil.Deref(source.SupportsTranscoding) || source.TranscodingUrl == nil {
 			t.Fatal("the client was left with nothing to play")
 		}
+		if got := apiutil.Deref(source.TranscodingSubProtocol); got != api.MediaStreamProtocolHls {
+			t.Errorf("transcoding protocol = %q, want hls", got)
+		}
+	})
+
+	t.Run("a file the client plays as it is is direct play as well as a url to it", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
+
+		source := fixture.source(t, id, firstPlay(&chrome))
+
+		if !apiutil.Deref(source.SupportsDirectPlay) {
+			t.Error("a file the client takes untouched was not offered as direct play, which a native player builds its own url for")
+		}
+		if apiutil.Deref(source.SupportsDirectStream) {
+			t.Error("the file was offered as a direct stream too")
+		}
 		if got := apiutil.Deref(source.TranscodingSubProtocol); got != api.MediaStreamProtocolHttp {
-			t.Errorf("transcoding protocol = %q, want http", got)
+			t.Errorf("transcoding protocol = %q, want the file over http", got)
+		}
+		if url := apiutil.Deref(source.TranscodingUrl); !strings.Contains(url, "/stream.mkv?") {
+			t.Errorf("transcoding url = %q, want the file itself", url)
+		}
+	})
+
+	t.Run("a file that failed to play is not offered as direct play again", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
+
+		if apiutil.Deref(fixture.source(t, id, afterPlaybackError(&chrome)).SupportsDirectPlay) {
+			t.Error("direct play was offered to a client that asked for none")
+		}
+	})
+
+	t.Run("a copy needs the file's keyframes to be cut into segments", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.keyframes = nil
+		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
+
+		source := fixture.source(t, id, firstPlay(&chrome))
+
+		if got := apiutil.Deref(source.TranscodingSubProtocol); got != api.MediaStreamProtocolHttp {
+			t.Errorf("transcoding protocol = %q, want a progressive stream until the file's keyframes are known", got)
+		}
+		if url := apiutil.Deref(source.TranscodingUrl); !strings.Contains(url, "/stream.mp4?") {
+			t.Errorf("transcoding url = %q, want a progressive remux", url)
+		}
+	})
+
+	t.Run("an encode needs no keyframes", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.keyframes = nil
+		id := fixture.addRipped(t, itemmodel.KindMovie, "mkv", "mpeg4", "aac")
+
+		if got := apiutil.Deref(fixture.source(t, id, firstPlay(&chrome)).TranscodingSubProtocol); got != api.MediaStreamProtocolHls {
+			t.Errorf("transcoding protocol = %q, want hls", got)
+		}
+	})
+
+	t.Run("a picture is never encoded down from above 1080p", func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.addRipped(t, itemmodel.KindMovie, "mkv", "mpeg4", "aac")
+		fixture.addCopy(t, id, "/media/uhd.mkv", "mpeg4", "aac", 2160)
+
+		source := fixture.source(t, id, firstPlay(&chrome))
+		if got := apiutil.Deref(source.Id); got != fixture.sourceID(t, id, "/media/rip.mkv") {
+			t.Errorf("encoded the file %q, want the 1080p one", got)
+		}
+
+		only := fixture.addRipped(t, itemmodel.KindMovie, "avi", "mpeg4", "aac")
+		if _, err := fixture.client.MediaStream.Update().
+			Where(streammodel.HasSourceWith(sourcemodel.ItemID(only)), streammodel.KindEQ(streammodel.KindVideo)).
+			SetHeight(int32(2160)).Save(context.Background()); err != nil {
+			t.Fatalf("failed to make the file 4K: %v", err)
+		}
+		if got := apiutil.Deref(fixture.answer(t, only, firstPlay(&chrome)).ErrorCode); got != api.NoCompatibleStream {
+			t.Errorf("error code = %q, want %q for a title whose only copy would be encoded down from 4K", got, api.NoCompatibleStream)
 		}
 	})
 
@@ -322,8 +403,8 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if got := apiutil.Deref(sources[0].Id); got != chosen {
 			t.Errorf("answered the file %q, want the one this server chose, %q", got, chosen)
 		}
-		if sources[0].Path != nil {
-			t.Errorf("answered the path %q, and where a file sits on this server's disk is not a client's to know", *sources[0].Path)
+		if got := apiutil.Deref(sources[0].Path); got != "uhd.mkv" {
+			t.Errorf("answered the path %q, want the file's name and no directory above it", got)
 		}
 	})
 
@@ -435,11 +516,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 			t.Errorf("transcoding container = %q, want mp4", got)
 		}
 		url := apiutil.Deref(source.TranscodingUrl)
-		if !strings.HasPrefix(url, "/Videos/"+id.String()+"/stream.mp4?") {
-			t.Errorf("transcoding url = %q, want a stream.mp4 under the item", url)
+		if !strings.HasPrefix(url, "/Videos/"+id.String()+"/master.m3u8?") {
+			t.Errorf("transcoding url = %q, want the item's master playlist", url)
 		}
-		if !strings.Contains(url, "container=mp4") {
-			t.Errorf("transcoding url = %q, want it to name the container it will carry", url)
+		if !strings.Contains(url, "audioCodec=aac") {
+			t.Errorf("transcoding url = %q, want it to name the audio it will carry", url)
 		}
 		if !strings.Contains(url, "api_key=the-token") {
 			t.Errorf("transcoding url carries no token: %q", url)
@@ -514,7 +595,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 			t.Error("an encode was offered as a direct play or a direct stream")
 		}
 		url := apiutil.Deref(source.TranscodingUrl)
-		for _, want := range []string{"/stream.mp4?", "videoCodec=h264", "maxHeight=1080", "audioCodec=aac", "allowVideoStreamCopy=false"} {
+		for _, want := range []string{"/master.m3u8?", "videoCodec=h264", "maxHeight=1080", "audioCodec=aac", "allowVideoStreamCopy=false"} {
 			if !strings.Contains(url, want) {
 				t.Errorf("transcoding url = %q, want it to carry %q", url, want)
 			}
@@ -621,8 +702,8 @@ func TestItemDtos_ListAFile(t *testing.T) {
 		t.Fatalf("failed to convert the item: %v", err)
 	}
 
-	if converted[0].Path != nil {
-		t.Errorf("the item names the path %q, and where a file sits on this server's disk is not a client's to know", *converted[0].Path)
+	if got := apiutil.Deref(converted[0].Path); got != "rip.mkv" {
+		t.Errorf("the item names the path %q, want the file's name: Infuse fails a list whose items carry none, and the directories above it are the operator's", got)
 	}
 
 	listed := apiutil.Deref(converted[0].MediaSources)

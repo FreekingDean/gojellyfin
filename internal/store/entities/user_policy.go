@@ -38,7 +38,7 @@ func (UserPolicy) Fields() []ent.Field {
 		field.Bool("enable_shared_device_control").Default(true),
 		field.Bool("enable_remote_access").Default(true),
 		field.Bool("enable_live_tv_management").Default(false),
-		field.Bool("enable_live_tv_access").Default(false),
+		field.Bool("enable_live_tv_access").Default(true),
 		field.Bool("enable_media_playback").Default(true),
 		field.Bool("enable_audio_playback_transcoding").Default(true),
 		field.Bool("enable_video_playback_transcoding").Default(true),

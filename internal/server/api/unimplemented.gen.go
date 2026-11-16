@@ -271,6 +271,22 @@ func (Unimplemented) GetUtcTime(ctx context.Context, request GetUtcTimeRequestOb
 	return nil, ErrNotImplemented
 }
 
+func (Unimplemented) GoJellyfinListChannels(ctx context.Context, request GoJellyfinListChannelsRequestObject) (GoJellyfinListChannelsResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinCreateChannel(ctx context.Context, request GoJellyfinCreateChannelRequestObject) (GoJellyfinCreateChannelResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinDeleteChannel(ctx context.Context, request GoJellyfinDeleteChannelRequestObject) (GoJellyfinDeleteChannelResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinUpdateChannel(ctx context.Context, request GoJellyfinUpdateChannelRequestObject) (GoJellyfinUpdateChannelResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
 func (Unimplemented) GoJellyfinGetHealth(ctx context.Context, request GoJellyfinGetHealthRequestObject) (GoJellyfinGetHealthResponseObject, error) {
 	return nil, ErrNotImplemented
 }

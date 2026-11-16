@@ -162,7 +162,7 @@ func (s *Service) SourceFor(ctx context.Context, item *Item, can Capabilities) (
 		if !costly(plan.Change) {
 			return plan, nil
 		}
-		if encode == nil || shorterYetFull(source, encode.Source) {
+		if encode == nil && (IsAudio(item) || Height(source) <= transcode.MaxHeight) {
 			encode = &plan
 		}
 	}
@@ -171,10 +171,6 @@ func (s *Service) SourceFor(ctx context.Context, item *Item, can Capabilities) (
 	}
 
 	return Plan{}, ErrNoPlayable
-}
-
-func shorterYetFull(source, than *MediaSource) bool {
-	return Height(source) >= transcode.MaxHeight && Height(source) < Height(than)
 }
 
 func (c Capabilities) plan(source *MediaSource) Plan {

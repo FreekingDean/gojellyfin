@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
@@ -226,14 +227,25 @@ func (h *Handler) cut(w http.ResponseWriter, r *http.Request, source *items.Medi
 		_ = output.Close()
 	}()
 
+	stop := func() {
+		cancel()
+		_ = http.NewResponseController(w).SetWriteDeadline(time.Now())
+	}
+	defer context.AfterFunc(r.Context(), stop)()
+	kill := func() {
+		log.Printf("segment %+v of %s moved nothing in %s", segment.Window, source.Path, h.transcoder.Stall())
+		stop()
+	}
+	stalling := transcode.UntilStalled(ctx, output, h.transcoder.Stall(), kill)
+
 	w.Header().Set("Content-Type", segment.ContentType())
 	w.WriteHeader(http.StatusOK)
 
 	body := transcode.Flushed(w)
 	if header {
-		err = transcode.Header(body, output)
+		err = transcode.Header(body, stalling)
 	} else {
-		err = transcode.Fragments(body, output, segment.Bounds())
+		err = transcode.Fragments(body, stalling, segment.Bounds())
 	}
 	if err != nil {
 		log.Printf("segment %+v of %s stopped: %v", segment.Window, source.Path, err)

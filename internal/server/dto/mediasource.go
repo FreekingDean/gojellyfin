@@ -2,6 +2,7 @@ package dto
 
 import (
 	"fmt"
+	"path/filepath"
 	"slices"
 
 	"github.com/FreekingDean/gojellyfin/internal/items"
@@ -20,6 +21,7 @@ func MediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 	return api.MediaSourceInfo{
 		Id:                         apiutil.Ptr(source.ID.String()),
 		Name:                       apiutil.Ptr(source.Name),
+		Path:                       fileName(source),
 		Protocol:                   apiutil.Ptr(api.MediaProtocolFile),
 		Type:                       apiutil.Ptr(api.MediaSourceTypeDefault),
 		Container:                  apiutil.Ptr(source.Container),
@@ -47,6 +49,14 @@ func MediaSourceDto(source *items.MediaSource) api.MediaSourceInfo {
 		DefaultAudioStreamIndex:    defaultStreamIndex(streams, streammodel.KindAudio),
 		DefaultSubtitleStreamIndex: defaultStreamIndex(streams, streammodel.KindSubtitle),
 	}
+}
+
+func fileName(source *items.MediaSource) *string {
+	if source.Path == "" {
+		return nil
+	}
+
+	return apiutil.Ptr(filepath.Base(source.Path))
 }
 
 var pictureSubtitles = []string{"hdmv_pgs_subtitle", "dvd_subtitle", "dvb_subtitle", "xsub"}

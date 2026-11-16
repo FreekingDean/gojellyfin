@@ -14,6 +14,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
+	"github.com/FreekingDean/gojellyfin/internal/store/channel"
+	"github.com/FreekingDean/gojellyfin/internal/store/channelentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
@@ -110,6 +112,8 @@ func checkColumn(t, c string) error {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			activitylogentry.Table:    activitylogentry.ValidColumn,
 			apikey.Table:              apikey.ValidColumn,
+			channel.Table:             channel.ValidColumn,
+			channelentry.Table:        channelentry.ValidColumn,
 			configuration.Table:       configuration.ValidColumn,
 			credit.Table:              credit.ValidColumn,
 			device.Table:              device.ValidColumn,

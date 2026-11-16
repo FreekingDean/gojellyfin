@@ -104,13 +104,15 @@ type ItemEdges struct {
 	PlaylistEntries []*PlaylistEntry `json:"playlist_entries,omitempty"`
 	// SyncPlayEntries holds the value of the sync_play_entries edge.
 	SyncPlayEntries []*SyncPlayQueueEntry `json:"sync_play_entries,omitempty"`
+	// ChannelEntries holds the value of the channel_entries edge.
+	ChannelEntries []*ChannelEntry `json:"channel_entries,omitempty"`
 	// Genres holds the value of the genres edge.
 	Genres []*Genre `json:"genres,omitempty"`
 	// Studios holds the value of the studios edge.
 	Studios []*Studio `json:"studios,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [16]bool
+	loadedTypes [17]bool
 }
 
 // ParentOrErr returns the Parent value or an error if the edge
@@ -243,10 +245,19 @@ func (e ItemEdges) SyncPlayEntriesOrErr() ([]*SyncPlayQueueEntry, error) {
 	return nil, &NotLoadedError{edge: "sync_play_entries"}
 }
 
+// ChannelEntriesOrErr returns the ChannelEntries value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) ChannelEntriesOrErr() ([]*ChannelEntry, error) {
+	if e.loadedTypes[14] {
+		return e.ChannelEntries, nil
+	}
+	return nil, &NotLoadedError{edge: "channel_entries"}
+}
+
 // GenresOrErr returns the Genres value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) GenresOrErr() ([]*Genre, error) {
-	if e.loadedTypes[14] {
+	if e.loadedTypes[15] {
 		return e.Genres, nil
 	}
 	return nil, &NotLoadedError{edge: "genres"}
@@ -255,7 +266,7 @@ func (e ItemEdges) GenresOrErr() ([]*Genre, error) {
 // StudiosOrErr returns the Studios value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) StudiosOrErr() ([]*Studio, error) {
-	if e.loadedTypes[15] {
+	if e.loadedTypes[16] {
 		return e.Studios, nil
 	}
 	return nil, &NotLoadedError{edge: "studios"}
@@ -546,6 +557,11 @@ func (_m *Item) QueryPlaylistEntries() *PlaylistEntryQuery {
 // QuerySyncPlayEntries queries the "sync_play_entries" edge of the Item entity.
 func (_m *Item) QuerySyncPlayEntries() *SyncPlayQueueEntryQuery {
 	return NewItemClient(_m.config).QuerySyncPlayEntries(_m)
+}
+
+// QueryChannelEntries queries the "channel_entries" edge of the Item entity.
+func (_m *Item) QueryChannelEntries() *ChannelEntryQuery {
+	return NewItemClient(_m.config).QueryChannelEntries(_m)
 }
 
 // QueryGenres queries the "genres" edge of the Item entity.

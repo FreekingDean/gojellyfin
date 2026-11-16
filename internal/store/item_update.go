@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
+	"github.com/FreekingDean/gojellyfin/internal/store/channelentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
@@ -710,6 +711,21 @@ func (_u *ItemUpdate) AddSyncPlayEntries(v ...*SyncPlayQueueEntry) *ItemUpdate {
 	return _u.AddSyncPlayEntryIDs(ids...)
 }
 
+// AddChannelEntryIDs adds the "channel_entries" edge to the ChannelEntry entity by IDs.
+func (_u *ItemUpdate) AddChannelEntryIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddChannelEntryIDs(ids...)
+	return _u
+}
+
+// AddChannelEntries adds the "channel_entries" edges to the ChannelEntry entity.
+func (_u *ItemUpdate) AddChannelEntries(v ...*ChannelEntry) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddChannelEntryIDs(ids...)
+}
+
 // AddGenreIDs adds the "genres" edge to the Genre entity by IDs.
 func (_u *ItemUpdate) AddGenreIDs(ids ...uuid.UUID) *ItemUpdate {
 	_u.mutation.AddGenreIDs(ids...)
@@ -1007,6 +1023,27 @@ func (_u *ItemUpdate) RemoveSyncPlayEntries(v ...*SyncPlayQueueEntry) *ItemUpdat
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSyncPlayEntryIDs(ids...)
+}
+
+// ClearChannelEntries clears all "channel_entries" edges to the ChannelEntry entity.
+func (_u *ItemUpdate) ClearChannelEntries() *ItemUpdate {
+	_u.mutation.ClearChannelEntries()
+	return _u
+}
+
+// RemoveChannelEntryIDs removes the "channel_entries" edge to ChannelEntry entities by IDs.
+func (_u *ItemUpdate) RemoveChannelEntryIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveChannelEntryIDs(ids...)
+	return _u
+}
+
+// RemoveChannelEntries removes "channel_entries" edges to ChannelEntry entities.
+func (_u *ItemUpdate) RemoveChannelEntries(v ...*ChannelEntry) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveChannelEntryIDs(ids...)
 }
 
 // ClearGenres clears all "genres" edges to the Genre entity.
@@ -1860,6 +1897,51 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ChannelEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ChannelEntriesTable,
+			Columns: []string{item.ChannelEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channelentry.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedChannelEntriesIDs(); len(nodes) > 0 && !_u.mutation.ChannelEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ChannelEntriesTable,
+			Columns: []string{item.ChannelEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channelentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ChannelEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ChannelEntriesTable,
+			Columns: []string{item.ChannelEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channelentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.GenresCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -2637,6 +2719,21 @@ func (_u *ItemUpdateOne) AddSyncPlayEntries(v ...*SyncPlayQueueEntry) *ItemUpdat
 	return _u.AddSyncPlayEntryIDs(ids...)
 }
 
+// AddChannelEntryIDs adds the "channel_entries" edge to the ChannelEntry entity by IDs.
+func (_u *ItemUpdateOne) AddChannelEntryIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddChannelEntryIDs(ids...)
+	return _u
+}
+
+// AddChannelEntries adds the "channel_entries" edges to the ChannelEntry entity.
+func (_u *ItemUpdateOne) AddChannelEntries(v ...*ChannelEntry) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddChannelEntryIDs(ids...)
+}
+
 // AddGenreIDs adds the "genres" edge to the Genre entity by IDs.
 func (_u *ItemUpdateOne) AddGenreIDs(ids ...uuid.UUID) *ItemUpdateOne {
 	_u.mutation.AddGenreIDs(ids...)
@@ -2934,6 +3031,27 @@ func (_u *ItemUpdateOne) RemoveSyncPlayEntries(v ...*SyncPlayQueueEntry) *ItemUp
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSyncPlayEntryIDs(ids...)
+}
+
+// ClearChannelEntries clears all "channel_entries" edges to the ChannelEntry entity.
+func (_u *ItemUpdateOne) ClearChannelEntries() *ItemUpdateOne {
+	_u.mutation.ClearChannelEntries()
+	return _u
+}
+
+// RemoveChannelEntryIDs removes the "channel_entries" edge to ChannelEntry entities by IDs.
+func (_u *ItemUpdateOne) RemoveChannelEntryIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveChannelEntryIDs(ids...)
+	return _u
+}
+
+// RemoveChannelEntries removes "channel_entries" edges to ChannelEntry entities.
+func (_u *ItemUpdateOne) RemoveChannelEntries(v ...*ChannelEntry) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveChannelEntryIDs(ids...)
 }
 
 // ClearGenres clears all "genres" edges to the Genre entity.
@@ -3810,6 +3928,51 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(syncplayqueueentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ChannelEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ChannelEntriesTable,
+			Columns: []string{item.ChannelEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channelentry.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedChannelEntriesIDs(); len(nodes) > 0 && !_u.mutation.ChannelEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ChannelEntriesTable,
+			Columns: []string{item.ChannelEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channelentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ChannelEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ChannelEntriesTable,
+			Columns: []string{item.ChannelEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channelentry.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

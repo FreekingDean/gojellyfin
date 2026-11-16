@@ -138,6 +138,15 @@ function proxy(apiPort, request, response) {
     response.end();
   });
 
+  // A gateway resets the upstream stream when the browser goes away; without
+  // this the API keeps writing an abandoned HLS segment, and the encode it
+  // holds starves the request the player sent in its place.
+  response.on('close', () => {
+    if (!response.writableFinished) {
+      upstream.destroy();
+    }
+  });
+
   request.pipe(upstream);
 }
 

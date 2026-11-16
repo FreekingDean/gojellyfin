@@ -5,6 +5,20 @@ const RESUME_AT = 60;
 test.describe('playing on the television', () => {
   test.afterEach(async ({ server, harness }) => {
     await server.forget(harness.playable);
+    await server.forget(harness.transcoded);
+  });
+
+  test('plays a title it has to encode, which reaches it as HLS', async ({ signedIn: tv, harness, server, shot }) => {
+    await server.forget(harness.transcoded);
+    await openDetails(tv, harness, harness.transcoded);
+    await tv.tapOn({ label: 'Play' });
+
+    await expect
+      .poll(() => server.positionSeconds(harness.transcoded), { timeout: 120000, intervals: [2000] })
+      .toBeGreaterThan(5);
+    await shot('playing-hls');
+
+    await leavePlayer(tv);
   });
 
   test('plays a title and skips ahead in it', async ({ signedIn: tv, harness, server, shot }) => {

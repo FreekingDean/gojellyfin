@@ -18,6 +18,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/apikey"
+	"github.com/FreekingDean/gojellyfin/internal/store/channel"
+	"github.com/FreekingDean/gojellyfin/internal/store/channelentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/configuration"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/device"
@@ -65,6 +67,10 @@ type Client struct {
 	ActivityLogEntry *ActivityLogEntryClient
 	// ApiKey is the client for interacting with the ApiKey builders.
 	ApiKey *ApiKeyClient
+	// Channel is the client for interacting with the Channel builders.
+	Channel *ChannelClient
+	// ChannelEntry is the client for interacting with the ChannelEntry builders.
+	ChannelEntry *ChannelEntryClient
 	// Configuration is the client for interacting with the Configuration builders.
 	Configuration *ConfigurationClient
 	// Credit is the client for interacting with the Credit builders.
@@ -146,6 +152,8 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.ActivityLogEntry = NewActivityLogEntryClient(c.config)
 	c.ApiKey = NewApiKeyClient(c.config)
+	c.Channel = NewChannelClient(c.config)
+	c.ChannelEntry = NewChannelEntryClient(c.config)
 	c.Configuration = NewConfigurationClient(c.config)
 	c.Credit = NewCreditClient(c.config)
 	c.Device = NewDeviceClient(c.config)
@@ -274,6 +282,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config:              cfg,
 		ActivityLogEntry:    NewActivityLogEntryClient(cfg),
 		ApiKey:              NewApiKeyClient(cfg),
+		Channel:             NewChannelClient(cfg),
+		ChannelEntry:        NewChannelEntryClient(cfg),
 		Configuration:       NewConfigurationClient(cfg),
 		Credit:              NewCreditClient(cfg),
 		Device:              NewDeviceClient(cfg),
@@ -329,6 +339,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config:              cfg,
 		ActivityLogEntry:    NewActivityLogEntryClient(cfg),
 		ApiKey:              NewApiKeyClient(cfg),
+		Channel:             NewChannelClient(cfg),
+		ChannelEntry:        NewChannelEntryClient(cfg),
 		Configuration:       NewConfigurationClient(cfg),
 		Credit:              NewCreditClient(cfg),
 		Device:              NewDeviceClient(cfg),
@@ -392,14 +404,14 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
-		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.KeyframeIndex,
-		c.Library, c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaSegment,
-		c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare,
-		c.QuickConnectRequest, c.Report, c.Request, c.RequestSubmission, c.Session,
-		c.Source, c.SourcePath, c.Studio, c.SyncPlayGroup, c.SyncPlayGroupMember,
-		c.SyncPlayQueueEntry, c.User, c.UserConfiguration, c.UserItemData,
-		c.UserPolicy,
+		c.ActivityLogEntry, c.ApiKey, c.Channel, c.ChannelEntry, c.Configuration,
+		c.Credit, c.Device, c.DisplayPreferences, c.Genre, c.Image, c.Item,
+		c.ItemSource, c.KeyframeIndex, c.Library, c.LibraryItem, c.LibraryOptions,
+		c.LibrarySource, c.MediaSegment, c.MediaStream, c.Person, c.Playlist,
+		c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Report, c.Request,
+		c.RequestSubmission, c.Session, c.Source, c.SourcePath, c.Studio,
+		c.SyncPlayGroup, c.SyncPlayGroupMember, c.SyncPlayQueueEntry, c.User,
+		c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Use(hooks...)
 	}
@@ -409,14 +421,14 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.ActivityLogEntry, c.ApiKey, c.Configuration, c.Credit, c.Device,
-		c.DisplayPreferences, c.Genre, c.Image, c.Item, c.ItemSource, c.KeyframeIndex,
-		c.Library, c.LibraryItem, c.LibraryOptions, c.LibrarySource, c.MediaSegment,
-		c.MediaStream, c.Person, c.Playlist, c.PlaylistEntry, c.PlaylistShare,
-		c.QuickConnectRequest, c.Report, c.Request, c.RequestSubmission, c.Session,
-		c.Source, c.SourcePath, c.Studio, c.SyncPlayGroup, c.SyncPlayGroupMember,
-		c.SyncPlayQueueEntry, c.User, c.UserConfiguration, c.UserItemData,
-		c.UserPolicy,
+		c.ActivityLogEntry, c.ApiKey, c.Channel, c.ChannelEntry, c.Configuration,
+		c.Credit, c.Device, c.DisplayPreferences, c.Genre, c.Image, c.Item,
+		c.ItemSource, c.KeyframeIndex, c.Library, c.LibraryItem, c.LibraryOptions,
+		c.LibrarySource, c.MediaSegment, c.MediaStream, c.Person, c.Playlist,
+		c.PlaylistEntry, c.PlaylistShare, c.QuickConnectRequest, c.Report, c.Request,
+		c.RequestSubmission, c.Session, c.Source, c.SourcePath, c.Studio,
+		c.SyncPlayGroup, c.SyncPlayGroupMember, c.SyncPlayQueueEntry, c.User,
+		c.UserConfiguration, c.UserItemData, c.UserPolicy,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -429,6 +441,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ActivityLogEntry.mutate(ctx, m)
 	case *ApiKeyMutation:
 		return c.ApiKey.mutate(ctx, m)
+	case *ChannelMutation:
+		return c.Channel.mutate(ctx, m)
+	case *ChannelEntryMutation:
+		return c.ChannelEntry.mutate(ctx, m)
 	case *ConfigurationMutation:
 		return c.Configuration.mutate(ctx, m)
 	case *CreditMutation:
@@ -829,6 +845,320 @@ func (c *ApiKeyClient) mutate(ctx context.Context, m *ApiKeyMutation) (Value, er
 		return (&ApiKeyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown ApiKey mutation op: %q", m.Op())
+	}
+}
+
+// ChannelClient is a client for the Channel schema.
+type ChannelClient struct {
+	config
+}
+
+// NewChannelClient returns a client for the Channel from the given config.
+func NewChannelClient(c config) *ChannelClient {
+	return &ChannelClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `channel.Hooks(f(g(h())))`.
+func (c *ChannelClient) Use(hooks ...Hook) {
+	c.hooks.Channel = append(c.hooks.Channel, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `channel.Intercept(f(g(h())))`.
+func (c *ChannelClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Channel = append(c.inters.Channel, interceptors...)
+}
+
+// Create returns a builder for creating a Channel entity.
+func (c *ChannelClient) Create() *ChannelCreate {
+	mutation := newChannelMutation(c.config, OpCreate)
+	return &ChannelCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Channel entities.
+func (c *ChannelClient) CreateBulk(builders ...*ChannelCreate) *ChannelCreateBulk {
+	return &ChannelCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ChannelClient) MapCreateBulk(slice any, setFunc func(*ChannelCreate, int)) *ChannelCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ChannelCreateBulk{err: fmt.Errorf("calling to ChannelClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ChannelCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ChannelCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Channel.
+func (c *ChannelClient) Update() *ChannelUpdate {
+	mutation := newChannelMutation(c.config, OpUpdate)
+	return &ChannelUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ChannelClient) UpdateOne(_m *Channel) *ChannelUpdateOne {
+	mutation := newChannelMutation(c.config, OpUpdateOne, withChannel(_m))
+	return &ChannelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ChannelClient) UpdateOneID(id uuid.UUID) *ChannelUpdateOne {
+	mutation := newChannelMutation(c.config, OpUpdateOne, withChannelID(id))
+	return &ChannelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Channel.
+func (c *ChannelClient) Delete() *ChannelDelete {
+	mutation := newChannelMutation(c.config, OpDelete)
+	return &ChannelDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ChannelClient) DeleteOne(_m *Channel) *ChannelDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ChannelClient) DeleteOneID(id uuid.UUID) *ChannelDeleteOne {
+	builder := c.Delete().Where(channel.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ChannelDeleteOne{builder}
+}
+
+// Query returns a query builder for Channel.
+func (c *ChannelClient) Query() *ChannelQuery {
+	return &ChannelQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeChannel},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Channel entity by its id.
+func (c *ChannelClient) Get(ctx context.Context, id uuid.UUID) (*Channel, error) {
+	return c.Query().Where(channel.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ChannelClient) GetX(ctx context.Context, id uuid.UUID) *Channel {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryEntries queries the entries edge of a Channel.
+func (c *ChannelClient) QueryEntries(_m *Channel) *ChannelEntryQuery {
+	query := (&ChannelEntryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(channelentry.Table, channelentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, channel.EntriesTable, channel.EntriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ChannelClient) Hooks() []Hook {
+	return c.hooks.Channel
+}
+
+// Interceptors returns the client interceptors.
+func (c *ChannelClient) Interceptors() []Interceptor {
+	return c.inters.Channel
+}
+
+func (c *ChannelClient) mutate(ctx context.Context, m *ChannelMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ChannelCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ChannelUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ChannelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ChannelDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown Channel mutation op: %q", m.Op())
+	}
+}
+
+// ChannelEntryClient is a client for the ChannelEntry schema.
+type ChannelEntryClient struct {
+	config
+}
+
+// NewChannelEntryClient returns a client for the ChannelEntry from the given config.
+func NewChannelEntryClient(c config) *ChannelEntryClient {
+	return &ChannelEntryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `channelentry.Hooks(f(g(h())))`.
+func (c *ChannelEntryClient) Use(hooks ...Hook) {
+	c.hooks.ChannelEntry = append(c.hooks.ChannelEntry, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `channelentry.Intercept(f(g(h())))`.
+func (c *ChannelEntryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ChannelEntry = append(c.inters.ChannelEntry, interceptors...)
+}
+
+// Create returns a builder for creating a ChannelEntry entity.
+func (c *ChannelEntryClient) Create() *ChannelEntryCreate {
+	mutation := newChannelEntryMutation(c.config, OpCreate)
+	return &ChannelEntryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ChannelEntry entities.
+func (c *ChannelEntryClient) CreateBulk(builders ...*ChannelEntryCreate) *ChannelEntryCreateBulk {
+	return &ChannelEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ChannelEntryClient) MapCreateBulk(slice any, setFunc func(*ChannelEntryCreate, int)) *ChannelEntryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ChannelEntryCreateBulk{err: fmt.Errorf("calling to ChannelEntryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ChannelEntryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ChannelEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ChannelEntry.
+func (c *ChannelEntryClient) Update() *ChannelEntryUpdate {
+	mutation := newChannelEntryMutation(c.config, OpUpdate)
+	return &ChannelEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ChannelEntryClient) UpdateOne(_m *ChannelEntry) *ChannelEntryUpdateOne {
+	mutation := newChannelEntryMutation(c.config, OpUpdateOne, withChannelEntry(_m))
+	return &ChannelEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ChannelEntryClient) UpdateOneID(id uuid.UUID) *ChannelEntryUpdateOne {
+	mutation := newChannelEntryMutation(c.config, OpUpdateOne, withChannelEntryID(id))
+	return &ChannelEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ChannelEntry.
+func (c *ChannelEntryClient) Delete() *ChannelEntryDelete {
+	mutation := newChannelEntryMutation(c.config, OpDelete)
+	return &ChannelEntryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ChannelEntryClient) DeleteOne(_m *ChannelEntry) *ChannelEntryDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ChannelEntryClient) DeleteOneID(id uuid.UUID) *ChannelEntryDeleteOne {
+	builder := c.Delete().Where(channelentry.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ChannelEntryDeleteOne{builder}
+}
+
+// Query returns a query builder for ChannelEntry.
+func (c *ChannelEntryClient) Query() *ChannelEntryQuery {
+	return &ChannelEntryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeChannelEntry},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ChannelEntry entity by its id.
+func (c *ChannelEntryClient) Get(ctx context.Context, id uuid.UUID) (*ChannelEntry, error) {
+	return c.Query().Where(channelentry.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ChannelEntryClient) GetX(ctx context.Context, id uuid.UUID) *ChannelEntry {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryChannel queries the channel edge of a ChannelEntry.
+func (c *ChannelEntryClient) QueryChannel(_m *ChannelEntry) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channelentry.Table, channelentry.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, channelentry.ChannelTable, channelentry.ChannelColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryItem queries the item edge of a ChannelEntry.
+func (c *ChannelEntryClient) QueryItem(_m *ChannelEntry) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channelentry.Table, channelentry.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, channelentry.ItemTable, channelentry.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ChannelEntryClient) Hooks() []Hook {
+	return c.hooks.ChannelEntry
+}
+
+// Interceptors returns the client interceptors.
+func (c *ChannelEntryClient) Interceptors() []Interceptor {
+	return c.inters.ChannelEntry
+}
+
+func (c *ChannelEntryClient) mutate(ctx context.Context, m *ChannelEntryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ChannelEntryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ChannelEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ChannelEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ChannelEntryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown ChannelEntry mutation op: %q", m.Op())
 	}
 }
 
@@ -2051,6 +2381,22 @@ func (c *ItemClient) QuerySyncPlayEntries(_m *Item) *SyncPlayQueueEntryQuery {
 			sqlgraph.From(item.Table, item.FieldID, id),
 			sqlgraph.To(syncplayqueueentry.Table, syncplayqueueentry.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.SyncPlayEntriesTable, item.SyncPlayEntriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryChannelEntries queries the channel_entries edge of a Item.
+func (c *ItemClient) QueryChannelEntries(_m *Item) *ChannelEntryQuery {
+	query := (&ChannelEntryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(channelentry.Table, channelentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.ChannelEntriesTable, item.ChannelEntriesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -6861,19 +7207,19 @@ func (c *UserPolicyClient) mutate(ctx context.Context, m *UserPolicyMutation) (V
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
-		Genre, Image, Item, ItemSource, KeyframeIndex, Library, LibraryItem,
-		LibraryOptions, LibrarySource, MediaSegment, MediaStream, Person, Playlist,
-		PlaylistEntry, PlaylistShare, QuickConnectRequest, Report, Request,
+		ActivityLogEntry, ApiKey, Channel, ChannelEntry, Configuration, Credit, Device,
+		DisplayPreferences, Genre, Image, Item, ItemSource, KeyframeIndex, Library,
+		LibraryItem, LibraryOptions, LibrarySource, MediaSegment, MediaStream, Person,
+		Playlist, PlaylistEntry, PlaylistShare, QuickConnectRequest, Report, Request,
 		RequestSubmission, Session, Source, SourcePath, Studio, SyncPlayGroup,
 		SyncPlayGroupMember, SyncPlayQueueEntry, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Hook
 	}
 	inters struct {
-		ActivityLogEntry, ApiKey, Configuration, Credit, Device, DisplayPreferences,
-		Genre, Image, Item, ItemSource, KeyframeIndex, Library, LibraryItem,
-		LibraryOptions, LibrarySource, MediaSegment, MediaStream, Person, Playlist,
-		PlaylistEntry, PlaylistShare, QuickConnectRequest, Report, Request,
+		ActivityLogEntry, ApiKey, Channel, ChannelEntry, Configuration, Credit, Device,
+		DisplayPreferences, Genre, Image, Item, ItemSource, KeyframeIndex, Library,
+		LibraryItem, LibraryOptions, LibrarySource, MediaSegment, MediaStream, Person,
+		Playlist, PlaylistEntry, PlaylistShare, QuickConnectRequest, Report, Request,
 		RequestSubmission, Session, Source, SourcePath, Studio, SyncPlayGroup,
 		SyncPlayGroupMember, SyncPlayQueueEntry, User, UserConfiguration, UserItemData,
 		UserPolicy []ent.Interceptor

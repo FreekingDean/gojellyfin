@@ -19,8 +19,8 @@ type flushing struct {
 
 func (f *flushing) Write(b []byte) (int, error) {
 	n, err := f.w.Write(b)
-	if flusher, ok := f.w.(http.Flusher); ok {
-		flusher.Flush()
+	if err == nil {
+		_ = http.NewResponseController(f.w).Flush()
 	}
 
 	return n, err

@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/FreekingDean/gojellyfin/internal/store/activitylogentry"
+	"github.com/FreekingDean/gojellyfin/internal/store/channelentry"
 	"github.com/FreekingDean/gojellyfin/internal/store/credit"
 	"github.com/FreekingDean/gojellyfin/internal/store/genre"
 	"github.com/FreekingDean/gojellyfin/internal/store/image"
@@ -52,6 +53,7 @@ type ItemQuery struct {
 	withPlaylist           *PlaylistQuery
 	withPlaylistEntries    *PlaylistEntryQuery
 	withSyncPlayEntries    *SyncPlayQueueEntryQuery
+	withChannelEntries     *ChannelEntryQuery
 	withGenres             *GenreQuery
 	withStudios            *StudioQuery
 	modifiers              []func(*sql.Selector)
@@ -399,6 +401,28 @@ func (_q *ItemQuery) QuerySyncPlayEntries() *SyncPlayQueueEntryQuery {
 	return query
 }
 
+// QueryChannelEntries chains the current query on the "channel_entries" edge.
+func (_q *ItemQuery) QueryChannelEntries() *ChannelEntryQuery {
+	query := (&ChannelEntryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(channelentry.Table, channelentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.ChannelEntriesTable, item.ChannelEntriesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryGenres chains the current query on the "genres" edge.
 func (_q *ItemQuery) QueryGenres() *GenreQuery {
 	query := (&GenreClient{config: _q.config}).Query()
@@ -649,6 +673,7 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		withPlaylist:           _q.withPlaylist.Clone(),
 		withPlaylistEntries:    _q.withPlaylistEntries.Clone(),
 		withSyncPlayEntries:    _q.withSyncPlayEntries.Clone(),
+		withChannelEntries:     _q.withChannelEntries.Clone(),
 		withGenres:             _q.withGenres.Clone(),
 		withStudios:            _q.withStudios.Clone(),
 		// clone intermediate query.
@@ -811,6 +836,17 @@ func (_q *ItemQuery) WithSyncPlayEntries(opts ...func(*SyncPlayQueueEntryQuery))
 	return _q
 }
 
+// WithChannelEntries tells the query-builder to eager-load the nodes that are connected to
+// the "channel_entries" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithChannelEntries(opts ...func(*ChannelEntryQuery)) *ItemQuery {
+	query := (&ChannelEntryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withChannelEntries = query
+	return _q
+}
+
 // WithGenres tells the query-builder to eager-load the nodes that are connected to
 // the "genres" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *ItemQuery) WithGenres(opts ...func(*GenreQuery)) *ItemQuery {
@@ -911,7 +947,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	var (
 		nodes       = []*Item{}
 		_spec       = _q.querySpec()
-		loadedTypes = [16]bool{
+		loadedTypes = [17]bool{
 			_q.withParent != nil,
 			_q.withChildren != nil,
 			_q.withLibraries != nil,
@@ -926,6 +962,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			_q.withPlaylist != nil,
 			_q.withPlaylistEntries != nil,
 			_q.withSyncPlayEntries != nil,
+			_q.withChannelEntries != nil,
 			_q.withGenres != nil,
 			_q.withStudios != nil,
 		}
@@ -1044,6 +1081,13 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := _q.loadSyncPlayEntries(ctx, query, nodes,
 			func(n *Item) { n.Edges.SyncPlayEntries = []*SyncPlayQueueEntry{} },
 			func(n *Item, e *SyncPlayQueueEntry) { n.Edges.SyncPlayEntries = append(n.Edges.SyncPlayEntries, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withChannelEntries; query != nil {
+		if err := _q.loadChannelEntries(ctx, query, nodes,
+			func(n *Item) { n.Edges.ChannelEntries = []*ChannelEntry{} },
+			func(n *Item, e *ChannelEntry) { n.Edges.ChannelEntries = append(n.Edges.ChannelEntries, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1481,6 +1525,36 @@ func (_q *ItemQuery) loadSyncPlayEntries(ctx context.Context, query *SyncPlayQue
 	}
 	query.Where(predicate.SyncPlayQueueEntry(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(item.SyncPlayEntriesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadChannelEntries(ctx context.Context, query *ChannelEntryQuery, nodes []*Item, init func(*Item), assign func(*Item, *ChannelEntry)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(channelentry.FieldItemID)
+	}
+	query.Where(predicate.ChannelEntry(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.ChannelEntriesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
