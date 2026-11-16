@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -83,7 +84,9 @@ func (h *Handler) serveLivePlaylist(w http.ResponseWriter, r *http.Request, sche
 	}
 
 	now := h.channels.Now()
-	pieces := schedule.Pieces(step, now.Add(-livePieces*step), now.Add(time.Nanosecond))
+	pieces := slices.DeleteFunc(schedule.Pieces(step, now.Add(-livePieces*step), now.Add(time.Nanosecond)), func(piece channels.Piece) bool {
+		return piece.Sequence < 0
+	})
 	if len(pieces) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -94,8 +97,8 @@ func (h *Handler) serveLivePlaylist(w http.ResponseWriter, r *http.Request, sche
 	b.WriteString("#EXTM3U\n")
 	fmt.Fprintf(&b, "#EXT-X-VERSION:%d\n", playlistVersion)
 	fmt.Fprintf(&b, "#EXT-X-TARGETDURATION:%d\n", (step+time.Second-1)/time.Second)
-	fmt.Fprintf(&b, "#EXT-X-MEDIA-SEQUENCE:%d\n", max(pieces[0].Sequence, 0))
-	fmt.Fprintf(&b, "#EXT-X-DISCONTINUITY-SEQUENCE:%d\n", max(pieces[0].Number, 0))
+	fmt.Fprintf(&b, "#EXT-X-MEDIA-SEQUENCE:%d\n", pieces[0].Sequence)
+	fmt.Fprintf(&b, "#EXT-X-DISCONTINUITY-SEQUENCE:%d\n", pieces[0].Number)
 	b.WriteString("#EXT-X-INDEPENDENT-SEGMENTS\n")
 	for i, piece := range pieces {
 		if i > 0 && piece.Number != pieces[i-1].Number {
