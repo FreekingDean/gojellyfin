@@ -161,7 +161,7 @@ func newFixture(t *testing.T) *fixture {
 	return &fixture{
 		downloader: downloader.ID,
 		client:     client,
-		handler:    New(sessionService, itemService, filesystem.New(config), transcoder, reports.New(client, nil), nil),
+		handler:    New(sessionService, itemService, filesystem.New(config), transcoder, reports.New(client, nil), nil, nil),
 		items:      itemService,
 		transcoder: transcoder,
 		library:    library.ID,
