@@ -164,30 +164,27 @@ function focusedTitle(tv) {
   return { title: title ? title.text : '', index: place ? Number(place[1]) : 0, total: place ? Number(place[2]) : 0, inGrid, where };
 }
 
-// The last column can be shorter than the rest, and the grid will not move
-// right from a row that column does not reach, so the walk climbs back to the
-// top of the column it is in and crosses there instead. It counts the climb
-// rather than climbing until nothing moves, because up from the top row
-// leaves the grid for the toolbar.
+// The grid fills a column before it starts the next, and the last column can
+// be shorter than the rest. Right from a row that column does not reach
+// leaves the grid for the toolbar, so the walk climbs back to the top of the
+// column it is in, counting the climb because up from the top row leaves the
+// grid too, and crosses there.
 async function walkGrid(tv, visit) {
   // The counter can trail the focus, so a move waits for the focus to land
   // somewhere new before it is read, and gives up quietly when it never does.
   const move = async (name) => {
     const from = focusedTitle(tv);
     tv.key(name);
-    let now = from;
     for (let wait = 0; wait < 12; wait++) {
       await sleep(250);
-      now = focusedTitle(tv);
+      const now = focusedTitle(tv);
       if (now.where !== from.where && now.index !== from.index) {
         break;
       }
     }
     await sleep(250);
-    const landed = focusedTitle(tv);
-    console.log(`grid walk: ${name} from ${from.index} at ${from.where} to ${landed.index} at ${landed.where} (${landed.inGrid ? 'grid' : 'outside'}) ${landed.title}`);
 
-    return landed;
+    return focusedTitle(tv);
   };
 
   let focused = focusedTitle(tv);
@@ -204,28 +201,11 @@ async function walkGrid(tv, visit) {
     if (focused.index !== before) {
       continue;
     }
+    for (let climb = before - top; climb > 0; climb--) {
+      focused = await move('up');
+    }
     focused = await move('right');
-    if (focused.index === before) {
-      for (let climb = before - top; climb > 0 && focused.index > top; climb--) {
-        focused = await move('up');
-        if (!focused.inGrid) {
-          focused = await move('down');
-          break;
-        }
-      }
-      focused = await move('right');
-      if (focused.index <= before) {
-        return null;
-      }
-    }
-    for (let climb = 0; climb < 10 && focused.index > before + 1; climb++) {
-      const above = await move('up');
-      if (above.index === focused.index) {
-        break;
-      }
-      focused = above;
-    }
-    if (focused.index === before) {
+    if (!focused.inGrid || focused.index <= before) {
       return null;
     }
     top = focused.index;
