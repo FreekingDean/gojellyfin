@@ -104,6 +104,7 @@ func (s *Server) saveOptions(ctx context.Context, id uuid.UUID, req *api.Library
 }
 
 func mergeOptions(options *libraries.Options, req *api.LibraryOptions) {
+	mergeOrders(options, req)
 	options.Enabled = apiutil.OrElse(req.Enabled, options.Enabled)
 	options.EnablePhotos = apiutil.OrElse(req.EnablePhotos, options.EnablePhotos)
 	options.EnableRealtimeMonitor = apiutil.OrElse(req.EnableRealtimeMonitor, options.EnableRealtimeMonitor)
@@ -131,6 +132,15 @@ func mergeOptions(options *libraries.Options, req *api.LibraryOptions) {
 	options.PreferredMetadataLanguage = apiutil.OrElse(req.PreferredMetadataLanguage, options.PreferredMetadataLanguage)
 	options.MetadataCountryCode = apiutil.OrElse(req.MetadataCountryCode, options.MetadataCountryCode)
 	options.SeasonZeroDisplayName = apiutil.OrElse(req.SeasonZeroDisplayName, options.SeasonZeroDisplayName)
+	if req.AllowEmbeddedSubtitles != nil {
+		options.AllowEmbeddedSubtitles = libraries.EmbeddedSubtitles(*req.AllowEmbeddedSubtitles)
+	}
+	if req.TypeOptions != nil {
+		options.TypeOptions = typeOptions(*req.TypeOptions)
+	}
+}
+
+func mergeOrders(options *libraries.Options, req *api.LibraryOptions) {
 	options.MetadataSavers = apiutil.OrElse(req.MetadataSavers, options.MetadataSavers)
 	options.DisabledLocalMetadataReaders = apiutil.OrElse(req.DisabledLocalMetadataReaders, options.DisabledLocalMetadataReaders)
 	options.LocalMetadataReaderOrder = apiutil.OrElse(req.LocalMetadataReaderOrder, options.LocalMetadataReaderOrder)
@@ -143,12 +153,6 @@ func mergeOptions(options *libraries.Options, req *api.LibraryOptions) {
 	options.LyricFetcherOrder = apiutil.OrElse(req.LyricFetcherOrder, options.LyricFetcherOrder)
 	options.CustomTagDelimiters = apiutil.OrElse(req.CustomTagDelimiters, options.CustomTagDelimiters)
 	options.DelimiterWhitelist = apiutil.OrElse(req.DelimiterWhitelist, options.DelimiterWhitelist)
-	if req.AllowEmbeddedSubtitles != nil {
-		options.AllowEmbeddedSubtitles = libraries.EmbeddedSubtitles(*req.AllowEmbeddedSubtitles)
-	}
-	if req.TypeOptions != nil {
-		options.TypeOptions = typeOptions(*req.TypeOptions)
-	}
 }
 
 func typeOptions(requested []api.TypeOptions) []libraries.TypeOptions {

@@ -175,7 +175,7 @@ type Server struct {
 	nestedUnimplemented
 }
 
-func New(
+func New( //nolint:funlen
 	apiKey *apikey.Server,
 	filter *filter.Server,
 	years *years.Server,

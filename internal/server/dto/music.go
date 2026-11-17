@@ -22,28 +22,7 @@ func applyMusicFields(ctx context.Context, store *items.Service, records []*item
 		return nil
 	}
 
-	parents, err := store.ItemsByIDs(ctx, items.Everyone, parentIDs)
-	if err != nil {
-		return err
-	}
-
-	artistIDs := make([]uuid.UUID, 0, len(parents))
-	albumIDs := make([]uuid.UUID, 0, len(parents))
-	for _, parent := range parents {
-		if parent.Kind == itemmodel.KindMusicAlbum {
-			albumIDs = append(albumIDs, parent.ID)
-			if parent.ParentID != nil {
-				artistIDs = append(artistIDs, *parent.ParentID)
-			}
-		}
-	}
-
-	artists, err := store.ItemsByIDs(ctx, items.Everyone, artistIDs)
-	if err != nil {
-		return err
-	}
-
-	tags, err := store.ImageTagsByItem(ctx, albumIDs)
+	parents, artists, tags, err := musicLineage(ctx, store, parentIDs)
 	if err != nil {
 		return err
 	}
@@ -64,11 +43,7 @@ func applyMusicFields(ctx context.Context, store *items.Service, records []*item
 				continue
 			}
 
-			converted[index].Album = apiutil.Ptr(parent.Name)
-			converted[index].AlbumId = apiutil.Ptr(parent.ID)
-			if tag, ok := tags[parent.ID]["Primary"]; ok {
-				converted[index].AlbumPrimaryImageTag = apiutil.Ptr(tag)
-			}
+			onAlbum(&converted[index], parent, tags[parent.ID])
 			if parent.ParentID == nil {
 				continue
 			}
@@ -78,12 +53,54 @@ func applyMusicFields(ctx context.Context, store *items.Service, records []*item
 			continue
 		}
 
-		credited := []api.NameGuidPair{{Id: apiutil.Ptr(artist.ID), Name: apiutil.Ptr(artist.Name)}}
-		converted[index].AlbumArtist = apiutil.Ptr(artist.Name)
-		converted[index].AlbumArtists = apiutil.Ptr(credited)
-		converted[index].ArtistItems = apiutil.Ptr(credited)
-		converted[index].Artists = apiutil.Ptr([]string{artist.Name})
+		byArtist(&converted[index], artist)
 	}
 
 	return nil
+}
+
+func musicLineage(ctx context.Context, store *items.Service, parentIDs []uuid.UUID) (map[uuid.UUID]*items.Item, map[uuid.UUID]*items.Item, map[uuid.UUID]map[string]string, error) {
+	parents, err := store.ItemsByIDs(ctx, items.Everyone, parentIDs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	artistIDs := make([]uuid.UUID, 0, len(parents))
+	albumIDs := make([]uuid.UUID, 0, len(parents))
+	for _, parent := range parents {
+		if parent.Kind == itemmodel.KindMusicAlbum {
+			albumIDs = append(albumIDs, parent.ID)
+			if parent.ParentID != nil {
+				artistIDs = append(artistIDs, *parent.ParentID)
+			}
+		}
+	}
+
+	artists, err := store.ItemsByIDs(ctx, items.Everyone, artistIDs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	tags, err := store.ImageTagsByItem(ctx, albumIDs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return parents, artists, tags, nil
+}
+
+func onAlbum(dto *api.BaseItemDto, album *items.Item, tags map[string]string) {
+	dto.Album = apiutil.Ptr(album.Name)
+	dto.AlbumId = apiutil.Ptr(album.ID)
+	if tag, ok := tags["Primary"]; ok {
+		dto.AlbumPrimaryImageTag = apiutil.Ptr(tag)
+	}
+}
+
+func byArtist(dto *api.BaseItemDto, artist *items.Item) {
+	credited := []api.NameGuidPair{{Id: apiutil.Ptr(artist.ID), Name: apiutil.Ptr(artist.Name)}}
+	dto.AlbumArtist = apiutil.Ptr(artist.Name)
+	dto.AlbumArtists = apiutil.Ptr(credited)
+	dto.ArtistItems = apiutil.Ptr(credited)
+	dto.Artists = apiutil.Ptr([]string{artist.Name})
 }

@@ -118,37 +118,13 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 
 	defer s.register(session.ID, replies)()
 
-	go func() {
-		defer close(done)
-		for {
-			_, payload, err := conn.ReadMessage()
-			if err != nil {
-				return
-			}
-
-			var message wsMessage
-			if err := json.Unmarshal(payload, &message); err != nil {
-				continue
-			}
-			if message.MessageType != "KeepAlive" {
-				continue
-			}
-
-			enqueue(replies, wsMessage{MessageType: "KeepAlive", MessageId: newGUID()})
-		}
-	}()
+	go readKeepAlives(conn, replies, done)
 
 	if err := conn.WriteJSON(forceKeepAlive()); err != nil {
 		return
 	}
 
-	s.mu.RLock()
-	connected := slices.Clone(s.connected)
-	s.mu.RUnlock()
-
-	for _, hook := range connected {
-		hook(r.Context(), session.ID)
-	}
+	s.announce(r.Context(), session.ID)
 
 	ticker := time.NewTicker(keepAliveInterval)
 	defer ticker.Stop()
@@ -166,6 +142,36 @@ func (s *Socket) Handle(w http.ResponseWriter, r *http.Request) {
 		case <-done:
 			return
 		}
+	}
+}
+
+func readKeepAlives(conn *websocket.Conn, replies chan wsMessage, done chan struct{}) {
+	defer close(done)
+	for {
+		_, payload, err := conn.ReadMessage()
+		if err != nil {
+			return
+		}
+
+		var message wsMessage
+		if err := json.Unmarshal(payload, &message); err != nil {
+			continue
+		}
+		if message.MessageType != "KeepAlive" {
+			continue
+		}
+
+		enqueue(replies, wsMessage{MessageType: "KeepAlive", MessageId: newGUID()})
+	}
+}
+
+func (s *Socket) announce(ctx context.Context, sessionID uuid.UUID) {
+	s.mu.RLock()
+	connected := slices.Clone(s.connected)
+	s.mu.RUnlock()
+
+	for _, hook := range connected {
+		hook(ctx, sessionID)
 	}
 }
 

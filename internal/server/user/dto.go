@@ -65,20 +65,6 @@ func policyDto(policy *users.Policy) api.UserPolicy {
 		return api.UserPolicy{}
 	}
 
-	schedules := make([]api.AccessSchedule, 0, len(policy.AccessSchedules))
-	for _, schedule := range policy.AccessSchedules {
-		schedules = append(schedules, api.AccessSchedule{
-			DayOfWeek: apiutil.Ptr(api.DynamicDayOfWeek(schedule.DayOfWeek)),
-			StartHour: apiutil.Ptr(schedule.StartHour),
-			EndHour:   apiutil.Ptr(schedule.EndHour),
-		})
-	}
-
-	unrated := make([]api.UnratedItem, 0, len(policy.BlockUnratedItems))
-	for _, item := range policy.BlockUnratedItems {
-		unrated = append(unrated, api.UnratedItem(item))
-	}
-
 	return api.UserPolicy{
 		IsAdministrator:                  apiutil.Ptr(policy.IsAdministrator),
 		IsHidden:                         apiutil.Ptr(policy.IsHidden),
@@ -111,8 +97,8 @@ func policyDto(policy *users.Policy) api.UserPolicy {
 		RemoteClientBitrateLimit:         apiutil.Ptr(policy.RemoteClientBitrateLimit),
 		AllowedTags:                      &policy.AllowedTags,
 		BlockedTags:                      &policy.BlockedTags,
-		AccessSchedules:                  &schedules,
-		BlockUnratedItems:                &unrated,
+		AccessSchedules:                  apiutil.Ptr(scheduleDtos(policy.AccessSchedules)),
+		BlockUnratedItems:                apiutil.Ptr(unratedDtos(policy.BlockUnratedItems)),
 		MaxParentalRating:                level(policy.MaxParentalRating),
 		MaxParentalSubRating:             level(policy.MaxParentalSubRating),
 		EnableContentDeletionFromFolders: &policy.EnableContentDeletionFromFolders,
@@ -125,6 +111,28 @@ func policyDto(policy *users.Policy) api.UserPolicy {
 		PasswordResetProviderId:          policy.PasswordResetProviderID,
 		SyncPlayAccess:                   apiutil.Ptr(api.SyncPlayUserAccessType(policy.SyncPlayAccess)),
 	}
+}
+
+func scheduleDtos(schedules []users.AccessSchedule) []api.AccessSchedule {
+	dtos := make([]api.AccessSchedule, 0, len(schedules))
+	for _, schedule := range schedules {
+		dtos = append(dtos, api.AccessSchedule{
+			DayOfWeek: apiutil.Ptr(api.DynamicDayOfWeek(schedule.DayOfWeek)),
+			StartHour: apiutil.Ptr(schedule.StartHour),
+			EndHour:   apiutil.Ptr(schedule.EndHour),
+		})
+	}
+
+	return dtos
+}
+
+func unratedDtos(items []string) []api.UnratedItem {
+	dtos := make([]api.UnratedItem, 0, len(items))
+	for _, item := range items {
+		dtos = append(dtos, api.UnratedItem(item))
+	}
+
+	return dtos
 }
 
 func (s *Server) saveConfiguration(ctx context.Context, id uuid.UUID, req *api.UserConfiguration) error {
@@ -161,31 +169,10 @@ func (s *Server) savePolicy(ctx context.Context, id uuid.UUID, req *api.UserPoli
 }
 
 func mergePolicy(policy *users.Policy, req *api.UserPolicy) {
+	mergePermissions(policy, req)
 	policy.IsAdministrator = apiutil.OrElse(req.IsAdministrator, policy.IsAdministrator)
 	policy.IsHidden = apiutil.OrElse(req.IsHidden, policy.IsHidden)
 	policy.IsDisabled = apiutil.OrElse(req.IsDisabled, policy.IsDisabled)
-	policy.EnableCollectionManagement = apiutil.OrElse(req.EnableCollectionManagement, policy.EnableCollectionManagement)
-	policy.EnableSubtitleManagement = apiutil.OrElse(req.EnableSubtitleManagement, policy.EnableSubtitleManagement)
-	policy.EnableLyricManagement = apiutil.OrElse(req.EnableLyricManagement, policy.EnableLyricManagement)
-	policy.EnableUserPreferenceAccess = apiutil.OrElse(req.EnableUserPreferenceAccess, policy.EnableUserPreferenceAccess)
-	policy.EnableRemoteControlOfOtherUsers = apiutil.OrElse(req.EnableRemoteControlOfOtherUsers, policy.EnableRemoteControlOfOtherUsers)
-	policy.EnableSharedDeviceControl = apiutil.OrElse(req.EnableSharedDeviceControl, policy.EnableSharedDeviceControl)
-	policy.EnableRemoteAccess = apiutil.OrElse(req.EnableRemoteAccess, policy.EnableRemoteAccess)
-	policy.EnableLiveTvManagement = apiutil.OrElse(req.EnableLiveTvManagement, policy.EnableLiveTvManagement)
-	policy.EnableLiveTvAccess = apiutil.OrElse(req.EnableLiveTvAccess, policy.EnableLiveTvAccess)
-	policy.EnableMediaPlayback = apiutil.OrElse(req.EnableMediaPlayback, policy.EnableMediaPlayback)
-	policy.EnableAudioPlaybackTranscoding = apiutil.OrElse(req.EnableAudioPlaybackTranscoding, policy.EnableAudioPlaybackTranscoding)
-	policy.EnableVideoPlaybackTranscoding = apiutil.OrElse(req.EnableVideoPlaybackTranscoding, policy.EnableVideoPlaybackTranscoding)
-	policy.EnablePlaybackRemuxing = apiutil.OrElse(req.EnablePlaybackRemuxing, policy.EnablePlaybackRemuxing)
-	policy.ForceRemoteSourceTranscoding = apiutil.OrElse(req.ForceRemoteSourceTranscoding, policy.ForceRemoteSourceTranscoding)
-	policy.EnableContentDeletion = apiutil.OrElse(req.EnableContentDeletion, policy.EnableContentDeletion)
-	policy.EnableContentDownloading = apiutil.OrElse(req.EnableContentDownloading, policy.EnableContentDownloading)
-	policy.EnableSyncTranscoding = apiutil.OrElse(req.EnableSyncTranscoding, policy.EnableSyncTranscoding)
-	policy.EnableMediaConversion = apiutil.OrElse(req.EnableMediaConversion, policy.EnableMediaConversion)
-	policy.EnablePublicSharing = apiutil.OrElse(req.EnablePublicSharing, policy.EnablePublicSharing)
-	policy.EnableAllDevices = apiutil.OrElse(req.EnableAllDevices, policy.EnableAllDevices)
-	policy.EnableAllChannels = apiutil.OrElse(req.EnableAllChannels, policy.EnableAllChannels)
-	policy.EnableAllFolders = apiutil.OrElse(req.EnableAllFolders, policy.EnableAllFolders)
 	policy.InvalidLoginAttemptCount = apiutil.OrElse(req.InvalidLoginAttemptCount, policy.InvalidLoginAttemptCount)
 	policy.LoginAttemptsBeforeLockout = apiutil.OrElse(req.LoginAttemptsBeforeLockout, policy.LoginAttemptsBeforeLockout)
 	policy.MaxActiveSessions = apiutil.OrElse(req.MaxActiveSessions, policy.MaxActiveSessions)
@@ -215,6 +202,31 @@ func mergePolicy(policy *users.Policy, req *api.UserPolicy) {
 	if req.AccessSchedules != nil {
 		policy.AccessSchedules = accessSchedules(*req.AccessSchedules)
 	}
+}
+
+func mergePermissions(policy *users.Policy, req *api.UserPolicy) {
+	policy.EnableCollectionManagement = apiutil.OrElse(req.EnableCollectionManagement, policy.EnableCollectionManagement)
+	policy.EnableSubtitleManagement = apiutil.OrElse(req.EnableSubtitleManagement, policy.EnableSubtitleManagement)
+	policy.EnableLyricManagement = apiutil.OrElse(req.EnableLyricManagement, policy.EnableLyricManagement)
+	policy.EnableUserPreferenceAccess = apiutil.OrElse(req.EnableUserPreferenceAccess, policy.EnableUserPreferenceAccess)
+	policy.EnableRemoteControlOfOtherUsers = apiutil.OrElse(req.EnableRemoteControlOfOtherUsers, policy.EnableRemoteControlOfOtherUsers)
+	policy.EnableSharedDeviceControl = apiutil.OrElse(req.EnableSharedDeviceControl, policy.EnableSharedDeviceControl)
+	policy.EnableRemoteAccess = apiutil.OrElse(req.EnableRemoteAccess, policy.EnableRemoteAccess)
+	policy.EnableLiveTvManagement = apiutil.OrElse(req.EnableLiveTvManagement, policy.EnableLiveTvManagement)
+	policy.EnableLiveTvAccess = apiutil.OrElse(req.EnableLiveTvAccess, policy.EnableLiveTvAccess)
+	policy.EnableMediaPlayback = apiutil.OrElse(req.EnableMediaPlayback, policy.EnableMediaPlayback)
+	policy.EnableAudioPlaybackTranscoding = apiutil.OrElse(req.EnableAudioPlaybackTranscoding, policy.EnableAudioPlaybackTranscoding)
+	policy.EnableVideoPlaybackTranscoding = apiutil.OrElse(req.EnableVideoPlaybackTranscoding, policy.EnableVideoPlaybackTranscoding)
+	policy.EnablePlaybackRemuxing = apiutil.OrElse(req.EnablePlaybackRemuxing, policy.EnablePlaybackRemuxing)
+	policy.ForceRemoteSourceTranscoding = apiutil.OrElse(req.ForceRemoteSourceTranscoding, policy.ForceRemoteSourceTranscoding)
+	policy.EnableContentDeletion = apiutil.OrElse(req.EnableContentDeletion, policy.EnableContentDeletion)
+	policy.EnableContentDownloading = apiutil.OrElse(req.EnableContentDownloading, policy.EnableContentDownloading)
+	policy.EnableSyncTranscoding = apiutil.OrElse(req.EnableSyncTranscoding, policy.EnableSyncTranscoding)
+	policy.EnableMediaConversion = apiutil.OrElse(req.EnableMediaConversion, policy.EnableMediaConversion)
+	policy.EnablePublicSharing = apiutil.OrElse(req.EnablePublicSharing, policy.EnablePublicSharing)
+	policy.EnableAllDevices = apiutil.OrElse(req.EnableAllDevices, policy.EnableAllDevices)
+	policy.EnableAllChannels = apiutil.OrElse(req.EnableAllChannels, policy.EnableAllChannels)
+	policy.EnableAllFolders = apiutil.OrElse(req.EnableAllFolders, policy.EnableAllFolders)
 }
 
 func unratedItems(items []api.UnratedItem) []string {
