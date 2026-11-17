@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM node:22-alpine AS admin
+FROM --platform=$BUILDPLATFORM node:26-alpine AS admin
 
 WORKDIR /src/admin
 
