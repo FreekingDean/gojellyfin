@@ -50,9 +50,25 @@ func TestQueryItems_UserDataFilters(t *testing.T) {
 		}
 	}
 
+	for _, test := range queryItemsUserDataFiltersCases(user) {
+		t.Run(test.name, func(t *testing.T) {
+			if got := fixture.picked(t, test.query); !slices.Equal(got, test.want) {
+				t.Errorf("items = %v, want %v", got, test.want)
+			}
+		})
+	}
+}
+
+type queryItemsUserDataFiltersCase struct {
+	name  string
+	query ItemQuery
+	want  []string
+}
+
+func queryItemsUserDataFiltersCases(user uuid.UUID) []queryItemsUserDataFiltersCase {
 	yes, no := true, false
 
-	for _, test := range []queryItemsUserDataFiltersCase{
+	return []queryItemsUserDataFiltersCase{
 		{
 			name:  "played takes what this user finished",
 			query: ItemQuery{User: user, Played: &yes},
@@ -93,17 +109,5 @@ func TestQueryItems_UserDataFilters(t *testing.T) {
 			query: ItemQuery{User: user, MediaTypes: []MediaType{"Video"}, ExcludeKinds: []Kind{itemmodel.KindMovie, itemmodel.KindEpisode}},
 			want:  nil,
 		},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			if got := fixture.picked(t, test.query); !slices.Equal(got, test.want) {
-				t.Errorf("items = %v, want %v", got, test.want)
-			}
-		})
 	}
-}
-
-type queryItemsUserDataFiltersCase struct {
-	name  string
-	query ItemQuery
-	want  []string
 }

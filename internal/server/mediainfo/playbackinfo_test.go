@@ -265,7 +265,34 @@ func (f *fixture) source(t *testing.T, id uuid.UUID, body *api.PlaybackInfoDto) 
 func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 	chrome := profileFrom(t, chromeProfile)
 
-	t.Run("the client is left with one url and no choice of path", func(t *testing.T) {
+	t.Run("the client is left with one url and no choice of path", theClientIsLeftWithOneUrlAndNoChoiceOfPath(chrome))
+	t.Run("a file the client plays as it is is direct play as well as a url to it", aFileTheClientPlaysAsItIsIsDirectPlayAsWellAsAUrlToIt(chrome))
+	t.Run("a file that failed to play is not offered as direct play again", aFileThatFailedToPlayIsNotOfferedAsDirectPlayAgain(chrome))
+	t.Run("a copy needs the file's keyframes to be cut into segments", aCopyNeedsTheFilesKeyframesToBeCutIntoSegments(chrome))
+	t.Run("an encode needs no keyframes", anEncodeNeedsNoKeyframes(chrome))
+	t.Run("a picture is never encoded down from above 1080p", aPictureIsNeverEncodedDownFromAbove1080p(chrome))
+	t.Run("an item with several files answers with one of them", anItemWithSeveralFilesAnswersWithOneOfThem(chrome))
+	t.Run("the version the client names is not the client's to choose", theVersionTheClientNamesIsNotTheClientsToChoose(chrome))
+	t.Run("nothing is answered as a stream that has to be opened, looped or probed", nothingIsAnsweredAsAStreamThatHasToBeOpenedLoopedOrProbed(chrome))
+	t.Run("a song is answered with a url this server wrote", aSongIsAnsweredWithAUrlThisServerWrote(chrome))
+	t.Run("a song the client cannot decode is encoded into a container it can", aSongTheClientCannotDecodeIsEncodedIntoAContainerItCan(chrome))
+	t.Run("a song the client decodes is served as it is", aSongTheClientDecodesIsServedAsItIs(chrome))
+	t.Run("a song is encoded into what the client asked a transcode to be", aSongIsEncodedIntoWhatTheClientAskedATranscodeToBe())
+	t.Run("a song nothing the client takes can carry is no compatible stream", aSongNothingTheClientTakesCanCarryIsNoCompatibleStream())
+	t.Run("audio the client cannot decode is answered in a container it can", audioTheClientCannotDecodeIsAnsweredInAContainerItCan(chrome))
+	t.Run("a source the client declared is named as the source", aSourceTheClientDeclaredIsNamedAsTheSource(chrome))
+	t.Run("codecs declared and the container not is answered by a mux", codecsDeclaredAndTheContainerNotIsAnsweredByAMux(chrome))
+	t.Run("a client that declared nothing is handed the source", aClientThatDeclaredNothingIsHandedTheSource())
+	t.Run("a seek is asked for by position", aSeekIsAskedForByPosition(chrome))
+	t.Run("a picture nothing declared can carry is handed over as an h264 encode", aPictureNothingDeclaredCanCarryIsHandedOverAsAnH264Encode(chrome))
+	t.Run("an item with no file behind it is answered as no compatible stream", anItemWithNoFileBehindItIsAnsweredAsNoCompatibleStream(chrome))
+	t.Run("a playable source is not refused for one it has beside it", aPlayableSourceIsNotRefusedForOneItHasBesideIt(chrome))
+	t.Run("transcoding and a url to transcode from always travel together", transcodingAndAUrlToTranscodeFromAlwaysTravelTogether(chrome))
+	t.Run("a playback error has somewhere to stop", aPlaybackErrorHasSomewhereToStop(chrome))
+}
+
+func theClientIsLeftWithOneUrlAndNoChoiceOfPath(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
 
@@ -280,9 +307,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if got := apiutil.Deref(source.TranscodingSubProtocol); got != api.MediaStreamProtocolHls {
 			t.Errorf("transcoding protocol = %q, want hls", got)
 		}
-	})
+	}
+}
 
-	t.Run("a file the client plays as it is is direct play as well as a url to it", func(t *testing.T) {
+func aFileTheClientPlaysAsItIsIsDirectPlayAsWellAsAUrlToIt(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
 
@@ -300,18 +329,22 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if url := apiutil.Deref(source.TranscodingUrl); !strings.Contains(url, "/stream.mkv?") {
 			t.Errorf("transcoding url = %q, want the file itself", url)
 		}
-	})
+	}
+}
 
-	t.Run("a file that failed to play is not offered as direct play again", func(t *testing.T) {
+func aFileThatFailedToPlayIsNotOfferedAsDirectPlayAgain(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
 
 		if apiutil.Deref(fixture.source(t, id, afterPlaybackError(&chrome)).SupportsDirectPlay) {
 			t.Error("direct play was offered to a client that asked for none")
 		}
-	})
+	}
+}
 
-	t.Run("a copy needs the file's keyframes to be cut into segments", func(t *testing.T) {
+func aCopyNeedsTheFilesKeyframesToBeCutIntoSegments(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.keyframes = nil
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
@@ -324,9 +357,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if url := apiutil.Deref(source.TranscodingUrl); !strings.Contains(url, "/stream.mp4?") {
 			t.Errorf("transcoding url = %q, want a progressive remux", url)
 		}
-	})
+	}
+}
 
-	t.Run("an encode needs no keyframes", func(t *testing.T) {
+func anEncodeNeedsNoKeyframes(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.keyframes = nil
 		id := fixture.addRipped(t, itemmodel.KindMovie, "mkv", "mpeg4", "aac")
@@ -334,9 +369,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if got := apiutil.Deref(fixture.source(t, id, firstPlay(&chrome)).TranscodingSubProtocol); got != api.MediaStreamProtocolHls {
 			t.Errorf("transcoding protocol = %q, want hls", got)
 		}
-	})
+	}
+}
 
-	t.Run("a picture is never encoded down from above 1080p", func(t *testing.T) {
+func aPictureIsNeverEncodedDownFromAbove1080p(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRipped(t, itemmodel.KindMovie, "mkv", "mpeg4", "aac")
 		fixture.addCopy(t, id, "/media/uhd.mkv", "mpeg4", "aac", 2160)
@@ -355,9 +392,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if got := apiutil.Deref(fixture.answer(t, only, firstPlay(&chrome)).ErrorCode); got != api.NoCompatibleStream {
 			t.Errorf("error code = %q, want %q for a title whose only copy would be encoded down from 4K", got, api.NoCompatibleStream)
 		}
-	})
+	}
+}
 
-	t.Run("an item with several files answers with one of them", func(t *testing.T) {
+func anItemWithSeveralFilesAnswersWithOneOfThem(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
 		fixture.addCopy(t, id, "/media/second.mkv", "h264", "aac", 1080)
@@ -365,9 +404,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if got := len(fixture.sources(t, id, firstPlay(&chrome))); got != 1 {
 			t.Errorf("answered with %d sources, want the one the client should play", got)
 		}
-	})
+	}
+}
 
-	t.Run("the version the client names is not the client's to choose", func(t *testing.T) {
+func theVersionTheClientNamesIsNotTheClientsToChoose(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
 		fixture.addCopy(t, id, "/media/uhd.mkv", "h264", "aac", 2160)
@@ -393,9 +434,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if got := apiutil.Deref(sources[0].Path); got != "uhd.mkv" {
 			t.Errorf("answered the path %q, want the file's name and no directory above it", got)
 		}
-	})
+	}
+}
 
-	t.Run("nothing is answered as a stream that has to be opened, looped or probed", func(t *testing.T) {
+func nothingIsAnsweredAsAStreamThatHasToBeOpenedLoopedOrProbed(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		for _, id := range []uuid.UUID{
 			fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3"),
@@ -416,9 +459,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 				}
 			}
 		}
-	})
+	}
+}
 
-	t.Run("a song is answered with a url this server wrote", func(t *testing.T) {
+func aSongIsAnsweredWithAUrlThisServerWrote(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindAudio, "flac", "flac")
 
@@ -433,9 +478,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if url := apiutil.Deref(source.TranscodingUrl); !strings.HasPrefix(url, "/Audio/"+id.String()+"/stream.") {
 			t.Errorf("transcoding url = %q, want the audio route", url)
 		}
-	})
+	}
+}
 
-	t.Run("a song the client cannot decode is encoded into a container it can", func(t *testing.T) {
+func aSongTheClientCannotDecodeIsEncodedIntoAContainerItCan(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindAudio, "flac", "flac")
 
@@ -450,9 +497,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if got := apiutil.Deref(source.TranscodingContainer); got != "mp3" {
 			t.Errorf("transcoding container = %q, want mp3", got)
 		}
-	})
+	}
+}
 
-	t.Run("a song the client decodes is served as it is", func(t *testing.T) {
+func aSongTheClientDecodesIsServedAsItIs(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindAudio, "mp3", "mp3")
 
@@ -463,11 +512,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 				t.Errorf("transcoding url = %q, want it to carry %q", url, want)
 			}
 		}
-	})
+	}
+}
 
-	t.Run("a song is encoded into what the client asked a transcode to be", aSongIsEncodedIntoWhatTheClientAskedATranscodeToBe())
-	t.Run("a song nothing the client takes can carry is no compatible stream", aSongNothingTheClientTakesCanCarryIsNoCompatibleStream())
-	t.Run("audio the client cannot decode is answered in a container it can", func(t *testing.T) {
+func audioTheClientCannotDecodeIsAnsweredInAContainerItCan(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
 
@@ -486,9 +535,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if !strings.Contains(url, "api_key=the-token") {
 			t.Errorf("transcoding url carries no token: %q", url)
 		}
-	})
+	}
+}
 
-	t.Run("a source the client declared is named as the source", func(t *testing.T) {
+func aSourceTheClientDeclaredIsNamedAsTheSource(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
 
@@ -504,9 +555,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if !strings.Contains(url, "audioCodec=aac") {
 			t.Errorf("transcoding url = %q, want it to name the audio it will carry", url)
 		}
-	})
+	}
+}
 
-	t.Run("codecs declared and the container not is answered by a mux", func(t *testing.T) {
+func codecsDeclaredAndTheContainerNotIsAnsweredByAMux(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindMovie, "avi", "aac")
 
@@ -518,10 +571,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if got := apiutil.Deref(source.TranscodingUrl); !strings.Contains(got, "audioCodec=aac") {
 			t.Errorf("transcoding url = %q, want the source audio kept", got)
 		}
-	})
+	}
+}
 
-	t.Run("a client that declared nothing is handed the source", aClientThatDeclaredNothingIsHandedTheSource())
-	t.Run("a seek is asked for by position", func(t *testing.T) {
+func aSeekIsAskedForByPosition(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
 
@@ -531,9 +585,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if got := apiutil.Deref(fixture.source(t, id, body).TranscodingUrl); !strings.Contains(got, "startTimeTicks=25000000") {
 			t.Errorf("transcoding url = %q, want the position the client seeked to", got)
 		}
-	})
+	}
+}
 
-	t.Run("a picture nothing declared can carry is handed over as an h264 encode", func(t *testing.T) {
+func aPictureNothingDeclaredCanCarryIsHandedOverAsAnH264Encode(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRipped(t, itemmodel.KindMovie, "mkv", "mpeg4", "aac")
 
@@ -548,9 +604,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 				t.Errorf("transcoding url = %q, want it to carry %q", url, want)
 			}
 		}
-	})
+	}
+}
 
-	t.Run("an item with no file behind it is answered as no compatible stream", func(t *testing.T) {
+func anItemWithNoFileBehindItIsAnsweredAsNoCompatibleStream(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.unscanned(t)
 
@@ -562,18 +620,22 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		if got := apiutil.Deref(answer.ErrorCode); got != api.NoCompatibleStream {
 			t.Errorf("error code = %q, want %q", got, api.NoCompatibleStream)
 		}
-	})
+	}
+}
 
-	t.Run("a playable source is not refused for one it has beside it", func(t *testing.T) {
+func aPlayableSourceIsNotRefusedForOneItHasBesideIt(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
 
 		if fixture.answer(t, id, firstPlay(&chrome)).ErrorCode != nil {
 			t.Error("a source that can be muxed was answered as no compatible stream")
 		}
-	})
+	}
+}
 
-	t.Run("transcoding and a url to transcode from always travel together", func(t *testing.T) {
+func transcodingAndAUrlToTranscodeFromAlwaysTravelTogether(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		ids := []uuid.UUID{
 			fixture.addRipped(t, itemmodel.KindMovie, "mkv", "mpeg4", "aac"),
@@ -598,9 +660,11 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 				}
 			}
 		}
-	})
+	}
+}
 
-	t.Run("a playback error has somewhere to stop", func(t *testing.T) {
+func aPlaybackErrorHasSomewhereToStop(chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
 
@@ -611,7 +675,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 				t.Errorf("url = %q, want it to carry %q so jellyfin-web stops retrying", raw, refusal)
 			}
 		}
-	})
+	}
 }
 
 func aSongNothingTheClientTakesCanCarryIsNoCompatibleStream() func(*testing.T) {

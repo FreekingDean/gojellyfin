@@ -306,149 +306,8 @@ func theNamesTheClientWritesAreTheNamesTheProbeWrote() func(*testing.T) {
 func TestService_SourceForOrder(t *testing.T) {
 	ctx := context.Background()
 
-	type copy struct {
-		path   string
-		video  string
-		audio  string
-		height int32
-		hdr    bool
-	}
-
-	for _, tc := range []struct {
-		name    string
-		copies  []copy
-		want    string
-		change  Change
-		refused bool
-	}{
-		{
-			name:   "a) the 4K plays untouched",
-			copies: []copy{{path: "/uhd.mkv", video: "h264", audio: "aac", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
-			want:   "/uhd.mkv",
-			change: ChangeNone,
-		},
-		{
-			name:   "b) the 4K needs a mux and still comes first",
-			copies: []copy{{path: "/uhd.avi", video: "h264", audio: "aac", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
-			want:   "/uhd.avi",
-			change: ChangeContainer,
-		},
-		{
-			name:   "c) the 4K needs its audio converted and still beats a 1080p that does not",
-			copies: []copy{{path: "/uhd.mkv", video: "h264", audio: "ac3", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
-			want:   "/uhd.mkv",
-			change: ChangeAudio,
-		},
-		{
-			name:   "d) the 1080p plays untouched once the 4K needs a picture encode",
-			copies: []copy{{path: "/uhd.mkv", video: "mpeg4", audio: "aac", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
-			want:   "/hd.mkv",
-			change: ChangeNone,
-		},
-		{
-			name:   "e) the 1080p needs a mux",
-			copies: []copy{{path: "/uhd.mkv", video: "mpeg4", audio: "aac", height: 2160}, {path: "/hd.avi", video: "h264", audio: "aac", height: 1080}},
-			want:   "/hd.avi",
-			change: ChangeContainer,
-		},
-		{
-			name:   "f) the 1080p needs its audio converted",
-			copies: []copy{{path: "/uhd.mkv", video: "mpeg4", audio: "aac", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "ac3", height: 1080}},
-			want:   "/hd.mkv",
-			change: ChangeAudio,
-		},
-		{
-			name:   "g) a picture encode keeps audio the client decodes",
-			copies: []copy{{path: "/only.mkv", video: "mpeg4", audio: "aac", height: 1080}},
-			want:   "/only.mkv",
-			change: ChangeVideo,
-		},
-		{
-			name:   "h) a picture encode converts audio it does not",
-			copies: []copy{{path: "/only.mkv", video: "mpeg4", audio: "ac3", height: 1080}},
-			want:   "/only.mkv",
-			change: ChangeVideoAudio,
-		},
-		{
-			name: "i) an encode starts from the shortest copy that still fills 1080p",
-			copies: []copy{
-				{path: "/uhd.mkv", video: "hevc", audio: "aac", height: 2160, hdr: true},
-				{path: "/hd.mkv", video: "mpeg4", audio: "aac", height: 1080},
-				{path: "/sd.mkv", video: "mpeg4", audio: "aac", height: 720},
-			},
-			want:   "/hd.mkv",
-			change: ChangeVideo,
-		},
-		{
-			name: "j) with nothing that fills 1080p the encode starts from the tallest",
-			copies: []copy{
-				{path: "/sd.mkv", video: "mpeg4", audio: "aac", height: 720},
-				{path: "/dvd.mkv", video: "mpeg4", audio: "aac", height: 480},
-			},
-			want:   "/sd.mkv",
-			change: ChangeVideo,
-		},
-		{
-			name: "k) any copy that plays without an encode beats every one that needs one",
-			copies: []copy{
-				{path: "/uhd.mkv", video: "h264", audio: "aac", height: 2160, hdr: true},
-				{path: "/dvd.mkv", video: "h264", audio: "ac3", height: 480},
-			},
-			want:   "/dvd.mkv",
-			change: ChangeAudio,
-		},
-		{
-			name:   "an HDR 4K falls through to the SDR 1080p beside it",
-			copies: []copy{{path: "/uhd.mkv", video: "h264", audio: "aac", height: 2160, hdr: true}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
-			want:   "/hd.mkv",
-			change: ChangeNone,
-		},
-		{
-			name:    "an HDR 4K with nothing beside it is never encoded down",
-			copies:  []copy{{path: "/only.mkv", video: "h264", audio: "aac", height: 2160, hdr: true}},
-			refused: true,
-		},
-		{
-			name:   "an HDR 1080p with nothing beside it is encoded",
-			copies: []copy{{path: "/only.mkv", video: "h264", audio: "aac", height: 1080, hdr: true}},
-			want:   "/only.mkv",
-			change: ChangeVideo,
-		},
-		{
-			name:   "a file nobody probed is still answered",
-			copies: []copy{{path: "/only.mkv"}},
-			want:   "/only.mkv",
-			change: ChangeNone,
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			fixture := newFixture(t)
-			film := fixture.film(t, tc.name)
-			for _, file := range tc.copies {
-				var rangeType *VideoRangeType
-				if file.hdr {
-					rangeType = ptr(streammodel.VideoRangeTypeHDR10)
-				}
-				fixture.copyRanged(t, film, file.path, file.video, file.audio, file.height, rangeType)
-			}
-
-			plan, err := fixture.service.SourceFor(ctx, film, chrome)
-			if tc.refused {
-				if !errors.Is(err, ErrNoPlayable) {
-					t.Fatalf("err = %v, want %v", err, ErrNoPlayable)
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("nothing was chosen: %v", err)
-			}
-			if plan.Source.Path != tc.want {
-				t.Errorf("chose %q, want %q", plan.Source.Path, tc.want)
-			}
-			if plan.Change != tc.change {
-				t.Errorf("change = %v, want %v", plan.Change, tc.change)
-			}
-		})
+	for _, tc := range sourceForOrderCases {
+		t.Run(tc.name, sourceForOrder(ctx, tc))
 	}
 
 	t.Run("the richer encode of two at one resolution", theRicherEncodeOfTwoAtOneResolution(ctx))
@@ -853,5 +712,154 @@ func TestSoundPlan(t *testing.T) {
 				t.Errorf("a song was planned a picture encode to %q", plan.VideoCodec)
 			}
 		})
+	}
+}
+
+type sourceForCopy struct {
+	path   string
+	video  string
+	audio  string
+	height int32
+	hdr    bool
+}
+
+type sourceForOrderCase struct {
+	name    string
+	copies  []sourceForCopy
+	want    string
+	change  Change
+	refused bool
+}
+
+var sourceForOrderCases = []sourceForOrderCase{
+	{
+		name:   "a) the 4K plays untouched",
+		copies: []sourceForCopy{{path: "/uhd.mkv", video: "h264", audio: "aac", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
+		want:   "/uhd.mkv",
+		change: ChangeNone,
+	},
+	{
+		name:   "b) the 4K needs a mux and still comes first",
+		copies: []sourceForCopy{{path: "/uhd.avi", video: "h264", audio: "aac", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
+		want:   "/uhd.avi",
+		change: ChangeContainer,
+	},
+	{
+		name:   "c) the 4K needs its audio converted and still beats a 1080p that does not",
+		copies: []sourceForCopy{{path: "/uhd.mkv", video: "h264", audio: "ac3", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
+		want:   "/uhd.mkv",
+		change: ChangeAudio,
+	},
+	{
+		name:   "d) the 1080p plays untouched once the 4K needs a picture encode",
+		copies: []sourceForCopy{{path: "/uhd.mkv", video: "mpeg4", audio: "aac", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
+		want:   "/hd.mkv",
+		change: ChangeNone,
+	},
+	{
+		name:   "e) the 1080p needs a mux",
+		copies: []sourceForCopy{{path: "/uhd.mkv", video: "mpeg4", audio: "aac", height: 2160}, {path: "/hd.avi", video: "h264", audio: "aac", height: 1080}},
+		want:   "/hd.avi",
+		change: ChangeContainer,
+	},
+	{
+		name:   "f) the 1080p needs its audio converted",
+		copies: []sourceForCopy{{path: "/uhd.mkv", video: "mpeg4", audio: "aac", height: 2160}, {path: "/hd.mkv", video: "h264", audio: "ac3", height: 1080}},
+		want:   "/hd.mkv",
+		change: ChangeAudio,
+	},
+	{
+		name:   "g) a picture encode keeps audio the client decodes",
+		copies: []sourceForCopy{{path: "/only.mkv", video: "mpeg4", audio: "aac", height: 1080}},
+		want:   "/only.mkv",
+		change: ChangeVideo,
+	},
+	{
+		name:   "h) a picture encode converts audio it does not",
+		copies: []sourceForCopy{{path: "/only.mkv", video: "mpeg4", audio: "ac3", height: 1080}},
+		want:   "/only.mkv",
+		change: ChangeVideoAudio,
+	},
+	{
+		name: "i) an encode starts from the shortest copy that still fills 1080p",
+		copies: []sourceForCopy{
+			{path: "/uhd.mkv", video: "hevc", audio: "aac", height: 2160, hdr: true},
+			{path: "/hd.mkv", video: "mpeg4", audio: "aac", height: 1080},
+			{path: "/sd.mkv", video: "mpeg4", audio: "aac", height: 720},
+		},
+		want:   "/hd.mkv",
+		change: ChangeVideo,
+	},
+	{
+		name: "j) with nothing that fills 1080p the encode starts from the tallest",
+		copies: []sourceForCopy{
+			{path: "/sd.mkv", video: "mpeg4", audio: "aac", height: 720},
+			{path: "/dvd.mkv", video: "mpeg4", audio: "aac", height: 480},
+		},
+		want:   "/sd.mkv",
+		change: ChangeVideo,
+	},
+	{
+		name: "k) any copy that plays without an encode beats every one that needs one",
+		copies: []sourceForCopy{
+			{path: "/uhd.mkv", video: "h264", audio: "aac", height: 2160, hdr: true},
+			{path: "/dvd.mkv", video: "h264", audio: "ac3", height: 480},
+		},
+		want:   "/dvd.mkv",
+		change: ChangeAudio,
+	},
+	{
+		name:   "an HDR 4K falls through to the SDR 1080p beside it",
+		copies: []sourceForCopy{{path: "/uhd.mkv", video: "h264", audio: "aac", height: 2160, hdr: true}, {path: "/hd.mkv", video: "h264", audio: "aac", height: 1080}},
+		want:   "/hd.mkv",
+		change: ChangeNone,
+	},
+	{
+		name:    "an HDR 4K with nothing beside it is never encoded down",
+		copies:  []sourceForCopy{{path: "/only.mkv", video: "h264", audio: "aac", height: 2160, hdr: true}},
+		refused: true,
+	},
+	{
+		name:   "an HDR 1080p with nothing beside it is encoded",
+		copies: []sourceForCopy{{path: "/only.mkv", video: "h264", audio: "aac", height: 1080, hdr: true}},
+		want:   "/only.mkv",
+		change: ChangeVideo,
+	},
+	{
+		name:   "a file nobody probed is still answered",
+		copies: []sourceForCopy{{path: "/only.mkv"}},
+		want:   "/only.mkv",
+		change: ChangeNone,
+	},
+}
+
+func sourceForOrder(ctx context.Context, tc sourceForOrderCase) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		film := fixture.film(t, tc.name)
+		for _, file := range tc.copies {
+			var rangeType *VideoRangeType
+			if file.hdr {
+				rangeType = ptr(streammodel.VideoRangeTypeHDR10)
+			}
+			fixture.copyRanged(t, film, file.path, file.video, file.audio, file.height, rangeType)
+		}
+
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
+		if tc.refused {
+			if !errors.Is(err, ErrNoPlayable) {
+				t.Fatalf("err = %v, want %v", err, ErrNoPlayable)
+			}
+			return
+		}
+		if err != nil {
+			t.Fatalf("nothing was chosen: %v", err)
+		}
+		if plan.Source.Path != tc.want {
+			t.Errorf("chose %q, want %q", plan.Source.Path, tc.want)
+		}
+		if plan.Change != tc.change {
+			t.Errorf("change = %v, want %v", plan.Change, tc.change)
+		}
 	}
 }

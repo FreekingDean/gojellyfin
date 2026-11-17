@@ -281,7 +281,7 @@ func TestServer_GetItemImage_Library(t *testing.T) {
 	}))
 	t.Cleanup(cdn.Close)
 
-	t.Run("serves a card of the library's posters", servesACardOfTheLibrarySPosters(cdn))
+	t.Run("serves a card of the library's posters", servesACardOfTheLibrarysPosters(cdn))
 
 	t.Run("tells the client not to keep a card missing a poster", tellsTheClientNotToKeepACardMissingAPoster(cdn))
 
@@ -319,7 +319,7 @@ func TestServer_GetItemImage_Library(t *testing.T) {
 	})
 }
 
-func servesACardOfTheLibrarySPosters(cdn *httptest.Server) func(*testing.T) {
+func servesACardOfTheLibrarysPosters(cdn *httptest.Server) func(*testing.T) {
 	return func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.store(t, imagemodel.KindPrimary, 0, cdn.URL+"/poster.png", "postertag")

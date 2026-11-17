@@ -173,7 +173,7 @@ func TestService_File(t *testing.T) {
 func TestService_Replace(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("the named file is replaced and the title's open reports resolved", theNamedFileIsReplacedAndTheTitleSOpenReportsResolved(ctx))
+	t.Run("the named file is replaced and the title's open reports resolved", theNamedFileIsReplacedAndTheTitlesOpenReportsResolved(ctx))
 
 	t.Run("a title nobody names a file for has nothing to replace", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -219,7 +219,7 @@ func TestService_Replace(t *testing.T) {
 	})
 }
 
-func theNamedFileIsReplacedAndTheTitleSOpenReportsResolved(ctx context.Context) func(*testing.T) {
+func theNamedFileIsReplacedAndTheTitlesOpenReportsResolved(ctx context.Context) func(*testing.T) {
 	return func(t *testing.T) {
 		fixture := newFixture(t)
 		copies := []sources.Copy{{TitleID: 12, FileID: 34}}

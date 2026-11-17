@@ -114,8 +114,19 @@ func TestTitles_Lidarr(t *testing.T) {
 		}
 	}
 
-	artist := byKey["artist:mb:a-one"]
+	titlesLidarrTree(t, byKey)
 
+	for _, path := range asked {
+		if path[:8] != "/api/v1/" {
+			t.Errorf("asked %q, want everything under Lidarr's v1 api", path)
+		}
+	}
+}
+
+func titlesLidarrTree(t *testing.T, byKey map[string]Title) {
+	t.Helper()
+
+	artist := byKey["artist:mb:a-one"]
 	if artist.Kind != itemmodel.KindMusicArtist || !artist.Tagged || artist.ParentKey != "" {
 		t.Errorf("artist = %+v, want a tagged top-level MusicArtist", artist)
 	}
@@ -146,12 +157,6 @@ func TestTitles_Lidarr(t *testing.T) {
 	}
 	if second.Index == nil || *second.Index != 2 || second.ParentIndex == nil || *second.ParentIndex != 1 {
 		t.Errorf("track number = %v disc %v, want the absolute number 2 on disc 1 for a side-lettered track", second.Index, second.ParentIndex)
-	}
-
-	for _, path := range asked {
-		if path[:8] != "/api/v1/" {
-			t.Errorf("asked %q, want everything under Lidarr's v1 api", path)
-		}
 	}
 }
 

@@ -356,7 +356,7 @@ func TestHook(t *testing.T) {
 
 	published := fixture.published(t)
 
-	t.Run("registers a webhook from the downloader's own schema", registersAWebhookFromTheDownloaderSOwnSchema(published, ctx, fixture))
+	t.Run("registers a webhook from the downloader's own schema", registersAWebhookFromTheDownloadersOwnSchema(published, ctx, fixture))
 
 	t.Run("a second save replaces it rather than adding another", func(t *testing.T) {
 		if err := published.Hook(ctx, fixture.sourceID); err != nil {
@@ -433,7 +433,7 @@ func registrationsRacingOnTwoReplicasAddOneWebhook(fixture *fixture, published *
 	}
 }
 
-func registersAWebhookFromTheDownloaderSOwnSchema(published *Service, ctx context.Context, fixture *fixture) func(*testing.T) {
+func registersAWebhookFromTheDownloadersOwnSchema(published *Service, ctx context.Context, fixture *fixture) func(*testing.T) {
 	return func(t *testing.T) {
 		if err := published.Hook(ctx, fixture.sourceID); err != nil {
 			t.Fatalf("failed to register: %v", err)

@@ -45,9 +45,7 @@ func credit(t *testing.T, client *store.Client, itemID uuid.UUID, name string, k
 func TestServer_GetPersons(t *testing.T) {
 	ctx := context.Background()
 
-	connection := storetest.Open(t)
-
-	client := connection.Client()
+	client := storetest.Client(t)
 	prefix := t.Name() + "-" + uuid.NewString() + " "
 	library, err := client.Library.Create().SetName(prefix).Save(ctx)
 	if err != nil {
@@ -74,40 +72,7 @@ func TestServer_GetPersons(t *testing.T) {
 
 	server := New(service, everyone{})
 
-	writerOnly := []string{string(creditmodel.KindWriter)}
-	unknownKind := []string{"NotAKind"}
-	term := "director"
-	otherItem := uuid.New()
-
-	tests := []serverGetPersonsCase{
-		{
-			name:   "returns the credited people",
-			params: api.GetPersonsParams{AppearsInItemId: &movie.ID},
-			want:   []string{director, writer},
-		},
-		{
-			name:   "filters by person type",
-			params: api.GetPersonsParams{AppearsInItemId: &movie.ID, PersonTypes: &writerOnly},
-			want:   []string{writer},
-		},
-		{
-			name:   "ignores unknown person types",
-			params: api.GetPersonsParams{AppearsInItemId: &movie.ID, PersonTypes: &unknownKind},
-			want:   []string{director, writer},
-		},
-		{
-			name:   "filters by search term",
-			params: api.GetPersonsParams{AppearsInItemId: &movie.ID, SearchTerm: &term},
-			want:   []string{director},
-		},
-		{
-			name:   "ignores other items",
-			params: api.GetPersonsParams{AppearsInItemId: &otherItem},
-			want:   nil,
-		},
-	}
-
-	for _, test := range tests {
+	for _, test := range serverGetPersonsCases(movie.ID, director, writer) {
 		t.Run(test.name, func(t *testing.T) {
 			result := getPersons(t, server, test.params)
 
@@ -189,4 +154,39 @@ type everyone struct{}
 
 func (everyone) Access(context.Context, uuid.UUID) (users.Access, error) {
 	return users.Access{All: true}, nil
+}
+
+func serverGetPersonsCases(movie uuid.UUID, director, writer string) []serverGetPersonsCase {
+	writerOnly := []string{string(creditmodel.KindWriter)}
+	unknownKind := []string{"NotAKind"}
+	term := "director"
+	otherItem := uuid.New()
+
+	return []serverGetPersonsCase{
+		{
+			name:   "returns the credited people",
+			params: api.GetPersonsParams{AppearsInItemId: &movie},
+			want:   []string{director, writer},
+		},
+		{
+			name:   "filters by person type",
+			params: api.GetPersonsParams{AppearsInItemId: &movie, PersonTypes: &writerOnly},
+			want:   []string{writer},
+		},
+		{
+			name:   "ignores unknown person types",
+			params: api.GetPersonsParams{AppearsInItemId: &movie, PersonTypes: &unknownKind},
+			want:   []string{director, writer},
+		},
+		{
+			name:   "filters by search term",
+			params: api.GetPersonsParams{AppearsInItemId: &movie, SearchTerm: &term},
+			want:   []string{director},
+		},
+		{
+			name:   "ignores other items",
+			params: api.GetPersonsParams{AppearsInItemId: &otherItem},
+			want:   nil,
+		},
+	}
 }

@@ -18,9 +18,7 @@ import (
 func TestItemDtos(t *testing.T) {
 	ctx := context.Background()
 
-	connection := storetest.Open(t)
-
-	client := connection.Client()
+	client := storetest.Client(t)
 	name := t.Name() + "-" + uuid.NewString()
 	t.Cleanup(func() {
 		if _, err := client.Item.Delete().Where(itemmodel.KeyHasPrefix("test:" + name)).Exec(context.Background()); err != nil {
@@ -36,26 +34,18 @@ func TestItemDtos(t *testing.T) {
 	episode := save(itemmodel.KindEpisode, name+" S01E01", &season.ID)
 	movie := save(itemmodel.KindMovie, name+" Movie", nil)
 
-	if err := service.SaveImage(ctx, series.ID, items.Image{
-		Kind: imagemodel.KindPrimary, URL: "https://image.tmdb.org/t/p/w780/poster.jpg", Tag: "poster",
-	}); err != nil {
-		t.Fatalf("failed to give the series an image: %v", err)
-	}
-	if err := service.SaveImage(ctx, series.ID, items.Image{
-		Kind: imagemodel.KindBackdrop, URL: "https://image.tmdb.org/t/p/w1280/backdrop.jpg", Tag: "backdrop",
-	}); err != nil {
-		t.Fatalf("failed to give the series a backdrop: %v", err)
-	}
-
-	if err := service.SaveImage(ctx, series.ID, items.Image{
-		Kind: imagemodel.KindThumb, URL: "https://image.tmdb.org/t/p/w780/thumb.jpg", Tag: "thumb",
-	}); err != nil {
-		t.Fatalf("failed to give the series a thumb: %v", err)
-	}
-	if err := service.SaveImage(ctx, movie.ID, items.Image{
-		Kind: imagemodel.KindBackdrop, URL: "https://image.tmdb.org/t/p/w1280/movie.jpg", Tag: "movie-backdrop",
-	}); err != nil {
-		t.Fatalf("failed to give the movie a backdrop: %v", err)
+	for _, image := range []struct {
+		item  uuid.UUID
+		image items.Image
+	}{
+		{series.ID, items.Image{Kind: imagemodel.KindPrimary, URL: "https://image.tmdb.org/t/p/w780/poster.jpg", Tag: "poster"}},
+		{series.ID, items.Image{Kind: imagemodel.KindBackdrop, URL: "https://image.tmdb.org/t/p/w1280/backdrop.jpg", Tag: "backdrop"}},
+		{series.ID, items.Image{Kind: imagemodel.KindThumb, URL: "https://image.tmdb.org/t/p/w780/thumb.jpg", Tag: "thumb"}},
+		{movie.ID, items.Image{Kind: imagemodel.KindBackdrop, URL: "https://image.tmdb.org/t/p/w1280/movie.jpg", Tag: "movie-backdrop"}},
+	} {
+		if err := service.SaveImage(ctx, image.item, image.image); err != nil {
+			t.Fatalf("failed to save the %s %s: %v", image.image.Tag, image.image.Kind, err)
+		}
 	}
 
 	converted, err := ItemDtos(ctx, service, []*items.Item{episode, season, series, movie})
@@ -76,7 +66,6 @@ func TestItemDtos(t *testing.T) {
 			t.Errorf("series id = %v, want nothing", record.SeriesId)
 		}
 	})
-
 	t.Run("a movie carries nothing", aMovieCarriesNothing(byID, movie))
 }
 

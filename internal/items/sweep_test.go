@@ -86,10 +86,10 @@ func TestService_SweepUnreachable(t *testing.T) {
 
 	t.Run("keeps a series while one episode still has a file", keepsASeriesWhileOneEpisodeStillHasAFile())
 
-	t.Run("leaves the artwork attached for the title's return", leavesTheArtworkAttachedForTheTitleSReturn())
+	t.Run("leaves the artwork attached for the title's return", leavesTheArtworkAttachedForTheTitlesReturn())
 }
 
-func leavesTheArtworkAttachedForTheTitleSReturn() func(*testing.T) {
+func leavesTheArtworkAttachedForTheTitlesReturn() func(*testing.T) {
 	return func(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()

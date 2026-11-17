@@ -375,7 +375,7 @@ func TestPlayback(t *testing.T) {
 
 	t.Run("the version this server chose is the version its bytes come from", theVersionThisServerChoseIsTheVersionItsBytesComeFrom())
 
-	t.Run("the audio kept is the served version's own", theAudioKeptIsTheServedVersionSOwn())
+	t.Run("the audio kept is the served version's own", theAudioKeptIsTheServedVersionsOwn())
 
 	t.Run("a picture the client cannot decode is encoded to h264 and its audio kept", aPictureTheClientCannotDecodeIsEncodedToH264AndItsAudioKept())
 
@@ -455,7 +455,7 @@ func anMp4WhoseAudioTheClientCannotDecodeIsConvertedRatherThanServedAsItIs() fun
 	}
 }
 
-func theAudioKeptIsTheServedVersionSOwn() func(*testing.T) {
+func theAudioKeptIsTheServedVersionsOwn() func(*testing.T) {
 	return func(t *testing.T) {
 		fixture := newPlaybackFixture(t)
 		id := fixture.rip(t, "beside.mkv", "ac3")

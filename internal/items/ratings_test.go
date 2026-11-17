@@ -43,44 +43,11 @@ func TestQueryItems_ParentalRating(t *testing.T) {
 
 	fixture.add(t, seed{kind: itemmodel.KindMusicArtist, name: "Band"})
 
-	thirteen := 13
-	everything := []string{
-		"Adult", "Band", "Cartoon", "Cartoon Season", "Cartoon Special", "Family",
-		"Late Show", "Late Show Episode", "Late Show Season", "Teen", "Unrated",
-	}
-	for _, test := range []queryItemsParentalRatingCase{
-		{
-			name:   "no limit sees everything",
-			viewer: Everyone,
-			want:   everything,
-		},
-		{
-			name:   "a limit hides what is rated above it, and what inherits a rating above it",
-			viewer: Viewer{All: true, MaxRating: &thirteen},
-			want:   []string{"Band", "Cartoon", "Cartoon Season", "Family", "Teen", "Unrated"},
-		},
-		{
-			name:   "blocking unrated movies leaves unrated music",
-			viewer: Viewer{All: true, MaxRating: &thirteen, BlockUnrated: []string{"Movie"}},
-			want:   []string{"Band", "Cartoon", "Cartoon Season", "Family", "Teen"},
-		},
-		{
-			name:   "blocking unrated music without a limit hides only the music",
-			viewer: Viewer{All: true, BlockUnrated: []string{"Music"}},
-			want: []string{
-				"Adult", "Cartoon", "Cartoon Season", "Cartoon Special", "Family",
-				"Late Show", "Late Show Episode", "Late Show Season", "Teen", "Unrated",
-			},
-		},
-		{
-			name:   "a limit applies inside the libraries a user may see",
-			viewer: Viewer{Libraries: []uuid.UUID{fixture.libraryID}, MaxRating: &thirteen},
-			want:   []string{"Band", "Cartoon", "Cartoon Season", "Family", "Teen", "Unrated"},
-		},
-	} {
+	for _, test := range queryItemsParentalRatingCases(fixture.libraryID) {
 		t.Run(test.name, testQueryItems_ParentalRatingCase(fixture, ctx, test))
 	}
 
+	thirteen := 13
 	if _, err := fixture.service.ItemByID(ctx, Viewer{All: true, MaxRating: &thirteen}, adult); err == nil {
 		t.Error("ItemByID answered a title rated above the limit")
 	}
@@ -108,4 +75,43 @@ type queryItemsParentalRatingCase struct {
 	name   string
 	viewer Viewer
 	want   []string
+}
+
+func queryItemsParentalRatingCases(libraryID uuid.UUID) []queryItemsParentalRatingCase {
+	thirteen := 13
+	everything := []string{
+		"Adult", "Band", "Cartoon", "Cartoon Season", "Cartoon Special", "Family",
+		"Late Show", "Late Show Episode", "Late Show Season", "Teen", "Unrated",
+	}
+
+	return []queryItemsParentalRatingCase{
+		{
+			name:   "no limit sees everything",
+			viewer: Everyone,
+			want:   everything,
+		},
+		{
+			name:   "a limit hides what is rated above it, and what inherits a rating above it",
+			viewer: Viewer{All: true, MaxRating: &thirteen},
+			want:   []string{"Band", "Cartoon", "Cartoon Season", "Family", "Teen", "Unrated"},
+		},
+		{
+			name:   "blocking unrated movies leaves unrated music",
+			viewer: Viewer{All: true, MaxRating: &thirteen, BlockUnrated: []string{"Movie"}},
+			want:   []string{"Band", "Cartoon", "Cartoon Season", "Family", "Teen"},
+		},
+		{
+			name:   "blocking unrated music without a limit hides only the music",
+			viewer: Viewer{All: true, BlockUnrated: []string{"Music"}},
+			want: []string{
+				"Adult", "Cartoon", "Cartoon Season", "Cartoon Special", "Family",
+				"Late Show", "Late Show Episode", "Late Show Season", "Teen", "Unrated",
+			},
+		},
+		{
+			name:   "a limit applies inside the libraries a user may see",
+			viewer: Viewer{Libraries: []uuid.UUID{libraryID}, MaxRating: &thirteen},
+			want:   []string{"Band", "Cartoon", "Cartoon Season", "Family", "Teen", "Unrated"},
+		},
+	}
 }

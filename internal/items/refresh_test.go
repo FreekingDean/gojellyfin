@@ -205,6 +205,12 @@ func TestService_RefreshItem_Music(t *testing.T) {
 		t.Errorf("probes = %d, want the new track probed", len(probes))
 	}
 
+	refreshItemMusicTree(t, fixture, ctx, artistKey, albumKey, trackKey)
+}
+
+func refreshItemMusicTree(t *testing.T, fixture *fixture, ctx context.Context, artistKey, albumKey, trackKey string) {
+	t.Helper()
+
 	artist, err := fixture.service.ItemByKey(ctx, artistKey)
 	if err != nil {
 		t.Fatalf("failed to read the artist back: %v", err)

@@ -728,7 +728,15 @@ func TestService_IdentifyItem(t *testing.T) {
 }
 
 func TestService_IdentifyItems_Force(t *testing.T) {
-	t.Run("looks an identified item up again", func(t *testing.T) {
+	t.Run("looks an identified item up again", looksAnIdentifiedItemUpAgain())
+	t.Run("leaves an identified item alone without it", leavesAnIdentifiedItemAloneWithoutIt())
+	t.Run("keeps a locked field", keepsALockedFieldWhenForced())
+	t.Run("carries on past an item the provider cannot reach", carriesOnPastAnItemTheProviderCannotReach())
+	t.Run("refreshes past the old two hundred item cap", refreshesPastTheOldTwoHundredItemCap())
+}
+
+func looksAnIdentifiedItemUpAgain() func(t *testing.T) {
+	return func(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.identified(t, fixed.add(t, items.Item{
 			Kind:           itemmodel.KindMovie,
@@ -745,10 +753,11 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 		if refreshed.OfficialRating != "R" {
 			t.Errorf("OfficialRating = %q, want R", refreshed.OfficialRating)
 		}
-	})
+	}
+}
 
-	t.Run("leaves an identified item alone without it", leavesAnIdentifiedItemAloneWithoutIt())
-	t.Run("keeps a locked field", func(t *testing.T) {
+func keepsALockedFieldWhenForced() func(t *testing.T) {
+	return func(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.lock(t, fixed.add(t, items.Item{
 			Kind:           itemmodel.KindMovie,
@@ -769,9 +778,11 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 		if refreshed.OfficialRating != "R" {
 			t.Errorf("OfficialRating = %q, want an unlocked field refreshed", refreshed.OfficialRating)
 		}
-	})
+	}
+}
 
-	t.Run("carries on past an item the provider cannot reach", func(t *testing.T) {
+func carriesOnPastAnItemTheProviderCannotReach() func(t *testing.T) {
+	return func(t *testing.T) {
 		fixed := newFixture(t)
 		unreachableItem := fixed.identified(t, fixed.add(t, items.Item{
 			Kind: itemmodel.KindMovie,
@@ -792,9 +803,11 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 		if done := fixed.reload(t, reachable.ID); !strings.HasPrefix(done.Overview, "Set in the 22nd century") {
 			t.Error("the run stopped at the unreachable item, want it to carry on")
 		}
-	})
+	}
+}
 
-	t.Run("refreshes past the old two hundred item cap", func(t *testing.T) {
+func refreshesPastTheOldTwoHundredItemCap() func(t *testing.T) {
+	return func(t *testing.T) {
 		fixed := newFixture(t)
 
 		ids := make([]uuid.UUID, 0, 205)
@@ -814,7 +827,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 				t.Fatalf("Overview = %q, want one run to drain the whole library", refreshed.Overview)
 			}
 		}
-	})
+	}
 }
 
 func leavesAnIdentifiedItemAloneWithoutIt() func(*testing.T) {

@@ -40,26 +40,10 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	connection := storetest.Open(t)
-
 	ctx := context.Background()
-	client := connection.Client()
+	client := storetest.Client(t)
 	library := storetest.Library(t, client, librarymodel.CollectionTypeMovies)
-
-	downloader, err := client.Source.Create().
-		SetName(t.Name() + "-" + uuid.NewString()).
-		SetURL("http://" + uuid.NewString() + ".invalid").
-		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(downloadermodel.KindRadarr).
-		Save(context.Background())
-	if err != nil {
-		t.Fatalf("failed to create the source: %v", err)
-	}
-	t.Cleanup(func() {
-		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
-			t.Errorf("failed to delete the source: %v", err)
-		}
-	})
+	downloader := radarr(t, client)
 
 	record, err := client.Item.Create().
 		SetKind(itemmodel.KindMovie).
@@ -106,6 +90,27 @@ func newFixture(t *testing.T) *fixture {
 	}
 }
 
+func radarr(t *testing.T, client *store.Client) *store.Source {
+	t.Helper()
+
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(downloadermodel.KindRadarr).
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
+	return downloader
+}
+
 func (f *fixture) item(t *testing.T) *store.ItemModel {
 	t.Helper()
 
@@ -148,7 +153,18 @@ func (f *fixture) editorInfo(t *testing.T, id uuid.UUID) api.GetMetadataEditorIn
 }
 
 func TestServer_UpdateItem(t *testing.T) {
-	t.Run("writes the editable fields", func(t *testing.T) {
+	t.Run("writes the editable fields", writesTheEditableFields())
+	t.Run("keeps a foreign rating", keepsAForeignRating())
+	t.Run("keeps the probed columns", keepsTheProbedColumns())
+	t.Run("claims the title it retitles", claimsTheTitleItRetitles())
+	t.Run("leaves an untouched title to the scan", leavesAnUntouchedTitleToTheScan())
+	t.Run("writes genres, studios and people and claims them", writesGenresStudiosAndPeopleAndClaimsThem())
+	t.Run("leaves unchanged genres to the provider", leavesUnchangedGenresToTheProvider())
+	t.Run("answers 404 for an unknown item", answers404ForAnUnknownItem())
+}
+
+func writesTheEditableFields() func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		premiere := time.Date(1999, 3, 31, 0, 0, 0, 0, time.UTC)
 
@@ -200,15 +216,7 @@ func TestServer_UpdateItem(t *testing.T) {
 		if want := map[string]string{"Imdb": "tt0133093"}; !maps.Equal(record.ProviderIds, want) {
 			t.Errorf("provider ids = %v, want %v", record.ProviderIds, want)
 		}
-	})
-
-	t.Run("keeps a foreign rating", keepsAForeignRating())
-	t.Run("keeps the probed columns", keepsTheProbedColumns())
-	t.Run("claims the title it retitles", claimsTheTitleItRetitles())
-	t.Run("leaves an untouched title to the scan", leavesAnUntouchedTitleToTheScan())
-	t.Run("writes genres, studios and people and claims them", writesGenresStudiosAndPeopleAndClaimsThem())
-	t.Run("leaves unchanged genres to the provider", leavesUnchangedGenresToTheProvider())
-	t.Run("answers 404 for an unknown item", answers404ForAnUnknownItem())
+	}
 }
 
 func answers404ForAnUnknownItem() func(*testing.T) {

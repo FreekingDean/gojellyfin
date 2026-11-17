@@ -21,10 +21,50 @@ import (
 
 func TestServer_GetGenres(t *testing.T) {
 	ctx := context.Background()
+	service, library, name := serverGetGenresSeed(t, ctx)
 
-	connection := storetest.Open(t)
+	hidden, err := New(service, access{}).GetGenres(ctx, api.GetGenresRequestObject{
+		Params: api.GetGenresParams{ParentId: &library.ID},
+	})
+	if err != nil {
+		t.Fatalf("failed to get the genres: %v", err)
+	}
+	if listed := hidden.(api.GetGenres200JSONResponse); len(*listed.Items) != 0 {
+		t.Errorf("genres = %d, want none for a user who cannot see the library", len(*listed.Items))
+	}
 
-	client := connection.Client()
+	response, err := New(service, access{All: true}).GetGenres(ctx, api.GetGenresRequestObject{
+		Params: api.GetGenresParams{ParentId: &library.ID},
+	})
+	if err != nil {
+		t.Fatalf("failed to get the genres: %v", err)
+	}
+
+	result, ok := response.(api.GetGenres200JSONResponse)
+	if !ok {
+		t.Fatalf("response = %T, want api.GetGenres200JSONResponse", response)
+	}
+	if result.TotalRecordCount == nil || *result.TotalRecordCount != 1 {
+		t.Fatalf("total = %v, want 1", result.TotalRecordCount)
+	}
+
+	dto := (*result.Items)[0]
+	if dto.Name == nil || *dto.Name != name {
+		t.Errorf("name = %v, want %s", dto.Name, name)
+	}
+	if dto.Type == nil || *dto.Type != api.BaseItemKindGenre {
+		t.Errorf("type = %v, want %s", dto.Type, api.BaseItemKindGenre)
+	}
+	if dto.Id == nil || *dto.Id == uuid.Nil {
+		t.Errorf("id = %v, want a genre id", dto.Id)
+	}
+}
+
+func serverGetGenresSeed(t *testing.T, ctx context.Context) (*items.Service, *store.Library, string) {
+	t.Helper()
+
+
+	client := storetest.Client(t)
 	name := t.Name() + "-" + uuid.NewString()
 	library, err := client.Library.Create().SetName(name).Save(ctx)
 	if err != nil {
@@ -66,41 +106,7 @@ func TestServer_GetGenres(t *testing.T) {
 		t.Fatalf("failed to save the probe: %v", err)
 	}
 
-	hidden, err := New(service, access{}).GetGenres(ctx, api.GetGenresRequestObject{
-		Params: api.GetGenresParams{ParentId: &library.ID},
-	})
-	if err != nil {
-		t.Fatalf("failed to get the genres: %v", err)
-	}
-	if listed := hidden.(api.GetGenres200JSONResponse); len(*listed.Items) != 0 {
-		t.Errorf("genres = %d, want none for a user who cannot see the library", len(*listed.Items))
-	}
-
-	response, err := New(service, access{All: true}).GetGenres(ctx, api.GetGenresRequestObject{
-		Params: api.GetGenresParams{ParentId: &library.ID},
-	})
-	if err != nil {
-		t.Fatalf("failed to get the genres: %v", err)
-	}
-
-	result, ok := response.(api.GetGenres200JSONResponse)
-	if !ok {
-		t.Fatalf("response = %T, want api.GetGenres200JSONResponse", response)
-	}
-	if result.TotalRecordCount == nil || *result.TotalRecordCount != 1 {
-		t.Fatalf("total = %v, want 1", result.TotalRecordCount)
-	}
-
-	dto := (*result.Items)[0]
-	if dto.Name == nil || *dto.Name != name {
-		t.Errorf("name = %v, want %s", dto.Name, name)
-	}
-	if dto.Type == nil || *dto.Type != api.BaseItemKindGenre {
-		t.Errorf("type = %v, want %s", dto.Type, api.BaseItemKindGenre)
-	}
-	if dto.Id == nil || *dto.Id == uuid.Nil {
-		t.Errorf("id = %v, want a genre id", dto.Id)
-	}
+	return service, library, name
 }
 
 func serverGetGenresCleanup(t *testing.T, library *store.Library, client *store.Client, ctx context.Context, name string) func() {
