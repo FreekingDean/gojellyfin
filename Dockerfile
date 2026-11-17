@@ -34,9 +34,9 @@ RUN GOARCH=$TARGETARCH go build \
       -ldflags "-X $STAMP.buildVersion=$VERSION -X $STAMP.buildCommit=$COMMIT -X $STAMP.buildDate=$DATE" \
       -o /out/ ./cmd/gojellyfin
 
-FROM arigaio/atlas:1.3.0 AS atlas
+FROM arigaio/atlas:1.3.10 AS atlas
 
-FROM alpine:3.22
+FROM alpine:3.24
 
 RUN apk add --no-cache ca-certificates ffmpeg && adduser -DH gojellyfin
 
