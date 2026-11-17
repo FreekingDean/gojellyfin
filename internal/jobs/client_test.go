@@ -71,11 +71,11 @@ func (q *queue) ListWorkflow(
 	return &workflowservice.ListWorkflowExecutionsResponse{Executions: found}, nil
 }
 
-func (q *queue) DescribeWorkflowExecution(
+func (q *queue) DescribeWorkflow(
 	_ context.Context,
 	id string,
 	_ string,
-) (*workflowservice.DescribeWorkflowExecutionResponse, error) {
+) (*client.WorkflowExecutionDescription, error) {
 	return nil, serviceerror.NewNotFound(id)
 }
 

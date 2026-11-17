@@ -308,12 +308,12 @@ func (s *Service) status(ctx context.Context, job Job) (Status, error) {
 }
 
 func (s *Service) runningState(ctx context.Context, connection client.Client, id string) State {
-	described, err := connection.DescribeWorkflowExecution(ctx, id, "")
+	described, err := connection.DescribeWorkflow(ctx, id, "")
 	if err != nil {
 		return StateRunning
 	}
 
-	for _, pending := range described.GetPendingActivities() {
+	for _, pending := range described.RawResponse.GetPendingActivities() {
 		if pending.GetState() == enums.PENDING_ACTIVITY_STATE_CANCEL_REQUESTED {
 			return StateCancelling
 		}
