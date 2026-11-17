@@ -19,6 +19,8 @@ const (
 	defaultDatabaseConns   = 20
 	defaultConnMaxLifetime = 30 * time.Minute
 	maxPort                = 65535
+	defaultMaxSourceHeight = 1080
+	maxSourceHeight        = 4320
 
 	SourceAPIKeyPrefix = "SOURCE_API_KEY_"
 )
@@ -50,8 +52,9 @@ type Database struct {
 }
 
 type Transcoder struct {
-	Jobs         int           `mapstructure:"TRANSCODER_JOBS"`
-	StallTimeout time.Duration `mapstructure:"TRANSCODER_STALL_TIMEOUT"`
+	Jobs            int           `mapstructure:"TRANSCODER_JOBS"`
+	StallTimeout    time.Duration `mapstructure:"TRANSCODER_STALL_TIMEOUT"`
+	MaxSourceHeight int32         `mapstructure:"TRANSCODER_MAX_SOURCE_HEIGHT"`
 }
 
 type Temporal struct {
@@ -94,6 +97,7 @@ func Load() (Config, error) {
 	v.SetDefault("DATABASE_MAX_CONNS", defaultDatabaseConns)
 	v.SetDefault("DATABASE_CONN_MAX_LIFETIME", defaultConnMaxLifetime)
 	v.SetDefault("MEDIA_DIRECTORIES", []string{"/"})
+	v.SetDefault("TRANSCODER_MAX_SOURCE_HEIGHT", defaultMaxSourceHeight)
 
 	var config Config
 	if err := v.Unmarshal(&config); err != nil {
@@ -127,6 +131,9 @@ func (c Config) validate() error {
 	}
 	if c.Transcoder.Jobs < 0 {
 		return fmt.Errorf("TRANSCODER_JOBS must be a positive whole number, got %d", c.Transcoder.Jobs)
+	}
+	if c.Transcoder.MaxSourceHeight < 1 || c.Transcoder.MaxSourceHeight > maxSourceHeight {
+		return fmt.Errorf("TRANSCODER_MAX_SOURCE_HEIGHT must be a height in pixels between 1 and %d such as 1080, got %d", maxSourceHeight, c.Transcoder.MaxSourceHeight)
 	}
 	if c.Transcoder.StallTimeout < 0 {
 		return fmt.Errorf("TRANSCODER_STALL_TIMEOUT must be a positive duration such as 30s, got %s", c.Transcoder.StallTimeout)

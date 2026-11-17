@@ -18,6 +18,7 @@ import (
 	playlistmodel "github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/store/predicate"
 	datamodel "github.com/FreekingDean/gojellyfin/internal/store/useritemdata"
+	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
 type (
@@ -32,11 +33,20 @@ var (
 )
 
 type Service struct {
-	store *store.Client
+	store        *store.Client
+	encodeHeight int32
 }
 
 func New(client *store.Client) *Service {
-	return &Service{store: client}
+	return &Service{store: client, encodeHeight: transcode.MaxHeight}
+}
+
+func (s *Service) EncodeAtMost(height int32) {
+	s.encodeHeight = height
+}
+
+func (s *Service) encodable(source *MediaSource) bool {
+	return Height(source) <= s.encodeHeight
 }
 
 var isFolderKind = map[Kind]bool{

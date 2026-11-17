@@ -209,6 +209,14 @@ func (s *Service) MediaSources(ctx context.Context, itemID uuid.UUID) ([]*MediaS
 }
 
 func (s *Service) PlayedSources(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]*MediaSource, error) {
+	return s.richest(ctx, itemIDs, func(*MediaSource) bool { return true })
+}
+
+func (s *Service) EncodableSources(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]*MediaSource, error) {
+	return s.richest(ctx, itemIDs, s.encodable)
+}
+
+func (s *Service) richest(ctx context.Context, itemIDs []uuid.UUID, takes func(*MediaSource) bool) (map[uuid.UUID]*MediaSource, error) {
 	played := map[uuid.UUID]*MediaSource{}
 	if len(itemIDs) == 0 {
 		return played, nil
@@ -227,6 +235,9 @@ func (s *Service) PlayedSources(ctx context.Context, itemIDs []uuid.UUID) (map[u
 	}
 
 	for _, source := range sources {
+		if !takes(source) {
+			continue
+		}
 		if listed, seen := played[source.ItemID]; !seen || richer(source, listed) {
 			played[source.ItemID] = source
 		}
