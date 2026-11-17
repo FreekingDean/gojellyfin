@@ -47,12 +47,6 @@ func TestItemDtos(t *testing.T) {
 		t.Fatalf("failed to give the series a backdrop: %v", err)
 	}
 
-	itemDtosRest(t, service, ctx, series, movie, episode, season)
-}
-
-func itemDtosRest(t *testing.T, service *items.Service, ctx context.Context, series *items.Item, movie *items.Item, episode *items.Item, season *items.Item) {
-	t.Helper()
-
 	if err := service.SaveImage(ctx, series.ID, items.Image{
 		Kind: imagemodel.KindThumb, URL: "https://image.tmdb.org/t/p/w780/thumb.jpg", Tag: "thumb",
 	}); err != nil {
@@ -75,9 +69,7 @@ func itemDtosRest(t *testing.T, service *items.Service, ctx context.Context, ser
 	}
 
 	t.Run("an episode carries its season and its series", anEpisodeCarriesItsSeasonAndItsSeries(byID, episode, series, season))
-
 	t.Run("a season carries its series and no season of its own", aSeasonCarriesItsSeriesAndNoSeasonOfItsOwn(byID, season, series))
-
 	t.Run("a series carries no series of its own", func(t *testing.T) {
 		record := byID[series.ID]
 		if record.SeriesId != nil {

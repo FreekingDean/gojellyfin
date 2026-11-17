@@ -72,142 +72,135 @@ func hdr(source *MediaSource) *MediaSource {
 }
 
 func TestPlanFor(t *testing.T) {
-	for _, tc := range []planForCase{
-		{
-			name:       "everything declared is handed over as it is",
-			can:        chrome,
-			source:     rip("mkv", "aac"),
-			change:     ChangeNone,
-			container:  "mkv",
-			audioCodec: "aac",
-		},
-		{
-			name:       "codecs declared and the container not costs a mux and nothing else",
-			can:        chrome,
-			source:     rip("avi", "aac"),
-			change:     ChangeContainer,
-			container:  "mp4",
-			audioCodec: "aac",
-			reasons:    []Reason{ReasonContainer},
-		},
-		{
-			name:       "audio the client cannot decode is the one stream converted",
-			can:        chrome,
-			source:     rip("mkv", "ac3"),
-			change:     ChangeAudio,
-			container:  "mp4",
-			audioCodec: "aac",
-			reasons:    []Reason{ReasonAudioCodec},
-		},
-		{
-			name:       "a client declaring another container gets that one",
-			can:        stick,
-			source:     rip("mkv", "ac3"),
-			change:     ChangeAudio,
-			container:  "ts",
-			audioCodec: "aac",
-			reasons:    []Reason{ReasonAudioCodec},
-		},
-		{
-			name:       "a client that declared nothing keeps the source",
-			source:     rip("mkv", "ac3"),
-			change:     ChangeNone,
-			container:  "mkv",
-			audioCodec: "ac3",
-		},
-		{
-			name:       "an HDR picture where the client decodes SDR only is encoded and its audio kept",
-			can:        chrome,
-			source:     hdr(rip("mkv", "aac")),
-			change:     ChangeVideo,
-			container:  "mp4",
-			audioCodec: "aac",
-			videoCodec: "h264",
-			reasons:    []Reason{ReasonRange},
-		},
-		{
-			name:       "an HDR picture beside audio the client also cannot decode converts both",
-			can:        chrome,
-			source:     hdr(rip("mkv", "ac3")),
-			change:     ChangeVideoAudio,
-			container:  "mp4",
-			audioCodec: "aac",
-			videoCodec: "h264",
-			reasons:    []Reason{ReasonRange, ReasonAudioCodec},
-		},
-		{
-			name:       "a picture nothing declared can carry is encoded to one it can",
-			can:        chrome,
-			source:     ripped("mkv", "mpeg4", 1080, "aac"),
-			change:     ChangeVideo,
-			container:  "mp4",
-			audioCodec: "aac",
-			videoCodec: "h264",
-			reasons:    []Reason{ReasonVideoCodec},
-		},
-		{
-			name:       "a picture and audio nothing declared can carry needs both",
-			can:        chrome,
-			source:     ripped("mkv", "mpeg4", 1080, "ac3"),
-			change:     ChangeVideoAudio,
-			container:  "mp4",
-			audioCodec: "aac",
-			videoCodec: "h264",
-			reasons:    []Reason{ReasonVideoCodec, ReasonAudioCodec},
-		},
-		{
-			name:       "a picture the real client never names",
-			can:        web,
-			source:     ripped("mkv", "theora", 1080, "aac"),
-			change:     ChangeVideo,
-			container:  "mp4",
-			audioCodec: "aac",
-			videoCodec: "h264",
-			reasons:    []Reason{ReasonVideoCodec},
-		},
-		{
-			name:       "an encode goes into the container the client declared for h264",
-			can:        stick,
-			source:     ripped("mkv", "hevc", 2160, "ac3"),
-			change:     ChangeVideoAudio,
-			container:  "ts",
-			audioCodec: "aac",
-			videoCodec: "h264",
-			reasons:    []Reason{ReasonVideoCodec, ReasonAudioCodec},
-		},
-		{
-			name:       "a client that decodes no h264 has nothing an encode could make",
-			can:        Capabilities{Profiles: []Profile{{Container: "webm", VideoCodec: "vp9", AudioCodec: "opus"}}},
-			source:     ripped("mkv", "hevc", 1080, "aac"),
-			change:     ChangeRefused,
-			container:  "mkv",
-			audioCodec: "aac",
-		},
-		{
-			name:       "a file nobody probed is not held to codecs nobody read",
-			can:        chrome,
-			source:     ripped("mkv", "", 0),
-			change:     ChangeNone,
-			container:  "mkv",
-			audioCodec: "",
-		},
-	} {
+	for _, tc := range planForCases {
 		t.Run(tc.name, testPlanForCase(tc))
 	}
 
 	t.Run("the names the client writes are the names the probe wrote", theNamesTheClientWritesAreTheNamesTheProbeWrote())
-
-	planForRest(t)
+	t.Run("a profile that named no codecs named none it refuses", aProfileThatNamedNoCodecsNamedNoneItRefuses())
+	t.Run("a container the client declared that cannot be written down a pipe is passed over", aContainerTheClientDeclaredThatCannotBeWrittenDownAPipeIsPassedOver())
+	t.Run("a picture only an unwritable container declared is still carried", aPictureOnlyAnUnwritableContainerDeclaredIsStillCarried())
 }
 
-func planForRest(t *testing.T) {
-	t.Helper()
-
-	t.Run("a profile that named no codecs named none it refuses", aProfileThatNamedNoCodecsNamedNoneItRefuses())
-
-	t.Run("a container the client declared that cannot be written down a pipe is passed over", aContainerTheClientDeclaredThatCannotBeWrittenDownAPipeIsPassedOver())
-
-	t.Run("a picture only an unwritable container declared is still carried", aPictureOnlyAnUnwritableContainerDeclaredIsStillCarried())
+var planForCases = []planForCase{
+	{
+		name:       "everything declared is handed over as it is",
+		can:        chrome,
+		source:     rip("mkv", "aac"),
+		change:     ChangeNone,
+		container:  "mkv",
+		audioCodec: "aac",
+	},
+	{
+		name:       "codecs declared and the container not costs a mux and nothing else",
+		can:        chrome,
+		source:     rip("avi", "aac"),
+		change:     ChangeContainer,
+		container:  "mp4",
+		audioCodec: "aac",
+		reasons:    []Reason{ReasonContainer},
+	},
+	{
+		name:       "audio the client cannot decode is the one stream converted",
+		can:        chrome,
+		source:     rip("mkv", "ac3"),
+		change:     ChangeAudio,
+		container:  "mp4",
+		audioCodec: "aac",
+		reasons:    []Reason{ReasonAudioCodec},
+	},
+	{
+		name:       "a client declaring another container gets that one",
+		can:        stick,
+		source:     rip("mkv", "ac3"),
+		change:     ChangeAudio,
+		container:  "ts",
+		audioCodec: "aac",
+		reasons:    []Reason{ReasonAudioCodec},
+	},
+	{
+		name:       "a client that declared nothing keeps the source",
+		source:     rip("mkv", "ac3"),
+		change:     ChangeNone,
+		container:  "mkv",
+		audioCodec: "ac3",
+	},
+	{
+		name:       "an HDR picture where the client decodes SDR only is encoded and its audio kept",
+		can:        chrome,
+		source:     hdr(rip("mkv", "aac")),
+		change:     ChangeVideo,
+		container:  "mp4",
+		audioCodec: "aac",
+		videoCodec: "h264",
+		reasons:    []Reason{ReasonRange},
+	},
+	{
+		name:       "an HDR picture beside audio the client also cannot decode converts both",
+		can:        chrome,
+		source:     hdr(rip("mkv", "ac3")),
+		change:     ChangeVideoAudio,
+		container:  "mp4",
+		audioCodec: "aac",
+		videoCodec: "h264",
+		reasons:    []Reason{ReasonRange, ReasonAudioCodec},
+	},
+	{
+		name:       "a picture nothing declared can carry is encoded to one it can",
+		can:        chrome,
+		source:     ripped("mkv", "mpeg4", 1080, "aac"),
+		change:     ChangeVideo,
+		container:  "mp4",
+		audioCodec: "aac",
+		videoCodec: "h264",
+		reasons:    []Reason{ReasonVideoCodec},
+	},
+	{
+		name:       "a picture and audio nothing declared can carry needs both",
+		can:        chrome,
+		source:     ripped("mkv", "mpeg4", 1080, "ac3"),
+		change:     ChangeVideoAudio,
+		container:  "mp4",
+		audioCodec: "aac",
+		videoCodec: "h264",
+		reasons:    []Reason{ReasonVideoCodec, ReasonAudioCodec},
+	},
+	{
+		name:       "a picture the real client never names",
+		can:        web,
+		source:     ripped("mkv", "theora", 1080, "aac"),
+		change:     ChangeVideo,
+		container:  "mp4",
+		audioCodec: "aac",
+		videoCodec: "h264",
+		reasons:    []Reason{ReasonVideoCodec},
+	},
+	{
+		name:       "an encode goes into the container the client declared for h264",
+		can:        stick,
+		source:     ripped("mkv", "hevc", 2160, "ac3"),
+		change:     ChangeVideoAudio,
+		container:  "ts",
+		audioCodec: "aac",
+		videoCodec: "h264",
+		reasons:    []Reason{ReasonVideoCodec, ReasonAudioCodec},
+	},
+	{
+		name:       "a client that decodes no h264 has nothing an encode could make",
+		can:        Capabilities{Profiles: []Profile{{Container: "webm", VideoCodec: "vp9", AudioCodec: "opus"}}},
+		source:     ripped("mkv", "hevc", 1080, "aac"),
+		change:     ChangeRefused,
+		container:  "mkv",
+		audioCodec: "aac",
+	},
+	{
+		name:       "a file nobody probed is not held to codecs nobody read",
+		can:        chrome,
+		source:     ripped("mkv", "", 0),
+		change:     ChangeNone,
+		container:  "mkv",
+		audioCodec: "",
+	},
 }
 
 func testPlanForCase(tc planForCase) func(*testing.T) {
@@ -458,354 +451,9 @@ func TestService_SourceForOrder(t *testing.T) {
 		})
 	}
 
-	serviceSourceForOrderRest57(t, ctx)
-}
-
-func serviceSourceForOrderRest57(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest56(t, ctx)
-}
-
-func serviceSourceForOrderRest56(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest55(t, ctx)
-}
-
-func serviceSourceForOrderRest55(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest54(t, ctx)
-}
-
-func serviceSourceForOrderRest54(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest53(t, ctx)
-}
-
-func serviceSourceForOrderRest53(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest52(t, ctx)
-}
-
-func serviceSourceForOrderRest52(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest51(t, ctx)
-}
-
-func serviceSourceForOrderRest51(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest50(t, ctx)
-}
-
-func serviceSourceForOrderRest50(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest49(t, ctx)
-}
-
-func serviceSourceForOrderRest49(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest48(t, ctx)
-}
-
-func serviceSourceForOrderRest48(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest47(t, ctx)
-}
-
-func serviceSourceForOrderRest47(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest46(t, ctx)
-}
-
-func serviceSourceForOrderRest46(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest45(t, ctx)
-}
-
-func serviceSourceForOrderRest45(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest44(t, ctx)
-}
-
-func serviceSourceForOrderRest44(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest43(t, ctx)
-}
-
-func serviceSourceForOrderRest43(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest42(t, ctx)
-}
-
-func serviceSourceForOrderRest42(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest41(t, ctx)
-}
-
-func serviceSourceForOrderRest41(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest40(t, ctx)
-}
-
-func serviceSourceForOrderRest40(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest39(t, ctx)
-}
-
-func serviceSourceForOrderRest39(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest38(t, ctx)
-}
-
-func serviceSourceForOrderRest38(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest37(t, ctx)
-}
-
-func serviceSourceForOrderRest37(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest36(t, ctx)
-}
-
-func serviceSourceForOrderRest36(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest35(t, ctx)
-}
-
-func serviceSourceForOrderRest35(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest34(t, ctx)
-}
-
-func serviceSourceForOrderRest34(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest33(t, ctx)
-}
-
-func serviceSourceForOrderRest33(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest32(t, ctx)
-}
-
-func serviceSourceForOrderRest32(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest31(t, ctx)
-}
-
-func serviceSourceForOrderRest31(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest30(t, ctx)
-}
-
-func serviceSourceForOrderRest30(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest29(t, ctx)
-}
-
-func serviceSourceForOrderRest29(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest28(t, ctx)
-}
-
-func serviceSourceForOrderRest28(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest27(t, ctx)
-}
-
-func serviceSourceForOrderRest27(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest26(t, ctx)
-}
-
-func serviceSourceForOrderRest26(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest25(t, ctx)
-}
-
-func serviceSourceForOrderRest25(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest24(t, ctx)
-}
-
-func serviceSourceForOrderRest24(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest23(t, ctx)
-}
-
-func serviceSourceForOrderRest23(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest22(t, ctx)
-}
-
-func serviceSourceForOrderRest22(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest21(t, ctx)
-}
-
-func serviceSourceForOrderRest21(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest20(t, ctx)
-}
-
-func serviceSourceForOrderRest20(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest19(t, ctx)
-}
-
-func serviceSourceForOrderRest19(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest18(t, ctx)
-}
-
-func serviceSourceForOrderRest18(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest17(t, ctx)
-}
-
-func serviceSourceForOrderRest17(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest16(t, ctx)
-}
-
-func serviceSourceForOrderRest16(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest15(t, ctx)
-}
-
-func serviceSourceForOrderRest15(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest14(t, ctx)
-}
-
-func serviceSourceForOrderRest14(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest13(t, ctx)
-}
-
-func serviceSourceForOrderRest13(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest12(t, ctx)
-}
-
-func serviceSourceForOrderRest12(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest11(t, ctx)
-}
-
-func serviceSourceForOrderRest11(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest10(t, ctx)
-}
-
-func serviceSourceForOrderRest10(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest9(t, ctx)
-}
-
-func serviceSourceForOrderRest9(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest8(t, ctx)
-}
-
-func serviceSourceForOrderRest8(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest7(t, ctx)
-}
-
-func serviceSourceForOrderRest7(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest6(t, ctx)
-}
-
-func serviceSourceForOrderRest6(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest5(t, ctx)
-}
-
-func serviceSourceForOrderRest5(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest4(t, ctx)
-}
-
-func serviceSourceForOrderRest4(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest3(t, ctx)
-}
-
-func serviceSourceForOrderRest3(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest2(t, ctx)
-}
-
-func serviceSourceForOrderRest2(t *testing.T, ctx context.Context) {
-	t.Helper()
-
-	serviceSourceForOrderRest(t, ctx)
-}
-
-func serviceSourceForOrderRest(t *testing.T, ctx context.Context) {
-	t.Helper()
-
 	t.Run("the richer encode of two at one resolution", theRicherEncodeOfTwoAtOneResolution(ctx))
-
 	t.Run("a lowered ceiling passes over every copy taller than it", aLoweredCeilingPassesOverEveryCopyTallerThanIt(ctx))
-
 	t.Run("a lowered ceiling refuses a title with nothing under it", aLoweredCeilingRefusesATitleWithNothingUnderIt(ctx))
-
 	t.Run("a lowered ceiling still plays a taller copy that needs no encode", aLoweredCeilingStillPlaysATallerCopyThatNeedsNoEncode(ctx))
 }
 
@@ -975,11 +623,8 @@ func TestService_SourceFor(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("answers with one file and never the others", answersWithOneFileAndNeverTheOthers(ctx))
-
 	t.Run("prefers the taller picture over the cheaper one to serve", prefersTheTallerPictureOverTheCheaperOneToServe(ctx))
-
 	t.Run("drops a copy whose picture would have to be re-encoded", dropsACopyWhosePictureWouldHaveToBeReEncoded(ctx))
-
 	t.Run("encodes the picture when every copy needs it", func(t *testing.T) {
 		fixture := newFixture(t)
 		film := fixture.film(t, "movie:unencodable")
@@ -1006,11 +651,8 @@ func TestService_SourceFor(t *testing.T) {
 	})
 
 	t.Run("an SDR client gets the 1080p rather than the HDR 4K beside it", anSDRClientGetsThe1080pRatherThanTheHDR4KBesideIt(ctx))
-
 	t.Run("encodes when the only copy is one the client cannot decode", encodesWhenTheOnlyCopyIsOneTheClientCannotDecode(ctx))
-
 	t.Run("a copy the probe never read the range of is still offered", aCopyTheProbeNeverReadTheRangeOfIsStillOffered(ctx))
-
 	t.Run("refuses an item with no file behind it", func(t *testing.T) {
 		fixture := newFixture(t)
 		film := fixture.film(t, "movie:nofile")

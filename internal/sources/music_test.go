@@ -116,12 +116,6 @@ func TestTitles_Lidarr(t *testing.T) {
 
 	artist := byKey["artist:mb:a-one"]
 
-	titlesLidarrRest(t, artist, byKey, asked)
-}
-
-func titlesLidarrRest(t *testing.T, artist Title, byKey map[string]Title, asked []string) {
-	t.Helper()
-
 	if artist.Kind != itemmodel.KindMusicArtist || !artist.Tagged || artist.ParentKey != "" {
 		t.Errorf("artist = %+v, want a tagged top-level MusicArtist", artist)
 	}

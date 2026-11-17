@@ -66,12 +66,6 @@ func TestServer_GetItemSegments(t *testing.T) {
 		}
 	}
 
-	serverGetItemSegmentsRest(t, client, err, catalogue, ctx, episode, file)
-}
-
-func serverGetItemSegmentsRest(t *testing.T, client *store.Client, err error, catalogue *items.Service, ctx context.Context, episode *items.Item, file *store.ItemSource) {
-	t.Helper()
-
 	found := segments.New(client, ffmpeg.New())
 
 	hidden, err := New(catalogue, found, access{}).GetItemSegments(ctx, api.GetItemSegmentsRequestObject{ItemId: episode.ID})

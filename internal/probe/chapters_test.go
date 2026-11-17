@@ -90,12 +90,6 @@ func TestProber_ReadsChapterSegments(t *testing.T) {
 	}
 	episode, err := client.Item.Create().SetKind(itemmodel.KindEpisode).SetKey(name).SetName(name).SetSortName(name).Save(ctx)
 
-	proberReadsChapterSegmentsRest(t, err, client, episode, downloader, name, path, ctx)
-}
-
-func proberReadsChapterSegmentsRest(t *testing.T, err error, client *store.Client, episode *store.Item, downloader *store.Source, name string, path string, ctx context.Context) {
-	t.Helper()
-
 	if err != nil {
 		t.Fatalf("failed to create the episode: %v", err)
 	}

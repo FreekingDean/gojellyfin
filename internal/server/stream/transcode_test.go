@@ -107,9 +107,7 @@ func decodable(t *testing.T, body []byte, name string) *ffmpeg.Probe {
 
 func TestHandler_serveTranscode(t *testing.T) {
 	t.Run("universal transcodes", universalTranscodes())
-
 	t.Run("transcodes the requested container", transcodesTheRequestedContainer())
-
 	t.Run("universal encodes into the transcoding container the client named", func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.withEncoder(t)
@@ -371,14 +369,7 @@ func TestHandler_relay(t *testing.T) {
 		}
 	})
 
-	handlerrelayRest(t)
-}
-
-func handlerrelayRest(t *testing.T) {
-	t.Helper()
-
 	t.Run("reports nothing when the stall timer kills the encode", reportsNothingWhenTheStallTimerKillsTheEncode())
-
 	t.Run("reports nothing when the client goes away", func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.add(t, uuid.NewString()+".flac", "flac")
@@ -464,7 +455,6 @@ func endsTheResponseCleanlyWhenFfmpegFinishes() func(*testing.T) {
 
 func TestHandler_ReportsWhatWillNotPlay(t *testing.T) {
 	t.Run("a source ffmpeg cannot read is reported once", aSourceFfmpegCannotReadIsReportedOnce())
-
 	t.Run("a file served whole that cannot be opened records a direct play", func(t *testing.T) {
 		fixture := newFixture(t)
 		item, source := fixture.scan(t, uuid.NewString()+".mp3")

@@ -59,12 +59,6 @@ func TestServer_GetGenres(t *testing.T) {
 		t.Fatalf("failed to save the item: %v", err)
 	}
 
-	serverGetGenresRest(t, service, ctx, library, downloader, movie, name, err)
-}
-
-func serverGetGenresRest(t *testing.T, service *items.Service, ctx context.Context, library *store.Library, downloader *store.Source, movie *items.Item, name string, err error) {
-	t.Helper()
-
 	if err := service.SaveMembership(ctx, library.ID, downloader.ID, []uuid.UUID{movie.ID}); err != nil {
 		t.Fatalf("failed to place the item in the library: %v", err)
 	}

@@ -109,12 +109,6 @@ func TestServer_GoJellyfinListReports(t *testing.T) {
 		},
 	}}}
 
-	serverGoJellyfinListReportsRest(t, queue)
-}
-
-func serverGoJellyfinListReportsRest(t *testing.T, queue *stubQueue) {
-	t.Helper()
-
 	response, err := (&Server{reports: queue}).GoJellyfinListReports(context.Background(), api.GoJellyfinListReportsRequestObject{})
 	if err != nil {
 		t.Fatal(err)

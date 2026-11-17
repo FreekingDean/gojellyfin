@@ -109,7 +109,6 @@ func namesOf(named []Named) []string {
 
 func TestService_NamedMetadata(t *testing.T) {
 	t.Run("writes the container metadata", writesTheContainerMetadata())
-
 	t.Run("two items may share a genre", func(t *testing.T) {
 		fixture := newMetadataFixture(t)
 		ctx := context.Background()

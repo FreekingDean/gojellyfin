@@ -756,42 +756,44 @@ func (allLibraries) Access(context.Context, uuid.UUID) (users.Access, error) {
 }
 
 func TestPlaybackIsShownOnTheSession(t *testing.T) {
-	for _, tc := range []playbackIsShownOnTheSessionCase{
-		{
-			name:   "a file handed over untouched is a direct play",
-			file:   "untouched.mkv",
-			audio:  "aac",
-			method: api.DirectPlay,
-		},
-		{
-			name:    "audio the client cannot decode is converted and says so",
-			file:    "surround.mkv",
-			audio:   "ac3",
-			method:  api.Transcode,
-			shown:   &api.TranscodingInfo{IsVideoDirect: apiutil.Ptr(true), IsAudioDirect: apiutil.Ptr(false), VideoCodec: apiutil.Ptr("h264"), AudioCodec: apiutil.Ptr("aac")},
-			reasons: []api.TranscodeReason{api.AudioCodecNotSupported},
-		},
-		{
-			name:    "a container the client cannot open is a remux",
-			file:    "boxed.mov",
-			audio:   "aac",
-			method:  api.Transcode,
-			shown:   &api.TranscodingInfo{IsVideoDirect: apiutil.Ptr(true), IsAudioDirect: apiutil.Ptr(true), VideoCodec: apiutil.Ptr("h264"), AudioCodec: apiutil.Ptr("aac")},
-			reasons: []api.TranscodeReason{api.ContainerNotSupported},
-		},
-		{
-			name:    "a picture the client cannot decode is encoded and sent as hls",
-			file:    "legacy.mkv",
-			video:   "mpeg4",
-			audio:   "aac",
-			method:  api.Transcode,
-			shown:   &api.TranscodingInfo{IsVideoDirect: apiutil.Ptr(false), IsAudioDirect: apiutil.Ptr(true), VideoCodec: apiutil.Ptr("h264"), AudioCodec: apiutil.Ptr("aac")},
-			reasons: []api.TranscodeReason{api.VideoCodecNotSupported},
-			hls:     true,
-		},
-	} {
+	for _, tc := range playbackIsShownOnTheSessionCases {
 		t.Run(tc.name, testPlaybackIsShownOnTheSessionCase(tc))
 	}
+}
+
+var playbackIsShownOnTheSessionCases = []playbackIsShownOnTheSessionCase{
+	{
+		name:   "a file handed over untouched is a direct play",
+		file:   "untouched.mkv",
+		audio:  "aac",
+		method: api.DirectPlay,
+	},
+	{
+		name:    "audio the client cannot decode is converted and says so",
+		file:    "surround.mkv",
+		audio:   "ac3",
+		method:  api.Transcode,
+		shown:   &api.TranscodingInfo{IsVideoDirect: apiutil.Ptr(true), IsAudioDirect: apiutil.Ptr(false), VideoCodec: apiutil.Ptr("h264"), AudioCodec: apiutil.Ptr("aac")},
+		reasons: []api.TranscodeReason{api.AudioCodecNotSupported},
+	},
+	{
+		name:    "a container the client cannot open is a remux",
+		file:    "boxed.mov",
+		audio:   "aac",
+		method:  api.Transcode,
+		shown:   &api.TranscodingInfo{IsVideoDirect: apiutil.Ptr(true), IsAudioDirect: apiutil.Ptr(true), VideoCodec: apiutil.Ptr("h264"), AudioCodec: apiutil.Ptr("aac")},
+		reasons: []api.TranscodeReason{api.ContainerNotSupported},
+	},
+	{
+		name:    "a picture the client cannot decode is encoded and sent as hls",
+		file:    "legacy.mkv",
+		video:   "mpeg4",
+		audio:   "aac",
+		method:  api.Transcode,
+		shown:   &api.TranscodingInfo{IsVideoDirect: apiutil.Ptr(false), IsAudioDirect: apiutil.Ptr(true), VideoCodec: apiutil.Ptr("h264"), AudioCodec: apiutil.Ptr("aac")},
+		reasons: []api.TranscodeReason{api.VideoCodecNotSupported},
+		hls:     true,
+	},
 }
 
 func testPlaybackIsShownOnTheSessionCase(tc playbackIsShownOnTheSessionCase) func(*testing.T) {

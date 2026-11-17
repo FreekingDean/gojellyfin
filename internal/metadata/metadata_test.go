@@ -392,29 +392,14 @@ func TestService_IdentifyItems(t *testing.T) {
 	})
 
 	t.Run("walks a series to its episode", walksASeriesToItsEpisode())
-
-	serviceIdentifyItemsRest(t)
-}
-
-func serviceIdentifyItemsRest(t *testing.T) {
-	t.Helper()
-
 	t.Run("identifies specials as season zero", identifiesSpecialsAsSeasonZero())
-
 	t.Run("keeps an unmatched season out of its episode", keepsAnUnmatchedSeasonOutOfItsEpisode())
-
 	t.Run("keeps a locked season field", keepsALockedSeasonField())
-
 	t.Run("leaves a locked item alone", leavesALockedItemAlone())
-
 	t.Run("fetches artwork for an identified item that has none", fetchesArtworkForAnIdentifiedItemThatHasNone())
-
 	t.Run("keeps a locked field", keepsALockedField())
-
 	t.Run("does nothing without a provider", doesNothingWithoutAProvider())
-
 	t.Run("leaves an unmatched item for the next run", leavesAnUnmatchedItemForTheNextRun())
-
 	t.Run("asks nothing for a key without a TMDB id", asksNothingForAKeyWithoutATMDBId())
 }
 
@@ -763,7 +748,6 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 	})
 
 	t.Run("leaves an identified item alone without it", leavesAnIdentifiedItemAloneWithoutIt())
-
 	t.Run("keeps a locked field", func(t *testing.T) {
 		fixed := newFixture(t)
 		movie := fixed.lock(t, fixed.add(t, items.Item{
@@ -786,12 +770,6 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 			t.Errorf("OfficialRating = %q, want an unlocked field refreshed", refreshed.OfficialRating)
 		}
 	})
-
-	serviceIdentifyItemsForceRest(t)
-}
-
-func serviceIdentifyItemsForceRest(t *testing.T) {
-	t.Helper()
 
 	t.Run("carries on past an item the provider cannot reach", func(t *testing.T) {
 		fixed := newFixture(t)
@@ -884,7 +862,6 @@ func TestService_IdentifyItems_Scope(t *testing.T) {
 	})
 
 	t.Run("follows a series down to its episodes", followsASeriesDownToItsEpisodes())
-
 	t.Run("refreshes everything in a library it names", func(t *testing.T) {
 		fixed := newFixture(t)
 		first := fixed.identified(t, fixed.add(t, items.Item{
