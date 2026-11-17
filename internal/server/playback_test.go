@@ -716,10 +716,12 @@ func TestPlaybackIsShownOnTheSession(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
 		file    string
+		video   string
 		audio   string
 		method  api.PlayMethod
 		shown   *api.TranscodingInfo
 		reasons []api.TranscodeReason
+		hls     bool
 	}{
 		{
 			name:   "a file handed over untouched is a direct play",
@@ -743,10 +745,25 @@ func TestPlaybackIsShownOnTheSession(t *testing.T) {
 			shown:   &api.TranscodingInfo{IsVideoDirect: apiutil.Ptr(true), IsAudioDirect: apiutil.Ptr(true), VideoCodec: apiutil.Ptr("h264"), AudioCodec: apiutil.Ptr("aac")},
 			reasons: []api.TranscodeReason{api.ContainerNotSupported},
 		},
+		{
+			name:    "a picture the client cannot decode is encoded and sent as hls",
+			file:    "legacy.mkv",
+			video:   "mpeg4",
+			audio:   "aac",
+			method:  api.Transcode,
+			shown:   &api.TranscodingInfo{IsVideoDirect: apiutil.Ptr(false), IsAudioDirect: apiutil.Ptr(true), VideoCodec: apiutil.Ptr("h264"), AudioCodec: apiutil.Ptr("aac")},
+			reasons: []api.TranscodeReason{api.VideoCodecNotSupported},
+			hls:     true,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			fixture := newPlaybackFixture(t)
-			id := fixture.rip(t, tc.file, tc.audio)
+			var id uuid.UUID
+			if tc.video == "" {
+				id = fixture.rip(t, tc.file, tc.audio)
+			} else {
+				id = fixture.ripped(t, tc.file, tc.video, tc.video, tc.audio)
+			}
 			fixture.offer(t, id, chromeProfile, 0)
 
 			ctx := context.Background()
@@ -778,6 +795,11 @@ func TestPlaybackIsShownOnTheSession(t *testing.T) {
 			streams := apiutil.Deref(shown.NowPlayingItem.MediaStreams)
 			if len(streams) == 0 || apiutil.Deref(streams[len(streams)-1].Codec) != tc.audio {
 				t.Errorf("now playing streams = %+v, want the planned file's, ending in %s", streams, tc.audio)
+			}
+
+			sent := apiutil.Deref(shown.NowPlayingItem.MediaSources)
+			if hls := len(sent) == 1 && apiutil.Deref(sent[0].TranscodingSubProtocol) == api.MediaStreamProtocolHls; hls != tc.hls {
+				t.Errorf("sent as hls = %v, want %v", hls, tc.hls)
 			}
 
 			info := shown.TranscodingInfo

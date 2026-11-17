@@ -2,10 +2,10 @@ import { useEffect, useState } from 'preact/hooks';
 
 import { api } from '../api';
 import * as mock from '../mock';
-import { Served, how } from '../playback';
+import { Stream, how } from '../playback';
 import type { How } from '../playback';
 import { Link } from '../router';
-import { Card, Dot, Page, since } from '../ui';
+import { Card, Dot, Page, Pill, since } from '../ui';
 import type { Tone } from '../ui';
 
 type Check = { name: string; tone: Tone; detail: string; at?: string };
@@ -143,26 +143,33 @@ export function Overview() {
           {watching.length === 0 ? (
             <p class="muted">Nobody is watching anything.</p>
           ) : (
-            <table class="rows plain">
-              <tbody>
-                {watching.map((stream) => (
-                  <tr key={stream.id}>
-                    <td>
-                      <b>{stream.user}</b> <span class="muted">{stream.device}</span>
-                    </td>
-                    <td>
+            <div class="watching">
+              {watching.map((stream) => (
+                <div key={stream.id} class="watch">
+                  <div class="who">
+                    <b class="line">{stream.user}</b>
+                    <span class="line muted">{stream.device}</span>
+                  </div>
+                  <div class="what">
+                    <span class="line" title={stream.title}>
                       {stream.title}
-                      <div class="bar">
-                        <span style={{ width: stream.progress + '%' }} />
-                      </div>
-                    </td>
-                    <td class="end">
-                      <Served how={stream.how} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </span>
+                    <div class="bar">
+                      <span style={{ width: stream.progress + '%' }} />
+                    </div>
+                  </div>
+                  {stream.how && <Pill tone={stream.how.tone}>{stream.how.kind}</Pill>}
+                  <div class="details">
+                    <Stream how={stream.how} />
+                    {stream.how?.reasons.map((line) => (
+                      <small key={line} class="stream muted" title={line}>
+                        {line}
+                      </small>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </Card>
 

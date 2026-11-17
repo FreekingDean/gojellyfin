@@ -201,7 +201,8 @@ test.describe('the admin app', () => {
       await page.getByRole('link', { name: 'Activity' }).click();
       const row = page.locator('tr', { hasText: 'Playwright' }).filter({ hasText: harness.playable });
       await expect(row).toContainText('Remux');
-      await expect(row).toContainText('WEBM → MP4');
+      await expect(row).toContainText('VP9 · WEBM · Opus');
+      await expect(row).toContainText('VP9 copied · Opus copied');
       await expect(row).toContainText('WEBM container not supported');
       await expect(row).toContainText('127.0.0.1');
     } finally {

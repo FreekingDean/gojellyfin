@@ -282,6 +282,7 @@ tr:last-child td {
 
 .pill {
   display: inline-block;
+  white-space: nowrap;
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 1px 9px;
@@ -465,6 +466,50 @@ button.bad {
   background: var(--raised);
   border-radius: 8px;
   padding: 10px 12px;
+}
+
+.watch {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
+  column-gap: 14px;
+  align-items: start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.watch:last-child {
+  border-bottom: 0;
+}
+
+.watch .details {
+  grid-column: 2 / -1;
+  min-width: 0;
+}
+
+.watch .who,
+.watch .what {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.watch .bar {
+  max-width: none;
+  margin-bottom: 2px;
+}
+
+small.stream.muted {
+  color: var(--muted);
+}
+
+small.stream {
+  display: block;
+  color: var(--text);
+  margin-top: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .served small {

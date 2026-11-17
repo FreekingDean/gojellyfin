@@ -15,6 +15,7 @@ type PlaybackPlan struct {
 	Container   string     `json:"container,omitempty"`
 	VideoCodec  string     `json:"video_codec,omitempty"`
 	AudioCodec  string     `json:"audio_codec,omitempty"`
+	Segmented   bool       `json:"segmented,omitempty"`
 	Reasons     []string   `json:"reasons,omitempty"`
 	StandsInFor *uuid.UUID `json:"stands_in_for,omitempty"`
 }

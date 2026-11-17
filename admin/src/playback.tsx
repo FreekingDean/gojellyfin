@@ -2,7 +2,7 @@ import type { Schemas } from './api';
 import { Pill } from './ui';
 import type { Tone } from './ui';
 
-export type How = { kind: string; tone: Tone; change?: string; reasons: string[] };
+export type How = { kind: string; tone: Tone; change?: string; from?: string; sent?: string; reasons: string[] };
 
 type Stream = Schemas['MediaStream'];
 
@@ -39,8 +39,42 @@ export function codec(name?: string | null): string {
   return codecs[name.toLowerCase()] ?? name.toUpperCase();
 }
 
-function arrow(from: string, to: string): string | undefined {
-  return from && to && from !== to ? `${from} → ${to}` : undefined;
+function resolution(video?: Stream): string {
+  const width = video?.Width ?? 0;
+  const height = video?.Height ?? 0;
+  if (width >= 3200 || height >= 1800) {
+    return '4K';
+  }
+  if (width >= 1800 || height >= 1000) {
+    return '1080p';
+  }
+  if (width >= 1200 || height >= 700) {
+    return '720p';
+  }
+
+  return height ? `${height}p` : '';
+}
+
+function channels(audio?: Stream): string {
+  const count = audio?.Channels ?? 0;
+  const named: Record<number, string> = { 1: 'mono', 2: 'stereo', 6: '5.1', 8: '7.1' };
+
+  return named[count] ?? (count ? `${count}ch` : '');
+}
+
+function bitrate(bits?: number | null): string {
+  if (!bits) {
+    return '';
+  }
+
+  return bits >= 1_000_000 ? `${(bits / 1_000_000).toFixed(1)} Mbps` : `${Math.round(bits / 1000)} kbps`;
+}
+
+function described(source?: Schemas['MediaSourceInfo'], video?: Stream, audio?: Stream): string {
+  const range = video?.VideoRangeType && !standard.includes(video.VideoRangeType) ? video.VideoRangeType : '';
+  const sound = [codec(audio?.Codec), channels(audio)].filter(Boolean).join(' ');
+
+  return [resolution(video), codec(video?.Codec), range, (source?.Container ?? '').toUpperCase(), sound, bitrate(source?.Bitrate)].filter(Boolean).join(' · ');
 }
 
 function spaced(reason: string): string {
@@ -82,40 +116,40 @@ export function how(session: Schemas['SessionInfoDto']): How | undefined {
     return undefined;
   }
 
-  const info = session.TranscodingInfo;
-  if (!info) {
-    const method = session.PlayState?.PlayMethod;
-    if (method === 'DirectPlay') {
-      return { kind: 'Direct play', tone: 'ok', reasons: [] };
-    }
-
-    return method ? { kind: spaced(method), tone: 'off', reasons: [] } : undefined;
-  }
-
   const source = item.MediaSources?.[0];
   const streams = item.MediaStreams ?? [];
   const video = streams.find((stream) => stream.Type === 'Video');
   const audio = streams.find((stream) => stream.Type === 'Audio' && stream.Index === source?.DefaultAudioStreamIndex) ?? streams.find((stream) => stream.Type === 'Audio');
-  const from = (source?.Container ?? '').toUpperCase();
-  const reasons = (info.TranscodeReasons ?? []).map((name) => reason(name, from, video, audio));
+  const from = described(source, video, audio) || undefined;
+
+  const info = session.TranscodingInfo;
+  if (!info) {
+    const method = session.PlayState?.PlayMethod;
+    if (method === 'DirectPlay') {
+      return { kind: 'Direct play', tone: 'ok', from, sent: source ? 'The file, untouched' : undefined, reasons: [] };
+    }
+
+    return method ? { kind: spaced(method), tone: 'off', from, reasons: [] } : undefined;
+  }
+
+  const container = (source?.Container ?? '').toUpperCase();
+  const reasons = (info.TranscodeReasons ?? []).map((name) => reason(name, container, video, audio));
+  const into = source?.TranscodingSubProtocol === 'hls' ? 'HLS' : `${(info.Container ?? '').toUpperCase()} stream`.trim();
+  const picture = !video ? '' : info.IsVideoDirect ? `${codec(video.Codec)} copied` : [codec(info.VideoCodec), info.Height ? `${info.Height}p` : ''].filter(Boolean).join(' ');
+  const sound = info.IsAudioDirect ? (audio ? `${codec(audio.Codec)} copied` : '') : codec(info.AudioCodec);
+  const sent = [into, picture, sound].filter(Boolean).join(' · ');
 
   if (info.IsVideoDirect && info.IsAudioDirect) {
-    return { kind: 'Remux', tone: 'off', change: arrow(from, (info.Container ?? '').toUpperCase()), reasons };
+    return { kind: 'Remux', tone: 'off', from, sent, reasons };
   }
   if (info.IsVideoDirect) {
-    return { kind: 'Audio conversion', tone: 'off', change: arrow(codec(audio?.Codec), codec(info.AudioCodec)), reasons };
-  }
-
-  const picture = [codec(info.VideoCodec), info.Height && info.Height < (video?.Height ?? 0) ? `${info.Height}p` : ''].filter(Boolean).join(' ');
-  const changes = [arrow(codec(video?.Codec) || 'Video', picture)];
-  if (!info.IsAudioDirect) {
-    changes.push(arrow(codec(audio?.Codec), codec(info.AudioCodec)));
+    return { kind: video ? 'Audio conversion' : 'Audio encode', tone: 'off', from, sent, reasons };
   }
   if (video?.VideoRangeType && !standard.includes(video.VideoRangeType) && !info.TranscodeReasons?.includes('VideoRangeTypeNotSupported')) {
     reasons.push(`${video.VideoRangeType} tone mapped to SDR`);
   }
 
-  return { kind: 'Video encode', tone: 'warn', change: changes.filter(Boolean).join(', '), reasons };
+  return { kind: 'Video encode', tone: 'warn', from, sent, reasons };
 }
 
 export function attempted(attempt?: Schemas['ReportAttempt'] | null): How | undefined {
@@ -164,5 +198,26 @@ export function Served({ how }: { how?: How }) {
         </small>
       ))}
     </div>
+  );
+}
+
+export function Stream({ how }: { how?: How }) {
+  if (!how) {
+    return null;
+  }
+
+  return (
+    <>
+      {how.from && (
+        <small class="stream" title={how.from}>
+          <span class="muted">From</span> {how.from}
+        </small>
+      )}
+      {how.sent && (
+        <small class="stream" title={how.sent}>
+          <span class="muted">Sent</span> {how.sent}
+        </small>
+      )}
+    </>
   );
 }
