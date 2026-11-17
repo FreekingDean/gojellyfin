@@ -14,7 +14,7 @@ func (Channel) Fields() []ent.Field {
 	return withDefaultFields(
 		field.Int32("number").Unique().Positive().Max(65535),
 		field.String("name").Unique().NotEmpty(),
-		field.Enum("order").Values("Shuffle", "Sequential").Default("Shuffle"),
+		field.Enum("order").Values("Shuffle", "Sequential", "Interleave").Default("Shuffle"),
 		field.Int64("seed"),
 		field.Time("epoch"),
 	)

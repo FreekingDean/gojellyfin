@@ -93,3 +93,34 @@ func TestServer_GetPostedPlaybackInfo_DeviceProfileFallsBackToTheSession(t *test
 		t.Error("a request with no profile was not planned from the profile the device reported")
 	}
 }
+
+func TestServer_GetPostedPlaybackInfo_DirectPlayCarriesItsCredential(t *testing.T) {
+	native := profileFrom(t, nativeAndroid)
+	fixture := newFixture(t)
+	id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
+
+	fixture.server.sessions = sessions.New(fixture.client, nil)
+	caller := &sessions.Session{ID: uuid.New()}
+	ctx := auth.ContextWithSession(auth.ContextWithAuthorization(context.Background(), auth.Authorization{Token: "the-token"}), caller)
+
+	response, err := fixture.server.GetPostedPlaybackInfo(ctx, api.GetPostedPlaybackInfoRequestObject{ItemId: id, JSONBody: firstPlay(&native)})
+	if err != nil {
+		t.Fatalf("failed to answer playback info: %v", err)
+	}
+	source := (*response.(api.GetPostedPlaybackInfo200JSONResponse).MediaSources)[0]
+	if !apiutil.Deref(source.SupportsDirectPlay) {
+		t.Fatal("the file was not offered as direct play")
+	}
+
+	sourceID, err := uuid.Parse(apiutil.Deref(source.Id))
+	if err != nil {
+		t.Fatalf("the source id %q is not a uuid: %v", apiutil.Deref(source.Id), err)
+	}
+	tag := apiutil.Deref(source.ETag)
+	if session, ok := auth.StreamTagSession(tag); !ok || session != caller.ID {
+		t.Errorf("ETag %q names session %v, want %v", tag, session, caller.ID)
+	}
+	if !auth.StreamTagValid(tag, "the-token", sourceID) {
+		t.Errorf("ETag %q does not open the file the url names, which the Android TV app requests with no token", tag)
+	}
+}

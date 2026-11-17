@@ -195,6 +195,8 @@ export function Settings() {
         </div>
       </Card>
 
+      <Override />
+
       <div class="grid two spaced">
         {groups.map((group) => (
           <Card key={group.title}>
@@ -225,6 +227,171 @@ export function Settings() {
         <Keys />
       </div>
     </Page>
+  );
+}
+
+type Standing = Schemas['PlaybackOverride'];
+type Person = { id: string; name: string };
+type Found = { id: string; name: string; detail: string };
+
+const mockedOverride: Standing = { Enabled: true, ItemId: 'm1', ItemName: 'An Invented Feature', From: '2027-04-01T00:00:00Z', Until: '2027-04-02T00:00:00Z', UserIds: [] };
+
+function local(stamp: string | null | undefined): string {
+  if (!stamp) {
+    return '';
+  }
+  const at = new Date(stamp);
+  at.setMinutes(at.getMinutes() - at.getTimezoneOffset());
+
+  return at.toISOString().slice(0, 16);
+}
+
+function stamped(value: string): string | undefined {
+  return value ? new Date(value).toISOString() : undefined;
+}
+
+function Override() {
+  const [standing, setStanding] = useState<Standing | undefined>(mock.mocked ? mockedOverride : undefined);
+  const [people, setPeople] = useState<Person[]>(mock.mocked ? mock.people.map((each) => ({ id: each.id, name: each.name })) : []);
+  const [search, setSearch] = useState('');
+  const [found, setFound] = useState<Found[]>([]);
+  const [failure, setFailure] = useState('');
+
+  async function load() {
+    const [override, users] = await Promise.all([api.GET('/GoJellyfin/PlaybackOverride'), api.GET('/Users')]);
+    if (!override.data || !users.data) {
+      setFailure('The playback override could not be loaded.');
+      return;
+    }
+    setStanding(override.data);
+    setPeople(users.data.map((user) => ({ id: user.Id ?? '', name: user.Name ?? '' })));
+  }
+
+  useEffect(() => {
+    if (!mock.mocked) {
+      void load();
+    }
+  }, []);
+
+  useEffect(() => {
+    const term = search.trim();
+    if (term.length < 2 || mock.mocked) {
+      setFound([]);
+      return;
+    }
+    const timer = window.setTimeout(async () => {
+      const { data } = await api.GET('/Items', {
+        params: { query: { searchTerm: term, recursive: true, includeItemTypes: ['Movie', 'Episode'], limit: 10 } },
+      });
+      setFound(
+        (data?.Items ?? []).map((item) => ({
+          id: item.Id ?? '',
+          name: item.Name ?? '',
+          detail: item.Type === 'Episode' ? [item.SeriesName, item.ParentIndexNumber && item.IndexNumber ? 'S' + item.ParentIndexNumber + 'E' + item.IndexNumber : ''].filter(Boolean).join(' ') : String(item.ProductionYear ?? ''),
+        })),
+      );
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  if (!standing) {
+    return <Card title="Playback override">{failure ? <p class="failure">{failure}</p> : <p class="muted">Loading…</p>}</Card>;
+  }
+
+  function change(patch: Partial<Standing>) {
+    setStanding({ ...(standing as Standing), ...patch });
+  }
+
+  function pick(each: Found) {
+    change({ ItemId: each.id, ItemName: each.name });
+    setSearch('');
+  }
+
+  function choose(id: string, on: boolean) {
+    const chosen = (standing as Standing).UserIds.filter((each) => each !== id);
+    change({ UserIds: on ? [...chosen, id] : chosen });
+  }
+
+  async function save(next: Standing) {
+    if (mock.mocked) {
+      setStanding(next);
+      return;
+    }
+    const body = { Enabled: next.Enabled, ItemId: next.ItemId, From: next.From, Until: next.Until, UserIds: next.UserIds };
+    const { response, error } = await api.PUT('/GoJellyfin/PlaybackOverride', { body });
+    if (response.ok) {
+      notify(next.Enabled ? 'The override is on. Plays started from now on are swapped while the window is open.' : 'The override is off. Plays go back to what was picked from the next request.');
+    } else {
+      refused(error, 'The playback override could not be saved.');
+    }
+    await load();
+  }
+
+  return (
+    <Card class="override">
+      <header class="cardhead">
+        <span class="line">
+          <b>Playback override</b> <Pill tone={standing.Enabled ? 'ok' : 'off'}>{standing.Enabled ? 'On' : 'Off'}</Pill>
+        </span>
+        <span class="actions">
+          {standing.Enabled && <button onClick={() => save({ ...standing, Enabled: false })}>Turn off now</button>}
+          <button class="primary" onClick={() => save(standing)}>
+            Save override
+          </button>
+        </span>
+      </header>
+      <p class="muted small">
+        Whatever movie or episode someone plays, this title plays instead, administrators included, so pick yourself alone to try it first. Music and channels play as they are, and nothing is marked watched or resumed on either title while it is swapped.
+      </p>
+      {failure && (
+        <p class="failure" role="alert">
+          {failure}
+        </p>
+      )}
+      <div class="form">
+        <label class="check">
+          <input type="checkbox" checked={standing.Enabled} onChange={(event) => change({ Enabled: event.currentTarget.checked })} />
+          <span>On</span>
+        </label>
+        <label>
+          Plays instead
+          <input placeholder="Search for a movie or an episode" value={search} onInput={(event) => setSearch(event.currentTarget.value)} />
+          <span class="line small">{standing.ItemName ? standing.ItemName : <span class="muted">Nothing picked yet</span>}</span>
+        </label>
+        {found.length > 0 && (
+          <div class="picker">
+            <ul>
+              {found.map((each) => (
+                <li key={each.id}>
+                  <button onClick={() => pick(each)}>
+                    {each.name} <span class="muted small">{each.detail}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <label>
+          From
+          <input type="datetime-local" value={local(standing.From)} onInput={(event) => change({ From: stamped(event.currentTarget.value) })} />
+        </label>
+        <label>
+          Until
+          <input type="datetime-local" value={local(standing.Until)} onInput={(event) => change({ Until: stamped(event.currentTarget.value) })} />
+        </label>
+      </div>
+      <p class="muted small">Times are in this browser's zone. Leave both empty to run for as long as it is on.</p>
+      <fieldset class="people">
+        <legend>Who {standing.UserIds.length === 0 ? '(everyone)' : ''}</legend>
+        {people.map((person) => (
+          <label class="check" key={person.id}>
+            <input type="checkbox" checked={standing.UserIds.includes(person.id)} onChange={(event) => choose(person.id, event.currentTarget.checked)} />
+            <span>{person.name}</span>
+          </label>
+        ))}
+      </fieldset>
+    </Card>
   );
 }
 

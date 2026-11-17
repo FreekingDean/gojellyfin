@@ -445,6 +445,69 @@ func TestService_SourceForOrder(t *testing.T) {
 			t.Errorf("chose %q, want the richer encode", plan.Source.Path)
 		}
 	})
+
+	t.Run("a lowered ceiling passes over every copy taller than it", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.service.EncodeAtMost(720)
+		film := fixture.film(t, "movie:ceiling")
+		fixture.copy(t, film, "/hd.mkv", "mpeg4", "aac", 1080)
+		fixture.copy(t, film, "/sd.mkv", "mpeg4", "aac", 720)
+
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
+		if err != nil {
+			t.Fatalf("nothing was chosen: %v", err)
+		}
+		if plan.Source.Path != "/sd.mkv" {
+			t.Errorf("chose %q, want the copy at the ceiling", plan.Source.Path)
+		}
+	})
+
+	t.Run("a lowered ceiling refuses a title with nothing under it", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.service.EncodeAtMost(720)
+		film := fixture.film(t, "movie:ceiling-refused")
+		fixture.copy(t, film, "/hd.mkv", "mpeg4", "aac", 1080)
+
+		if _, err := fixture.service.SourceFor(ctx, film, chrome); !errors.Is(err, ErrNoPlayable) {
+			t.Fatalf("err = %v, want %v", err, ErrNoPlayable)
+		}
+	})
+
+	t.Run("a lowered ceiling still plays a taller copy that needs no encode", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.service.EncodeAtMost(720)
+		film := fixture.film(t, "movie:ceiling-untouched")
+		fixture.copy(t, film, "/hd.mkv", "h264", "aac", 1080)
+
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
+		if err != nil {
+			t.Fatalf("nothing was chosen: %v", err)
+		}
+		if plan.Change != ChangeNone {
+			t.Errorf("change = %v, want the file untouched", plan.Change)
+		}
+	})
+}
+
+func TestEncodableSources(t *testing.T) {
+	ctx := context.Background()
+	fixture := newFixture(t)
+	film := fixture.film(t, "movie:encodable")
+	fixture.copy(t, film, "/uhd.mkv", "hevc", "aac", 2160)
+	fixture.copy(t, film, "/hd.mkv", "h264", "aac", 1080)
+	tall := fixture.film(t, "movie:only-tall")
+	fixture.copy(t, tall, "/tall.mkv", "hevc", "aac", 2160)
+
+	sources, err := fixture.service.EncodableSources(ctx, []uuid.UUID{film.ID, tall.ID})
+	if err != nil {
+		t.Fatalf("failed to read the sources: %v", err)
+	}
+	if got := sources[film.ID]; got == nil || got.Path != "/hd.mkv" {
+		t.Errorf("chose %v, want the 1080p copy", got)
+	}
+	if got, held := sources[tall.ID]; held {
+		t.Errorf("chose %q for a title with nothing under the ceiling", got.Path)
+	}
 }
 
 func (f *fixture) copy(t *testing.T, item *Item, path, video, audio string, height int32) {

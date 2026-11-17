@@ -59,7 +59,11 @@ async function fetched(): Promise<Loaded | undefined> {
 }
 
 function described(order: Order): string {
-  return order === 'Shuffle' ? 'Shuffled' : 'In order';
+  if (order === 'Shuffle') {
+    return 'Shuffled';
+  }
+
+  return order === 'Interleave' ? 'Taking turns' : 'In order';
 }
 
 export function Channels({ id }: { id?: string }) {
@@ -274,6 +278,7 @@ function Edit({ channel, titles, reload }: { channel: Channel; titles: Map<strin
               Order
               <select value={draft.Order} onChange={(event) => change({ Order: event.currentTarget.value as Order })}>
                 <option value="Shuffle">Shuffled</option>
+                <option value="Interleave">Taking turns, each series by season and episode</option>
                 <option value="Sequential">In order, each series by season and episode</option>
               </select>
             </label>

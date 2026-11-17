@@ -67,4 +67,19 @@ test.describe('live tv', () => {
     expect(listed).not.toContain('#EXT-X-ENDLIST');
     expect(listed).toContain('#EXT-X-DISCONTINUITY');
   });
+
+  test('answers the live playlist the Android TV app builds for a channel', async ({ signedIn: page, harness }) => {
+    const { AccessToken: token } = await credentials(page);
+    const live = await page.request.get(`${harness.baseUrl}/Videos/${channel.Id}/live.m3u8`, {
+      params: { api_key: token, mediaSourceId: channel.Id, videoCodec: 'h264', audioCodec: 'aac', maxHeight: 1080 },
+    });
+    expect(live.ok()).toBe(true);
+    const master = await live.text();
+    expect(master).toContain('#EXT-X-STREAM-INF');
+
+    const variant = master.split('\n').find((line) => line.startsWith('main.m3u8'));
+    const media = await page.request.get(`${harness.baseUrl}/Videos/${channel.Id}/${variant}`);
+    expect(media.ok()).toBe(true);
+    expect(await media.text()).not.toContain('#EXT-X-ENDLIST');
+  });
 });

@@ -9,13 +9,15 @@ import (
 )
 
 type PlaybackPlan struct {
-	Direct      bool     `json:"direct"`
-	VideoDirect bool     `json:"video_direct"`
-	AudioDirect bool     `json:"audio_direct"`
-	Container   string   `json:"container,omitempty"`
-	VideoCodec  string   `json:"video_codec,omitempty"`
-	AudioCodec  string   `json:"audio_codec,omitempty"`
-	Reasons     []string `json:"reasons,omitempty"`
+	Direct      bool       `json:"direct"`
+	VideoDirect bool       `json:"video_direct"`
+	AudioDirect bool       `json:"audio_direct"`
+	Container   string     `json:"container,omitempty"`
+	VideoCodec  string     `json:"video_codec,omitempty"`
+	AudioCodec  string     `json:"audio_codec,omitempty"`
+	Segmented   bool       `json:"segmented,omitempty"`
+	Reasons     []string   `json:"reasons,omitempty"`
+	StandsInFor *uuid.UUID `json:"stands_in_for,omitempty"`
 }
 
 type Session struct {

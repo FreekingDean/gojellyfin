@@ -56,6 +56,7 @@ var streamRoutes = []streamRoute{
 	{"HEAD /Audio/{itemId}/stream.{container}", "HeadAudioStreamByContainer", serve},
 	{"GET /Videos/{itemId}/master.m3u8", "GetMasterHlsVideoPlaylist", serveMaster},
 	{"HEAD /Videos/{itemId}/master.m3u8", "HeadMasterHlsVideoPlaylist", serveMaster},
+	{"GET /Videos/{itemId}/live.m3u8", "GetLiveHlsStream", serveMaster},
 	{"GET /Videos/{itemId}/main.m3u8", "GetVariantHlsVideoPlaylist", serveMedia},
 	{"GET /Videos/{itemId}/audio.m3u8", "GetVariantHlsAudioPlaylist", serveAudio},
 	{"GET /Videos/{itemId}/hls1/{playlistId}/{segmentId}.{container}", "GetHlsVideoSegment", serveSegment},
@@ -320,7 +321,7 @@ func Register(
 	}
 
 	for _, route := range streamRoutes {
-		m.HandleFunc(route.pattern, middleware.StreamTracing(s.tracing, route.operation, route.handler(streams)))
+		m.HandleFunc(route.pattern, middleware.StreamTracing(s.tracing, route.operation, streams.Tagged(route.handler(streams))))
 	}
 	m.HandleFunc("DELETE /Videos/ActiveEncodings", streams.StopEncodings)
 	finalHandler := api.HandlerWithOptions(h, api.StdHTTPServerOptions{

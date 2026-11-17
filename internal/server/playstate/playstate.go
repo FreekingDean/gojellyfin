@@ -8,6 +8,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/channels"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/prank"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
@@ -21,16 +22,24 @@ type Channels interface {
 	Now() time.Time
 }
 
+type Pranks interface {
+	Disguises(ctx context.Context, userID, itemID uuid.UUID) (bool, error)
+}
+
 type Server struct {
 	channels Channels
 	items    *items.Service
 	sessions *sessions.Service
+	pranks   Pranks
 }
 
-func New(items *items.Service, sessions *sessions.Service, channels *channels.Service) *Server {
+func New(items *items.Service, sessions *sessions.Service, channels *channels.Service, pranks *prank.Service) *Server {
 	server := &Server{items: items, sessions: sessions}
 	if channels != nil {
 		server.channels = channels
+	}
+	if pranks != nil {
+		server.pranks = pranks
 	}
 
 	return server
@@ -150,6 +159,11 @@ func (s *Server) recordProgress(ctx context.Context, itemID uuid.UUID, position 
 		return err
 	}
 
+	disguised, err := s.disguised(ctx, userID, itemID)
+	if err != nil || disguised {
+		return err
+	}
+
 	return s.items.RecordProgress(ctx, userID, itemID, position)
 }
 
@@ -159,5 +173,21 @@ func (s *Server) recordStop(ctx context.Context, itemID uuid.UUID, position int6
 		return err
 	}
 
+	disguised, err := s.disguised(ctx, userID, itemID)
+	if err != nil || disguised {
+		return err
+	}
+
 	return s.items.RecordStop(ctx, userID, itemID, position)
+}
+
+func (s *Server) disguised(ctx context.Context, userID, itemID uuid.UUID) (bool, error) {
+	if session := auth.SessionFrom(ctx); session != nil && sessions.StandsIn(session.PlaybackPlan, itemID) {
+		return true, nil
+	}
+	if s.pranks == nil {
+		return false, nil
+	}
+
+	return s.pranks.Disguises(ctx, userID, itemID)
 }

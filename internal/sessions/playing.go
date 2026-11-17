@@ -52,11 +52,18 @@ func (s *Service) Planned(ctx context.Context, sessionID, sourceID uuid.UUID, pl
 
 func Planned(session *Session) (*MediaSource, *entities.PlaybackPlan) {
 	source := session.PlannedSource
-	if session.PlaybackPlan == nil || source == nil || session.NowPlaying == nil || source.ItemID != session.NowPlaying.ID {
+	if session.PlaybackPlan == nil || source == nil || session.NowPlaying == nil {
+		return nil, nil
+	}
+	if source.ItemID != session.NowPlaying.ID && !StandsIn(session.PlaybackPlan, session.NowPlaying.ID) {
 		return nil, nil
 	}
 
 	return source, session.PlaybackPlan
+}
+
+func StandsIn(plan *entities.PlaybackPlan, itemID uuid.UUID) bool {
+	return plan != nil && plan.StandsInFor != nil && *plan.StandsInFor == itemID
 }
 
 func (s *Service) Stopped(ctx context.Context, sessionID uuid.UUID, address string) error {

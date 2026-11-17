@@ -77,6 +77,43 @@ func CopiedWindows(keyframes []int64, runtime int64) []Window {
 	return append(windows, Window{Start: start, End: max(runtime, start+1)})
 }
 
+func SnappedWindows(keyframes []int64, runtime int64) ([]Window, bool) {
+	grid := EncodedWindows(runtime)
+	if len(keyframes) == 0 {
+		return nil, false
+	}
+
+	starts := make([]int64, len(grid))
+	next := 0
+	for i, cell := range grid {
+		for next < len(keyframes) && keyframes[next] < cell.Start {
+			next++
+		}
+		if i == 0 {
+			starts[i] = keyframes[0]
+			continue
+		}
+		if next == len(keyframes) || keyframes[next] >= cell.End {
+			return nil, false
+		}
+		starts[i] = keyframes[next]
+	}
+
+	windows := make([]Window, len(grid))
+	for i, start := range starts {
+		end := max(runtime, start+1)
+		if i+1 < len(starts) {
+			end = starts[i+1]
+		}
+		if end <= start {
+			return nil, false
+		}
+		windows[i] = Window{Start: start, End: end}
+	}
+
+	return windows, true
+}
+
 func EncodedWindows(runtime int64) []Window {
 	return grid(runtime, SegmentTicks)
 }
@@ -104,6 +141,7 @@ type Segment struct {
 	Transfer  string
 	MaxHeight int32
 	Threads   int
+	Preset    string
 }
 
 func (s Segment) Valid() error {
@@ -213,7 +251,7 @@ func (s Segment) videoArgs() []string {
 		return args
 	}
 
-	encode := Spec{MaxHeight: s.MaxHeight, Transfer: s.Transfer, Threads: s.Threads}.videoEncode()
+	encode := Spec{MaxHeight: s.MaxHeight, Transfer: s.Transfer, Threads: s.Threads, Preset: s.Preset}.videoEncode()
 	for i, arg := range encode {
 		if arg == "-force_key_frames" {
 			encode[i+1] = fmt.Sprintf("expr:gte(t,%s+n_forced*%d)", seconds(s.Window.Start), keyframeSecs)

@@ -25,6 +25,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/notify"
 	"github.com/FreekingDean/gojellyfin/internal/observability"
 	"github.com/FreekingDean/gojellyfin/internal/playlists"
+	"github.com/FreekingDean/gojellyfin/internal/prank"
 	"github.com/FreekingDean/gojellyfin/internal/probe"
 	"github.com/FreekingDean/gojellyfin/internal/quickconnect"
 	"github.com/FreekingDean/gojellyfin/internal/reports"
@@ -62,6 +63,7 @@ var serverModules = fx.Options(
 	metadata.Module,
 	notify.Module,
 	playlists.Module,
+	prank.Module,
 	probe.Module,
 	segments.Module,
 	quickconnect.Module,

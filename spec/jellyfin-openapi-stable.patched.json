@@ -274,6 +274,86 @@
           }
         ]
       }
+    }, "/GoJellyfin/PlaybackOverride": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Reads the playback override: the title that plays in place of whatever a user plays.",
+        "operationId": "GoJellyfinGetPlaybackOverride",
+        "responses": {
+          "200": {
+            "description": "The override.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaybackOverride"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Replaces the playback override.",
+        "operationId": "GoJellyfinUpdatePlaybackOverride",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaybackOverride"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Override saved."
+          },
+          "400": {
+            "description": "The override cannot be saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
     }, "/GoJellyfin/Reports": {
       "get": {
         "tags": [
@@ -48413,9 +48493,10 @@
         "type": "string",
         "enum": [
           "Shuffle",
-          "Sequential"
+          "Sequential",
+          "Interleave"
         ],
-        "description": "Shuffle reshuffles the titles on every pass; Sequential airs them in the order listed, a series by season and episode."
+        "description": "Shuffle reshuffles the titles on every pass; Sequential airs them in the order listed, a series by season and episode; Interleave takes turns between the titles listed, each series by season and episode, spread so a short series is not over before a long one has begun."
       }, "LiveChannels": {
         "type": "array",
         "items": {
@@ -48456,6 +48537,50 @@
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/MyRequest"
+        }
+      }, "PlaybackOverride": {
+        "type": "object",
+        "required": [
+          "Enabled",
+          "UserIds"
+        ],
+        "properties": {
+          "Enabled": {
+            "type": "boolean",
+            "description": "Whether the override is on. Turning it off stops it at once."
+          },
+          "ItemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The movie or episode that plays instead."
+          },
+          "ItemName": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true,
+            "description": "The name of that title."
+          },
+          "From": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When it starts; none means as soon as it is on."
+          },
+          "Until": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When it ends; none means until it is turned off."
+          },
+          "UserIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Who it applies to, administrators included; empty means everyone."
+          }
         }
       }, "Report": {
         "type": "object",

@@ -18,6 +18,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/filesystem"
 	"github.com/FreekingDean/gojellyfin/internal/http/middleware"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/prank"
 	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
@@ -64,7 +65,12 @@ type Channels interface {
 	Now() time.Time
 }
 
+type Pranks interface {
+	Swap(ctx context.Context, userID uuid.UUID, item *items.Item) (*items.Item, bool, error)
+}
+
 type Handler struct {
+	pranks     Pranks
 	channels   Channels
 	sessions   *sessions.Service
 	items      *items.Service
@@ -81,10 +87,14 @@ func New(
 	transcoder Transcoder,
 	reports *reports.Service,
 	channels *channels.Service,
+	pranks *prank.Service,
 ) *Handler {
 	handler := &Handler{sessions: sessions, items: items, files: files, transcoder: transcoder, reports: reports}
 	if channels != nil {
 		handler.channels = channels
+	}
+	if pranks != nil {
+		handler.pranks = pranks
 	}
 
 	return handler
@@ -380,7 +390,8 @@ func unsupported(w http.ResponseWriter, r *http.Request, source, requested strin
 }
 
 func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *items.MediaSource, string, bool) {
-	if !h.authenticated(r) {
+	session, err := h.sessions.ByToken(r.Context(), middleware.TokenFrom(r))
+	if middleware.TokenFrom(r) == "" || err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return nil, nil, "", false
 	}
@@ -397,6 +408,12 @@ func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *it
 		return nil, nil, "", false
 	}
 
+	item, err = h.standIn(r.Context(), session, item)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil, nil, "", false
+	}
+
 	sources, err := h.items.MediaSources(r.Context(), item.ID)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -405,6 +422,7 @@ func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *it
 
 	source := items.BestSource(sources)
 	if asked, err := uuid.Parse(r.URL.Query().Get("mediaSourceId")); err == nil {
+		source = nil
 		for _, candidate := range sources {
 			if candidate.ID == asked {
 				source = candidate
@@ -422,6 +440,16 @@ func (h *Handler) item(w http.ResponseWriter, r *http.Request) (*items.Item, *it
 	}
 
 	return item, source, path, true
+}
+
+func (h *Handler) standIn(ctx context.Context, session *sessions.Session, item *items.Item) (*items.Item, error) {
+	if h.pranks == nil || session.UserID == nil {
+		return item, nil
+	}
+
+	played, _, err := h.pranks.Swap(ctx, *session.UserID, item)
+
+	return played, err
 }
 
 func (h *Handler) resolve(w http.ResponseWriter, r *http.Request, source *items.MediaSource) (string, bool) {

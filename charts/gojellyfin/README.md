@@ -132,6 +132,7 @@ reads the environment.
 | `temporal.hostPort` | `TEMPORAL_HOSTPORT` | `""` | Empty turns background work off and the server still starts |
 | `temporal.namespace` | `TEMPORAL_NAMESPACE` | `""` | Required once `hostPort` is set; the binary refuses to invent one, and so does the chart |
 | `api.transcoderJobs`, `streaming.transcoderJobs` | `TRANSCODER_JOBS` | `""` | Concurrent encodes on one pod. Empty follows the cpu request |
+| `transcoderMaxSourceHeight` | `TRANSCODER_MAX_SOURCE_HEIGHT` | `1080` | The tallest file whose picture is encoded, on every API and streaming pod. A taller copy plays only when it needs no encode, so a title whose copies are all taller and none plays untouched cannot play. Live channels skip such titles |
 | `api.transcoderStallTimeout`, `streaming.transcoderStallTimeout` | `TRANSCODER_STALL_TIMEOUT` | `30s` | How long a write to a client that vanished without closing may block before the encode is killed |
 
 `MIGRATE_ON_START` is deliberately not exposed — see [Migrations](#migrations).

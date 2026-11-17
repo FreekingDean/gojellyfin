@@ -19,6 +19,7 @@ type Spec struct {
 	MaxHeight  int32
 	Transfer   string
 	Threads    int
+	Preset     string
 }
 
 type format struct {
@@ -54,6 +55,8 @@ const (
 	maxFrameRate   = 30
 	TransferPQ     = "smpte2084"
 	TransferHLG    = "arib-std-b67"
+	Preset         = "veryfast"
+	LivePreset     = "ultrafast"
 )
 
 const toneMap = "setparams=color_trc=%s:color_primaries=bt2020:colorspace=bt2020nc:range=tv," +
@@ -137,6 +140,14 @@ func (s Spec) Args() []string {
 	return append(args, "-f", target.muxer, "pipe:1")
 }
 
+func (s Spec) preset() string {
+	if s.Preset == "" {
+		return Preset
+	}
+
+	return s.Preset
+}
+
 func (s Spec) videoEncode() []string {
 	height := int32(MaxHeight)
 	if s.MaxHeight > 0 {
@@ -159,7 +170,7 @@ func (s Spec) videoEncode() []string {
 	args := []string{
 		"-vf", strings.Join(filters, ","),
 		"-c:v", "libx264",
-		"-preset", "veryfast",
+		"-preset", s.preset(),
 		"-crf", "21",
 		"-profile:v", "high",
 		"-level:v", "4.1",

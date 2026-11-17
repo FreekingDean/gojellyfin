@@ -162,7 +162,7 @@ func (s *Service) SourceFor(ctx context.Context, item *Item, can Capabilities) (
 		if !costly(plan.Change) {
 			return plan, nil
 		}
-		if encode == nil && (IsAudio(item) || Height(source) <= transcode.MaxHeight) {
+		if encode == nil && (IsAudio(item) || s.encodable(source)) {
 			encode = &plan
 		}
 	}

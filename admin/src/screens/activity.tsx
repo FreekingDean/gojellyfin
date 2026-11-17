@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 
 import { api } from '../api';
 import * as mock from '../mock';
-import { Served, how } from '../playback';
+import { Served, Stream, how } from '../playback';
 import type { How } from '../playback';
 import { Cell, Dot, Page, Tabs, notify, refused, since } from '../ui';
 import type { Tone } from '../ui';
@@ -153,9 +153,12 @@ export function Activity() {
                     <Cell
                       main={session.playing.title}
                       sub={
-                        <div class="bar">
-                          <span style={{ width: session.playing.progress + '%' }} />
-                        </div>
+                        <>
+                          <div class="bar">
+                            <span style={{ width: session.playing.progress + '%' }} />
+                          </div>
+                          <Stream how={session.playing.how} />
+                        </>
                       }
                     />
                   ) : (
