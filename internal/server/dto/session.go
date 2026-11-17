@@ -119,6 +119,10 @@ func planned(dto *api.SessionInfoDto, item *api.BaseItemDto, source *items.Media
 		reasons = append(reasons, api.TranscodeReason(reason))
 	}
 	dto.PlayState.PlayMethod = apiutil.Ptr(api.Transcode)
+	if plan.Segmented {
+		listed.TranscodingSubProtocol = apiutil.Ptr(api.MediaStreamProtocolHls)
+		item.MediaSources = &[]api.MediaSourceInfo{listed}
+	}
 	dto.TranscodingInfo = &api.TranscodingInfo{
 		IsVideoDirect:    apiutil.Ptr(plan.VideoDirect),
 		IsAudioDirect:    apiutil.Ptr(plan.AudioDirect),

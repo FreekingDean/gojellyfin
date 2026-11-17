@@ -137,7 +137,6 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 	if standsIn {
 		playback.StandsInFor = &item.ID
 	}
-	s.record(ctx, plan, playback)
 
 	token := auth.AuthorizationFrom(ctx).Token
 	source := dto.MediaSourceDto(plan.Source)
@@ -155,6 +154,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 		if err != nil {
 			return api.PlaybackInfoResponse{}, err
 		}
+		playback.Segmented = segmented
 		if !segmented {
 			served(&source, plan, streamURL("Videos", itemID, plan, token, session, question.startTicks))
 			break
@@ -164,6 +164,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 		source.TranscodingContainer = apiutil.Ptr(transcode.VideoContainer)
 	}
 
+	s.record(ctx, plan, playback)
 	response.MediaSources = &[]api.MediaSourceInfo{source}
 
 	return response, nil
