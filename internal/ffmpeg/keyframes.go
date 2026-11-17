@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"os"
 	"os/exec"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/FreekingDean/gojellyfin/internal/matroska"
 	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
@@ -29,6 +31,16 @@ func (ffmpeg *FFMpeg) Keyframes(ctx context.Context, path string) ([]int64, erro
 	ctx, span := tracing.Start(ctx, "ffprobe keyframes")
 	defer span.End()
 
+	if keyframes, err := ffmpeg.indexed(ctx, path); err == nil {
+		span.Set(tracing.Bool("ffmpeg.keyframes_indexed", true), tracing.Int("ffmpeg.keyframes", len(keyframes)))
+
+		return keyframes, nil
+	}
+
+	return ffmpeg.packets(ctx, path, span)
+}
+
+func (ffmpeg *FFMpeg) packets(ctx context.Context, path string, span *tracing.Span) ([]int64, error) {
 	ctx, cancel := context.WithTimeout(ctx, keyframeTimeout)
 	defer cancel()
 
@@ -72,6 +84,56 @@ func (ffmpeg *FFMpeg) Keyframes(ctx context.Context, path string) ([]int64, erro
 	span.Set(tracing.Int("ffmpeg.keyframes", len(keyframes)))
 
 	return keyframes, nil
+}
+
+func (ffmpeg *FFMpeg) indexed(ctx context.Context, path string) ([]int64, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	cues, err := matroska.Keyframes(file)
+	if err != nil {
+		return nil, err
+	}
+
+	start, err := ffmpeg.videoStart(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+
+	keyframes := make([]int64, 0, len(cues))
+	for _, cue := range cues {
+		keyframes = append(keyframes, int64(cue/100)-start)
+	}
+
+	return keyframes, nil
+}
+
+func (ffmpeg *FFMpeg) videoStart(ctx context.Context, path string) (int64, error) {
+	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, ffmpeg.probe,
+		"-v", "error",
+		"-select_streams", "V:0",
+		"-show_entries", "stream=start_time",
+		"-of", "csv=p=0",
+		path,
+	)
+	cmd.WaitDelay = probeWaitDelay
+
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, fmt.Errorf("failed to read the start of %s: %w", path, err)
+	}
+	start, ok := toTicks(strings.TrimSpace(string(output)))
+	if !ok {
+		return 0, fmt.Errorf("ffprobe gave %s no start time", path)
+	}
+
+	return start, nil
 }
 
 func fromStart(output io.Reader) ([]int64, error) {
