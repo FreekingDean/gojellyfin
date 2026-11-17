@@ -32,7 +32,7 @@ func (r *Recorder) Values() map[string]string {
 	values := make(map[string]string)
 	for _, span := range r.recorder.Ended() {
 		for _, attribute := range span.Attributes() {
-			values[string(attribute.Key)] = attribute.Value.Emit()
+			values[string(attribute.Key)] = attribute.Value.String()
 		}
 	}
 

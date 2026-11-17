@@ -9,7 +9,7 @@ COPY admin ./
 COPY spec/jellyfin-openapi-stable.patched.json /src/spec/
 RUN npm run build
 
-FROM --platform=$BUILDPLATFORM golang:1.25 AS build
+FROM --platform=$BUILDPLATFORM golang:1.26 AS build
 
 WORKDIR /src
 
