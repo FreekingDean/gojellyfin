@@ -91,7 +91,7 @@ func (ffmpeg *FFMpeg) indexed(ctx context.Context, path string) ([]int64, error)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	cues, err := matroska.Keyframes(file)
 	if err != nil {

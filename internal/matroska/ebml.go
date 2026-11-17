@@ -31,7 +31,6 @@ type reader struct {
 	file  io.ReadSeeker
 	buf   *bufio.Reader
 	at    int64
-	limit int64
 }
 
 func newReader(file io.ReadSeeker) *reader {
