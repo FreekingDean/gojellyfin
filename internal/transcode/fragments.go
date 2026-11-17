@@ -106,10 +106,61 @@ func decodeTime(moof []byte) (uint64, error) {
 	}
 }
 
+func presentationTime(moof []byte) (int64, error) {
+	decoded, err := decodeTime(moof)
+	if err != nil {
+		return 0, err
+	}
+
+	return int64(decoded) + firstCompositionOffset(children(children(moof)["traf"])["trun"]), nil
+}
+
+func firstCompositionOffset(trun []byte) int64 {
+	const (
+		dataOffset       = 0x1
+		firstSampleFlags = 0x4
+		sampleDuration   = 0x100
+		sampleSize       = 0x200
+		sampleFlags      = 0x400
+		sampleOffset     = 0x800
+	)
+	if len(trun) < 8 {
+		return 0
+	}
+	flags := binary.BigEndian.Uint32(trun[:4]) & 0xffffff
+	if flags&sampleOffset == 0 || binary.BigEndian.Uint32(trun[4:8]) == 0 {
+		return 0
+	}
+
+	at := 8
+	for _, present := range []uint32{dataOffset, firstSampleFlags, sampleDuration, sampleSize, sampleFlags} {
+		if flags&present != 0 {
+			at += 4
+		}
+	}
+	if len(trun) < at+4 {
+		return 0
+	}
+	offset := binary.BigEndian.Uint32(trun[at : at+4])
+	if trun[0] == 0 {
+		return int64(offset)
+	}
+
+	return int64(int32(offset))
+}
+
 func ticks(units uint64, scale uint32) int64 {
 	product := new(big.Int).Mul(new(big.Int).SetUint64(units), big.NewInt(ticksPerSecond))
 
 	return product.Div(product, big.NewInt(int64(scale))).Int64()
+}
+
+func presented(units int64, scale uint32) int64 {
+	if units < 0 {
+		return -ticks(uint64(-units), scale)
+	}
+
+	return ticks(uint64(units), scale)
 }
 
 func Header(w io.Writer, r io.Reader) error {
@@ -169,11 +220,11 @@ func Fragments(w io.Writer, r io.Reader, window Window) error {
 			if scale == 0 {
 				return ErrNoHeader
 			}
-			units, err := decodeTime(body)
+			units, err := presentationTime(body)
 			if err != nil {
 				return err
 			}
-			at := ticks(units, scale)
+			at := presented(units, scale)
 			if at >= window.End-tolerance {
 				return nil
 			}
