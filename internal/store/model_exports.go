@@ -88,7 +88,6 @@ func (_u *ActivityLogEntryUpdateOne) SaveModel(ctx context.Context) (*ActivityLo
 }
 
 func (_u *ActivityLogEntryUpdateOne) SetModel(m *ActivityLogEntryModel) *ActivityLogEntryUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetName(m.Name)
 	_u.SetKind(m.Kind)
 	_u.SetOverview(m.Overview)
@@ -172,7 +171,6 @@ func (_u *ApiKeyUpdateOne) SaveModel(ctx context.Context) (*ApiKeyModel, error) 
 }
 
 func (_u *ApiKeyUpdateOne) SetModel(m *ApiKeyModel) *ApiKeyUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetAccessToken(m.AccessToken)
 	_u.SetAppName(m.AppName)
 	if m.RevokedAt == nil {
@@ -258,7 +256,6 @@ func (_u *ChannelUpdateOne) SaveModel(ctx context.Context) (*ChannelModel, error
 }
 
 func (_u *ChannelUpdateOne) SetModel(m *ChannelModel) *ChannelUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetNumber(m.Number)
 	_u.SetName(m.Name)
 	_u.SetOrder(m.Order)
@@ -340,7 +337,6 @@ func (_u *ChannelEntryUpdateOne) SaveModel(ctx context.Context) (*ChannelEntryMo
 }
 
 func (_u *ChannelEntryUpdateOne) SetModel(m *ChannelEntryModel) *ChannelEntryUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetPosition(m.Position)
 	return _u
 }
@@ -410,7 +406,6 @@ func (_u *ConfigurationUpdateOne) SaveModel(ctx context.Context) (*Configuration
 }
 
 func (_u *ConfigurationUpdateOne) SetModel(m *ConfigurationModel) *ConfigurationUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetKey(m.Key)
 	_u.SetValue(m.Value)
 	return _u
@@ -495,7 +490,6 @@ func (_u *CreditUpdateOne) SaveModel(ctx context.Context) (*CreditModel, error) 
 }
 
 func (_u *CreditUpdateOne) SetModel(m *CreditModel) *CreditUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetKind(m.Kind)
 	_u.SetRole(m.Role)
 	if m.SortOrder == nil {
@@ -595,7 +589,6 @@ func (_u *DeviceUpdateOne) SaveModel(ctx context.Context) (*DeviceModel, error) 
 }
 
 func (_u *DeviceUpdateOne) SetModel(m *DeviceModel) *DeviceUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetClientID(m.ClientID)
 	_u.SetName(m.Name)
 	_u.SetCustomName(m.CustomName)
@@ -710,7 +703,6 @@ func (_u *DisplayPreferencesUpdateOne) SaveModel(ctx context.Context) (*DisplayP
 }
 
 func (_u *DisplayPreferencesUpdateOne) SetModel(m *DisplayPreferencesModel) *DisplayPreferencesUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetReferenceID(m.ReferenceID)
 	_u.SetClient(m.Client)
 	_u.SetViewType(m.ViewType)
@@ -795,7 +787,6 @@ func (_u *GenreUpdateOne) SaveModel(ctx context.Context) (*GenreModel, error) {
 }
 
 func (_u *GenreUpdateOne) SetModel(m *GenreModel) *GenreUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetName(m.Name)
 	return _u
 }
@@ -875,7 +866,6 @@ func (_u *ImageUpdateOne) SaveModel(ctx context.Context) (*ImageModel, error) {
 }
 
 func (_u *ImageUpdateOne) SetModel(m *ImageModel) *ImageUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetKind(m.Kind)
 	_u.SetIndex(m.Index)
 	_u.SetURL(m.URL)
@@ -1026,7 +1016,6 @@ func (_u *ItemUpdateOne) SaveModel(ctx context.Context) (*ItemModel, error) {
 }
 
 func (_u *ItemUpdateOne) SetModel(m *ItemModel) *ItemUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetKind(m.Kind)
 	_u.SetKey(m.Key)
 	_u.SetName(m.Name)
@@ -1197,7 +1186,6 @@ func (_u *ItemSourceUpdateOne) SaveModel(ctx context.Context) (*ItemSourceModel,
 }
 
 func (_u *ItemSourceUpdateOne) SetModel(m *ItemSourceModel) *ItemSourceUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetName(m.Name)
 	_u.SetPath(m.Path)
 	_u.SetContainer(m.Container)
@@ -1314,7 +1302,6 @@ func (_u *KeyframeIndexUpdateOne) SaveModel(ctx context.Context) (*KeyframeIndex
 }
 
 func (_u *KeyframeIndexUpdateOne) SetModel(m *KeyframeIndexModel) *KeyframeIndexUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetTicks(m.Ticks)
 	return _u
 }
@@ -1394,7 +1381,6 @@ func (_u *LibraryUpdateOne) SaveModel(ctx context.Context) (*LibraryModel, error
 }
 
 func (_u *LibraryUpdateOne) SetModel(m *LibraryModel) *LibraryUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetName(m.Name)
 	_u.SetCollectionType(m.CollectionType)
 	_u.SetLocations(m.Locations)
@@ -1476,7 +1462,6 @@ func (_u *LibraryItemUpdateOne) SaveModel(ctx context.Context) (*LibraryItemMode
 }
 
 func (_u *LibraryItemUpdateOne) SetModel(m *LibraryItemModel) *LibraryItemUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	return _u
 }
 
@@ -1631,7 +1616,6 @@ func (_u *LibraryOptionsUpdateOne) SaveModel(ctx context.Context) (*LibraryOptio
 }
 
 func (_u *LibraryOptionsUpdateOne) SetModel(m *LibraryOptionsModel) *LibraryOptionsUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetEnabled(m.Enabled)
 	_u.SetEnablePhotos(m.EnablePhotos)
 	_u.SetEnableRealtimeMonitor(m.EnableRealtimeMonitor)
@@ -1753,7 +1737,6 @@ func (_u *LibrarySourceUpdateOne) SaveModel(ctx context.Context) (*LibrarySource
 }
 
 func (_u *LibrarySourceUpdateOne) SetModel(m *LibrarySourceModel) *LibrarySourceUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetTagFilter(m.TagFilter)
 	if m.LastSyncedAt == nil {
 		_u.ClearLastSyncedAt()
@@ -1839,7 +1822,6 @@ func (_u *MediaSegmentUpdateOne) SaveModel(ctx context.Context) (*MediaSegmentMo
 }
 
 func (_u *MediaSegmentUpdateOne) SetModel(m *MediaSegmentModel) *MediaSegmentUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetKind(m.Kind)
 	_u.SetOrigin(m.Origin)
 	_u.SetStartTicks(m.StartTicks)
@@ -1950,7 +1932,6 @@ func (_u *MediaStreamUpdateOne) SaveModel(ctx context.Context) (*MediaStreamMode
 }
 
 func (_u *MediaStreamUpdateOne) SetModel(m *MediaStreamModel) *MediaStreamUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetKind(m.Kind)
 	if m.VideoRangeType == nil {
 		_u.ClearVideoRangeType()
@@ -2069,7 +2050,6 @@ func (_u *PersonUpdateOne) SaveModel(ctx context.Context) (*PersonModel, error) 
 }
 
 func (_u *PersonUpdateOne) SetModel(m *PersonModel) *PersonUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetName(m.Name)
 	_u.SetImageURL(m.ImageURL)
 	return _u
@@ -2154,7 +2134,6 @@ func (_u *PlaylistUpdateOne) SaveModel(ctx context.Context) (*PlaylistModel, err
 }
 
 func (_u *PlaylistUpdateOne) SetModel(m *PlaylistModel) *PlaylistUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetMediaType(m.MediaType)
 	_u.SetOpenAccess(m.OpenAccess)
 	return _u
@@ -2233,7 +2212,6 @@ func (_u *PlaylistEntryUpdateOne) SaveModel(ctx context.Context) (*PlaylistEntry
 }
 
 func (_u *PlaylistEntryUpdateOne) SetModel(m *PlaylistEntryModel) *PlaylistEntryUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetSortOrder(m.SortOrder)
 	return _u
 }
@@ -2311,7 +2289,6 @@ func (_u *PlaylistShareUpdateOne) SaveModel(ctx context.Context) (*PlaylistShare
 }
 
 func (_u *PlaylistShareUpdateOne) SetModel(m *PlaylistShareModel) *PlaylistShareUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetCanEdit(m.CanEdit)
 	return _u
 }
@@ -2399,7 +2376,6 @@ func (_u *QuickConnectRequestUpdateOne) SaveModel(ctx context.Context) (*QuickCo
 }
 
 func (_u *QuickConnectRequestUpdateOne) SetModel(m *QuickConnectRequestModel) *QuickConnectRequestUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetSecret(m.Secret)
 	_u.SetCode(m.Code)
 	_u.SetDeviceID(m.DeviceID)
@@ -2496,7 +2472,6 @@ func (_u *ReportUpdateOne) SaveModel(ctx context.Context) (*ReportModel, error) 
 }
 
 func (_u *ReportUpdateOne) SetModel(m *ReportModel) *ReportUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetKind(m.Kind)
 	_u.SetOrigin(m.Origin)
 	_u.SetNote(m.Note)
@@ -2584,7 +2559,6 @@ func (_u *RequestUpdateOne) SaveModel(ctx context.Context) (*RequestModel, error
 }
 
 func (_u *RequestUpdateOne) SetModel(m *RequestModel) *RequestUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetKey(m.Key)
 	_u.SetKind(m.Kind)
 	_u.SetTmdbID(m.TmdbID)
@@ -2667,7 +2641,6 @@ func (_u *RequestSubmissionUpdateOne) SaveModel(ctx context.Context) (*RequestSu
 }
 
 func (_u *RequestSubmissionUpdateOne) SetModel(m *RequestSubmissionModel) *RequestSubmissionUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetKey(m.Key)
 	if m.AcceptedAt == nil {
 		_u.ClearAcceptedAt()
@@ -2791,7 +2764,6 @@ func (_u *SessionUpdateOne) SaveModel(ctx context.Context) (*SessionModel, error
 }
 
 func (_u *SessionUpdateOne) SetModel(m *SessionModel) *SessionUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetAccessToken(m.AccessToken)
 	_u.SetRemoteEndpoint(m.RemoteEndpoint)
 	if m.LastActivityAt == nil {
@@ -2920,7 +2892,6 @@ func (_u *SourceUpdateOne) SaveModel(ctx context.Context) (*SourceModel, error) 
 }
 
 func (_u *SourceUpdateOne) SetModel(m *SourceModel) *SourceUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetName(m.Name)
 	_u.SetURL(m.URL)
 	_u.SetAPIKeyVariable(m.APIKeyVariable)
@@ -3020,7 +2991,6 @@ func (_u *SourcePathUpdateOne) SaveModel(ctx context.Context) (*SourcePathModel,
 }
 
 func (_u *SourcePathUpdateOne) SetModel(m *SourcePathModel) *SourcePathUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetRemotePath(m.RemotePath)
 	_u.SetLocalPath(m.LocalPath)
 	return _u
@@ -3093,7 +3063,6 @@ func (_u *StudioUpdateOne) SaveModel(ctx context.Context) (*StudioModel, error) 
 }
 
 func (_u *StudioUpdateOne) SetModel(m *StudioModel) *StudioUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetName(m.Name)
 	return _u
 }
@@ -3193,7 +3162,6 @@ func (_u *SyncPlayGroupUpdateOne) SaveModel(ctx context.Context) (*SyncPlayGroup
 }
 
 func (_u *SyncPlayGroupUpdateOne) SetModel(m *SyncPlayGroupModel) *SyncPlayGroupUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetName(m.Name)
 	_u.SetState(m.State)
 	_u.SetPositionTicks(m.PositionTicks)
@@ -3296,7 +3264,6 @@ func (_u *SyncPlayGroupMemberUpdateOne) SaveModel(ctx context.Context) (*SyncPla
 }
 
 func (_u *SyncPlayGroupMemberUpdateOne) SetModel(m *SyncPlayGroupMemberModel) *SyncPlayGroupMemberUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetPing(m.Ping)
 	_u.SetIsBuffering(m.IsBuffering)
 	_u.SetIgnoreWait(m.IgnoreWait)
@@ -3378,7 +3345,6 @@ func (_u *SyncPlayQueueEntryUpdateOne) SaveModel(ctx context.Context) (*SyncPlay
 }
 
 func (_u *SyncPlayQueueEntryUpdateOne) SetModel(m *SyncPlayQueueEntryModel) *SyncPlayQueueEntryUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetSortedIndex(m.SortedIndex)
 	if m.ShuffledIndex == nil {
 		_u.ClearShuffledIndex()
@@ -3497,7 +3463,6 @@ func (_u *UserUpdateOne) SaveModel(ctx context.Context) (*UserModel, error) {
 }
 
 func (_u *UserUpdateOne) SetModel(m *UserModel) *UserUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetName(m.Name)
 	_u.SetUsername(m.Username)
 	_u.SetPasswordHash(m.PasswordHash)
@@ -3632,7 +3597,6 @@ func (_u *UserConfigurationUpdateOne) SaveModel(ctx context.Context) (*UserConfi
 }
 
 func (_u *UserConfigurationUpdateOne) SetModel(m *UserConfigurationModel) *UserConfigurationUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetCastReceiverID(m.CastReceiverID)
 	_u.SetAudioLanguagePreference(m.AudioLanguagePreference)
 	_u.SetSubtitleLanguagePreference(m.SubtitleLanguagePreference)
@@ -3737,7 +3701,6 @@ func (_u *UserItemDataUpdateOne) SaveModel(ctx context.Context) (*UserItemDataMo
 }
 
 func (_u *UserItemDataUpdateOne) SetModel(m *UserItemDataModel) *UserItemDataUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetPlayed(m.Played)
 	_u.SetIsFavorite(m.IsFavorite)
 	_u.SetPlayCount(m.PlayCount)
@@ -3917,7 +3880,6 @@ func (_u *UserPolicyUpdateOne) SaveModel(ctx context.Context) (*UserPolicyModel,
 }
 
 func (_u *UserPolicyUpdateOne) SetModel(m *UserPolicyModel) *UserPolicyUpdateOne {
-	_u.SetCreatedAt(m.CreatedAt)
 	_u.SetIsAdministrator(m.IsAdministrator)
 	_u.SetIsHidden(m.IsHidden)
 	_u.SetIsDisabled(m.IsDisabled)
