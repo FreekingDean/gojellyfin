@@ -38,6 +38,11 @@ const (
 	finishedOnly = `ExecutionStatus != "Running"`
 )
 
+var (
+	queued   = []string{"RunWorkflow:", "StartActivity:"}
+	executed = []string{"RunActivity:"}
+)
+
 type Client struct {
 	client client.Client
 }
@@ -58,10 +63,7 @@ func NewClient(config env.Config, traces *tracing.Tracing) (*Client, error) {
 		},
 	}
 	if traces.Enabled() {
-		traced, err := opentelemetry.NewTracingInterceptor(opentelemetry.TracerOptions{
-			Tracer:            traces.Tracer(),
-			TextMapPropagator: traces.Propagator(),
-		})
+		traced, err := tracer(traces)
 		if err != nil {
 			return nil, err
 		}
@@ -74,6 +76,14 @@ func NewClient(config env.Config, traces *tracing.Tracing) (*Client, error) {
 	}
 
 	return &Client{client: connected}, nil
+}
+
+func tracer(traces *tracing.Tracing) (interceptor.Interceptor, error) {
+	return opentelemetry.NewTracingInterceptor(opentelemetry.TracerOptions{
+		Tracer:            traces.Tracer(),
+		TextMapPropagator: traces.Propagator(),
+		SpanStarter:       tracing.Starts(queued, executed),
+	})
 }
 
 func (c *Client) Enabled() bool {
