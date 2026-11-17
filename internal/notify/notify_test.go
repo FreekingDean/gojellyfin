@@ -6,10 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/FreekingDean/gojellyfin/internal/storetest"
+
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
-	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
 func newService(t *testing.T) (*Service, chan Envelope) {
@@ -20,13 +21,7 @@ func newService(t *testing.T) (*Service, chan Envelope) {
 		t.Fatalf("failed to read the environment: %v", err)
 	}
 
-	connection, err := store.NewStore(config)
-	if err != nil {
-		t.Fatalf("failed to open the database: %v", err)
-	}
-	if err := connection.Start(); err != nil {
-		t.Fatalf("failed to reach the database, set DATABASE_URL: %v", err)
-	}
+	connection := storetest.Open(t)
 
 	received := make(chan Envelope, 64)
 	service := New(config, connection.Client(), func(envelope Envelope) {
@@ -40,12 +35,6 @@ func newService(t *testing.T) (*Service, chan Envelope) {
 	}
 
 	t.Cleanup(func() {
-		if err := service.Stop(); err != nil {
-			t.Errorf("failed to stop the notifier: %v", err)
-		}
-		if err := connection.Stop(); err != nil {
-			t.Errorf("failed to close the database: %v", err)
-		}
 	})
 
 	return service, received

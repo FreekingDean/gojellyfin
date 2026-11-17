@@ -4,16 +4,18 @@ import (
 	"context"
 	"testing"
 
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
+
+	"github.com/FreekingDean/gojellyfin/internal/storetest"
+
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
-	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	downloadermodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -28,37 +30,10 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	config, err := env.Load()
-	if err != nil {
-		t.Fatalf("failed to read the environment: %v", err)
-	}
-
-	connection, err := store.NewStore(config)
-	if err != nil {
-		t.Fatalf("failed to open the database: %v", err)
-	}
-	if err := connection.Start(); err != nil {
-		t.Fatalf("failed to reach the database, set DATABASE_URL: %v", err)
-	}
+	connection := storetest.Open(t)
 
 	client := connection.Client()
-	library, err := client.Library.Create().SetName(t.Name() + "-" + uuid.NewString()).Save(context.Background())
-	if err != nil {
-		t.Fatalf("failed to create the library: %v", err)
-	}
-
-	t.Cleanup(func() {
-		ctx := context.Background()
-		if _, err := client.Item.Delete().Where(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the items: %v", err)
-		}
-		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the library: %v", err)
-		}
-		if err := connection.Stop(); err != nil {
-			t.Errorf("failed to close the database: %v", err)
-		}
-	})
+	library := storetest.Library(t, client, librarymodel.CollectionTypeMixed)
 
 	server := New(items.New(client), libraries.New(client), allLibraries{})
 

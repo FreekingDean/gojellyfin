@@ -5,26 +5,16 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/storetest"
+
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/env"
-	"github.com/FreekingDean/gojellyfin/internal/store"
 	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/source"
 )
 
 func TestService_EnsureFixed(t *testing.T) {
-	config, err := env.Load()
-	if err != nil {
-		t.Fatalf("failed to read the environment: %v", err)
-	}
-	connection, err := store.NewStore(config)
-	if err != nil {
-		t.Fatalf("failed to open the database: %v", err)
-	}
-	if err := connection.Start(); err != nil {
-		t.Fatalf("failed to reach the database, set DATABASE_URL: %v", err)
-	}
+	connection := storetest.Open(t)
 	client := connection.Client()
 	ctx := context.Background()
 	t.Cleanup(func() {

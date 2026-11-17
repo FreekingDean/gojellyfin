@@ -5,12 +5,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/storetest"
+
 	"github.com/FreekingDean/gojellyfin/internal/config"
-	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/shelves"
-	"github.com/FreekingDean/gojellyfin/internal/store"
 )
 
 type styling string
@@ -28,18 +28,7 @@ type titles []shelves.Title
 func (t titles) Titles(context.Context) ([]shelves.Title, error) { return t, nil }
 
 func TestServer_GetBrandingCss(t *testing.T) {
-	base, err := env.Load()
-	if err != nil {
-		t.Fatalf("failed to read the environment: %v", err)
-	}
-	connection, err := store.NewStore(base)
-	if err != nil {
-		t.Fatalf("failed to open the database: %v", err)
-	}
-	if err := connection.Start(); err != nil {
-		t.Fatalf("failed to reach the database, set DATABASE_URL: %v", err)
-	}
-	t.Cleanup(func() { _ = connection.Stop() })
+	connection := storetest.Open(t)
 
 	id := shelves.ID("recently-aired")
 	server := &Server{
@@ -87,18 +76,7 @@ func TestServer_GetBrandingCss(t *testing.T) {
 }
 
 func TestServer_GetBrandingOptions(t *testing.T) {
-	base, err := env.Load()
-	if err != nil {
-		t.Fatalf("failed to read the environment: %v", err)
-	}
-	connection, err := store.NewStore(base)
-	if err != nil {
-		t.Fatalf("failed to open the database: %v", err)
-	}
-	if err := connection.Start(); err != nil {
-		t.Fatalf("failed to reach the database, set DATABASE_URL: %v", err)
-	}
-	t.Cleanup(func() { _ = connection.Stop() })
+	connection := storetest.Open(t)
 
 	tests := []struct {
 		name    string

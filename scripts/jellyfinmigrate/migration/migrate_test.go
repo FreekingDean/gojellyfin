@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/FreekingDean/gojellyfin/internal/storetest"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
-	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
 	"github.com/FreekingDean/gojellyfin/internal/store"
@@ -39,14 +40,7 @@ type harness struct {
 func newHarness(t *testing.T) *harness {
 	t.Helper()
 
-	config, err := env.Load()
-	require.NoError(t, err)
-	db, err := store.NewStore(config)
-	require.NoError(t, err)
-	require.NoError(t, db.Start())
-	t.Cleanup(func() { _ = db.Stop() })
-
-	h := &harness{client: db.Client(), titles: map[string]uuid.UUID{}}
+	h := &harness{client: storetest.Client(t), titles: map[string]uuid.UUID{}}
 	h.clear(t)
 	t.Cleanup(func() { h.clear(t) })
 

@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/FreekingDean/gojellyfin/internal/storetest"
+
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
@@ -83,13 +85,7 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to read the environment: %v", err)
 	}
 
-	connection, err := store.NewStore(config)
-	if err != nil {
-		t.Fatalf("failed to open the database: %v", err)
-	}
-	if err := connection.Start(); err != nil {
-		t.Fatalf("failed to reach the database, set DATABASE_URL: %v", err)
-	}
+	connection := storetest.Open(t)
 
 	ctx := context.Background()
 	client := connection.Client()
@@ -135,9 +131,6 @@ func newFixture(t *testing.T) *fixture {
 		}
 		if err := client.User.DeleteOneID(user.ID).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user: %v", err)
-		}
-		if err := connection.Stop(); err != nil {
-			t.Errorf("failed to close the database: %v", err)
 		}
 	})
 
