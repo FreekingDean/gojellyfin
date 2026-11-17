@@ -38,19 +38,14 @@ type Settings interface {
 	SetConfiguration(ctx context.Context, key string, value json.RawMessage) error
 }
 
-type Administrators interface {
-	IsAdministrator(ctx context.Context, id uuid.UUID) (bool, error)
-}
-
 type Service struct {
-	catalogue      Catalogue
-	settings       Settings
-	administrators Administrators
-	now            func() time.Time
+	catalogue Catalogue
+	settings  Settings
+	now       func() time.Time
 }
 
-func newService(catalogue Catalogue, settings Settings, administrators Administrators, now func() time.Time) *Service {
-	return &Service{catalogue: catalogue, settings: settings, administrators: administrators, now: now}
+func newService(catalogue Catalogue, settings Settings, now func() time.Time) *Service {
+	return &Service{catalogue: catalogue, settings: settings, now: now}
 }
 
 func AprilFirst(now time.Time) (time.Time, time.Time) {
@@ -169,11 +164,6 @@ func (s *Service) target(ctx context.Context, userID, itemID uuid.UUID) (uuid.UU
 	}
 	if len(override.UserIDs) > 0 && !slices.Contains(override.UserIDs, userID) {
 		return uuid.Nil, false, nil
-	}
-
-	administrator, err := s.administrators.IsAdministrator(ctx, userID)
-	if err != nil || administrator {
-		return uuid.Nil, false, err
 	}
 
 	return *override.ItemID, true, nil
