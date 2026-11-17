@@ -1,165 +1,124 @@
 # gojellyfin
 
-A Go reimplementation of a Jellyfin media server, serving the Jellyfin 12.0.0
-HTTP API so that stock `jellyfin-web` and Jellyfin clients can talk to it.
+A Go reimplementation of Jellyfin's server API. It serves the Jellyfin 12.0.0 HTTP API, so the standard `jellyfin-web` interface and Jellyfin clients can connect to it.
 
-Everything ships as one binary, `cmd/gojellyfin`, with a subcommand each for
-`server`, `worker`, `migrate`, `adduser`, `resetpassword` and
-`localizationdata`.
+## What you can do
 
-## What works
-
-| | |
+| Feature | What it means |
 |---|---|
-| **Movies, TV and music** | Filled from Radarr, Sonarr and Lidarr, with next-up, resume and lyrics |
-| **Metadata** | Movies, series and episodes identified against TMDB, with your own `TMDB_API_KEY` (a v3 API key or a v4 read access token) |
-| **Playback** | A file the client can play is sent whole; anything else is remuxed, has its audio converted, or is encoded to 1080p H.264, over HLS |
-| **Live TV** | Channels built from your own titles, with a guide, played as live HLS |
-| **SyncPlay** | Groups that play together across replicas |
-| **Requests and reports** | A heart on a title the library lacks asks Radarr or Sonarr for it; Delete reports a broken copy and asks for another |
-| **Sign-in** | Passwords, Quick Connect with a QR on the television, OpenID Connect single sign-on and API keys |
-| **Background jobs** | Temporal workflows in a separate worker deployment |
-| **High availability** | Every server pod is interchangeable — run as many replicas as you like |
-| **Admin app** | `/admin`, beside `jellyfin-web`'s own dashboard |
+| **Movies, TV and music** | Build your library from Radarr, Sonarr and Lidarr. Includes next-up, resume and lyrics. |
+| **Metadata and artwork** | Match movies, series and episodes with TMDB. Add your own `TMDB_API_KEY` (a v3 API key or v4 read access token). |
+| **Playback** | Play compatible files directly. When needed, gojellyfin remuxes, converts audio or transcodes video to 1080p H.264 over HLS. |
+| **Live TV** | Create channels from your own titles and play them as live HLS. |
+| **SyncPlay** | Watch together across server replicas. |
+| **Requests and reports** | Request missing titles through Radarr or Sonarr, or report a broken copy so another can be requested. |
+| **Sign-in** | Passwords, TV-based Quick Connect, OpenID Connect single sign-on and API keys. |
+| **Background work** | Run Temporal workflows in a separate worker deployment. |
+| **Multiple replicas** | Run interchangeable server pods. Postgres stores shared session and coordination state. |
+| **Admin app** | Open the admin interface at `/admin`, alongside the standard Jellyfin dashboard. |
 
-**Playback** is decided by the server rather than the client: it reads the
-client's `DeviceProfile`, picks the file that needs the least changing, and
-hands back one url. A picture encode is the last resort and starts only from a
-source at or under `TRANSCODER_MAX_SOURCE_HEIGHT` (1080 by default), so a title
-whose only copies are 4K and need encoding is refused rather than encoded.
+### Playback and compatibility
 
-**High availability** means nothing a request leaves behind lives in one
-process: sessions, Quick Connect, SyncPlay and the websocket's delivery are
-Postgres, and every HLS segment is cut on its own. It does not mean the
-database is replicated.
+The server chooses the best available file for each client's `DeviceProfile`. It prefers a file the client can play as-is, then uses remuxing or audio conversion, and only transcodes the picture as a last resort.
 
-Live TV has no tuner and no recordings, and remote control of another session
-is not offered.
+Picture transcoding is limited to sources at or below `TRANSCODER_MAX_SOURCE_HEIGHT` (1080 by default). If a title only has 4K copies and needs a picture transcode, playback is refused rather than starting an unsupported encode.
 
-## Development
+Live TV does not use a tuner and does not support recordings. Remote control of another session is not available.
 
-Needs a reachable Postgres. `DATABASE_URL` is required — the binary carries no
-default — and the `Makefile` supplies the development one, so `make` targets
-work out of the box and an explicit `DATABASE_URL` still wins.
+### Running more than one server
+
+Server pods can handle requests interchangeably. Sessions, Quick Connect, SyncPlay and websocket delivery are stored in Postgres, and HLS segments are generated independently. This does not replicate Postgres itself; database availability remains your responsibility.
+
+## Get started
+
+gojellyfin needs a reachable PostgreSQL database. Set `DATABASE_URL` before starting the server; the binary does not include a default database connection string.
+
+For local development, the Makefile provides a development database configuration:
 
 ```sh
-make dev     # migrate, build and serve on :8081
-make build test lint
-echo hunter2 | DATABASE_URL=... go run ./cmd/gojellyfin adduser Dean   # bootstrap the first user
+make dev       # Run migrations, build, and serve on :8081
+make build
+make test
+make lint
 ```
 
-`CLAUDE.md` carries the architecture and the reasoning behind it.
-
-The [screenshot gallery](https://freekingdean.github.io/gojellyfin/main/) shows
-what `main` looks like in `jellyfin-web` and in the stock Android TV app, as the
-end-to-end suites last rendered it: the browser on every merge, the emulators
-nightly.
-
-## Deployment
-
-`charts/gojellyfin` is a Helm chart for the shape this runs in. Create the
-Secret holding `DATABASE_URL` — the chart carries no credential — and install:
+To create the first user, run:
 
 ```sh
-kubectl create secret generic gojellyfin --from-literal DATABASE_URL='postgres://…'
+echo 'your-password' | DATABASE_URL='postgres://…' go run ./cmd/gojellyfin adduser your-username
+```
+
+The binary also includes the `server`, `worker`, `migrate`, `adduser`, `resetpassword` and `localizationdata` commands.
+
+## Deploy with Helm
+
+The project includes a Helm chart at [`charts/gojellyfin`](charts/gojellyfin). Before installing, create a Kubernetes Secret containing your database URL:
+
+```sh
+kubectl create secret generic gojellyfin \
+  --from-literal DATABASE_URL='postgres://user:password@host:5432/gojellyfin?sslmode=require'
+
 helm install gojellyfin oci://ghcr.io/freekingdean/charts/gojellyfin --version 0.0.1
 ```
 
-Every merge to `main` publishes the image and the chart at the same version.
+The chart does not store credentials in its values. See the [Helm chart guide](charts/gojellyfin/README.md) for the full install, storage, routing, migration and configuration instructions.
 
-It is one image run as up to four workloads: the API, the streaming pods, the
-Temporal worker and nginx serving `jellyfin-web`. The streaming pods are the
-same `server` subcommand as the API — what makes them the streaming pods is the
-route, which sends `/Videos` and `/Audio` to them, so the pod that serves the
-stream is the pod that runs ffmpeg.
+### How the deployment is organised
 
-The one thing they must agree on is the media, which is yours: the chart mounts
-whatever volume `media.volume` names and creates no storage of its own. The API
-hands ffmpeg the item's filesystem path straight out of the database, so it has
-to be the same media at the same path in every pod — read-write for the API,
-which deletes files, read-only everywhere else.
+The chart runs one image in up to four workloads:
 
-### New downloads show up at once
+- **API** handles normal Jellyfin requests.
+- **Streaming** handles `/Videos` and `/Audio`. These pods run the same server command as the API, but the gateway routes stream requests to them so ffmpeg runs on the pod serving the stream.
+- **Worker** runs Temporal background workflows.
+- **Web** serves `jellyfin-web` through nginx.
 
-Saving a Sonarr, Radarr or Lidarr on the admin app's Libraries screen also adds a
-webhook named `gojellyfin` under its Settings, Connect, so an import, an
-upgrade, a rename or a delete refreshes that one movie, series or artist straight away
-instead of waiting for the next library refresh. It needs `PUBLISHED_SERVER_URL`
-(the chart's `hostname`), and the downloader has to be able to reach that
-address: the instance tests the webhook before it saves it, and the card on the
-Libraries screen says why when it refused.
+Your media stays on storage you provide. The chart does not create a media volume. Every pod that reads media must see the same files at the same paths. The API needs write access because deleting an item is an API operation; other workloads mount the media read-only.
 
-If it cannot be registered, add it by hand: **Settings → Connect → + → Webhook**,
-with On Import (On Release Import in Lidarr), On Upgrade, On Rename and every delete ticked, method `POST`,
-URL `<your server>/webhooks/<source id>`, username `gojellyfin` and the password
-the Libraries card shows for that downloader. The scheduled refresh still runs,
-so a missed call is caught up on the next one.
+New downloads can appear in the library as soon as they are imported. When you save a Sonarr, Radarr or Lidarr connection on the admin app's Libraries screen, gojellyfin registers a webhook with that service. The webhook refreshes the affected item after an import, upgrade, rename or delete. This requires `PUBLISHED_SERVER_URL` (the chart's `hostname`) to be reachable by the downloader. If automatic registration fails, the Libraries screen explains why and shows the details needed to add the webhook manually. Scheduled library refreshes still provide a fallback.
 
-Migrations never run at startup unless `MIGRATE_ON_START=true`, which is unsafe
-with rolling replicas, so the chart does not offer it. Run `gojellyfin migrate`
-as a one-off or set `migration.enabled=true` for a pre-upgrade hook Job;
-`charts/gojellyfin/README.md` documents the tradeoff and every other value.
+Database migrations do not run automatically at server startup. Run `gojellyfin migrate` as a one-off, or configure `migration.enabled=true` in the chart to run a pre-upgrade Job. The chart guide explains the trade-offs.
 
-## Moving over from Jellyfin
+## Move from Jellyfin
 
-`scripts/jellyfinmigrate` carries an existing Jellyfin install into gojellyfin
-so nobody has to sign in again. It is a script rather than a part of the server:
-it runs once, from a checkout, against the two databases.
+Use [`scripts/jellyfinmigrate`](scripts/jellyfinmigrate) to bring an existing Jellyfin installation into gojellyfin. It runs once from a source checkout against the old Jellyfin data directory and your gojellyfin database. It reads the old data and does not modify it.
 
-It reads Jellyfin's data directory — the one holding `jellyfin.db`, `library.db`
-and `device.txt`, which is `/config/data` in the official image — and never
-writes to it. Jellyfin 10.10 and 10.11 are both read. It carries:
+The script supports Jellyfin 10.10 and 10.11. It migrates:
 
-- **Users**, with the ids Jellyfin gave them, their password hashes, their
-  policy and their playback preferences. A Jellyfin password keeps working.
-- **Signed-in devices and their access tokens**, so a phone, a television and a
-  browser that were signed in stay signed in.
-- **API keys**, each owned by the oldest administrator, since Jellyfin records
-  no maker for one.
-- **Watch state**: played, play count, resume position, favourites and ratings.
-  A title is matched by its TMDB id, then by its IMDb or TVDB id, then by its
-  file path.
+- Users, including their IDs, password hashes, policy and playback preferences.
+- Signed-in devices and access tokens, so existing clients can stay signed in.
+- API keys. Jellyfin does not record who created a key, so migrated keys belong to the oldest administrator.
+- Watch state: played status, play count, resume position, favourites and ratings.
 
-Not carried: libraries and metadata, which gojellyfin fills from Sonarr and
-Radarr; which libraries a restricted user may see, because the library ids
-differ; parental ratings; and display preferences.
+Libraries and metadata are not migrated; gojellyfin rebuilds those from Sonarr and Radarr. Restricted-library assignments, parental ratings and display preferences are not carried over.
 
-### Cutover
+### Migration steps
 
-1. **Fill gojellyfin first.** Bind the downloaders to the libraries and let a
-   refresh finish, so the titles exist for the watch state to land on.
-2. **Rehearse.** Copy Jellyfin's data directory somewhere the script can read
-   and run it with `--dry-run`. It prints what it would carry and every title it
-   could not match, and writes nothing.
+1. **Set up the new library first.** Connect your downloaders and let a library refresh finish so titles exist for the watch state to attach to.
+2. **Do a dry run.** Copy Jellyfin's data directory (the one containing `jellyfin.db`, `library.db` and `device.txt`; in the official image this is `/config/data`) and run:
 
    ```sh
    DATABASE_URL='postgres://…' go run ./scripts/jellyfinmigrate --from ./jellyfin-data --dry-run
    ```
 
-3. **Stop Jellyfin**, so nothing changes underneath the copy, and copy the data
-   directory again.
-4. **Run it for real**: the same command without `--dry-run`. It is one
-   transaction, so a failure writes nothing.
-5. **Give gojellyfin Jellyfin's server id.** The script ends by printing it. Set
-   `serverId` in the chart (`SERVER_ID` in the environment) and restart. A
-   client keeps its token filed under the server's id, so without this every
-   client asks for a sign-in however many tokens were carried.
-6. **Point the hostname at gojellyfin.** Clients come back to the same address,
-   find the same server id and the token they already hold, and carry on.
+   Review the output, especially titles the script could not match.
+3. **Stop Jellyfin** and make a fresh copy of its data directory so it cannot change during migration.
+4. **Run the migration** using the same command without `--dry-run`. The import runs in one transaction; if it fails, it writes nothing.
+5. **Reuse the old server ID.** The script prints Jellyfin's server ID. Set it as `SERVER_ID` (or the chart's `serverId` value) and restart gojellyfin. Clients associate their saved token with this ID.
+6. **Point your existing hostname at gojellyfin.** Clients can then find the same server ID and reuse their existing sign-in.
 
-Running it again is safe. A user, a token and an api key that are already here
-are left alone, and watch state is merged rather than overwritten: played and
-favourite if either side says so, and the further of the two play counts and
-positions. So a title that had no match the first time is picked up by a later
-run once a scan has it.
+You can safely run the migration again. Existing users, tokens and API keys are left alone, and watch state is merged rather than overwritten. A title that could not be matched on the first run may be picked up after a later library scan.
 
-Three things it reports rather than guesses at. A Jellyfin user whose name an
-account here already holds is skipped with their devices, since a matching name
-is not a matching person; rename or delete the account here and run it again. A
-user with no Jellyfin password, such as one signed in through a plugin, has none
-here until `gojellyfin resetpassword`. And a user Jellyfin limited to chosen
-libraries sees none here until theirs are ticked in the dashboard.
+A few cases need attention:
 
-A carried token is as good here as it was there, so a token that leaked from the
-old install signs in to the new one too. Changing a password revokes that
-user's sessions.
+- If a gojellyfin account already has the same username as a Jellyfin user, that user and their devices are skipped. Rename or remove the existing account before retrying; matching names do not prove they are the same person.
+- A Jellyfin user without a password (for example, one authenticated by a plugin) will need a password set with `gojellyfin resetpassword`.
+- Users restricted to selected Jellyfin libraries will need their library access configured again in the dashboard.
+- Migrated access tokens remain valid. If an old token was exposed, it remains usable after migration; changing that user's password revokes their sessions.
+
+## Screenshots
+
+The [screenshot gallery](https://freekingdean.github.io/gojellyfin/main/) shows gojellyfin in `jellyfin-web` and the standard Android TV app. The browser suite renders on every merge; emulator screenshots are updated nightly.
+
+## Contributing
+
+See the development commands above to build, test and lint the project. The architecture and implementation notes are maintained separately from this user guide.

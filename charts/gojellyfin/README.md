@@ -1,12 +1,12 @@
-# gojellyfin
+# Deploy gojellyfin with Helm
 
-A Helm chart for [gojellyfin](https://github.com/FreekingDean/gojellyfin), a Go
-reimplementation of a Jellyfin media server.
+This chart runs [gojellyfin](https://github.com/FreekingDean/gojellyfin) on Kubernetes. It deploys the API, optional streaming and worker workloads, and the web client.
 
 ## Install
 
-The chart never carries a credential. `DATABASE_URL` is required — the binary
-has no default and fails at start without one — so create the Secret first:
+You need a PostgreSQL database and a Kubernetes Secret containing its connection URL. The chart never stores credentials in `values.yaml`, and gojellyfin cannot start without `DATABASE_URL`.
+
+Create the Secret first:
 
 ```sh
 kubectl create secret generic gojellyfin \
@@ -18,20 +18,11 @@ helm install gojellyfin oci://ghcr.io/freekingdean/charts/gojellyfin \
   --set-json 'media.volume={"persistentVolumeClaim":{"claimName":"media"}}'
 ```
 
-The release name decides the Secret's default name: an install named `gojellyfin`
-looks for a Secret named `gojellyfin`, and `database.existingSecret` names a
-different one. Nothing in `values.yaml` ever holds the URL.
+If your release is named `gojellyfin`, the chart looks for a Secret with that name by default. Set `database.existingSecret` if your Secret has a different name. The database URL stays in the Secret, not in `values.yaml`.
 
-Every merge to `main` is a release, and each publishes the chart at the same
-version as the image it deploys, so `--version` pins both: an upgrade is
-`helm upgrade --version <next>`, and a rollback is a rollback to a build rather
-than to whatever `latest` meant that day. The versions are the image's, without
-the git tag's `v`. Installing from a checkout of `charts/gojellyfin` instead
-gets `latest`, because an unreleased chart has no version to name; pin
-`image.tag` when you do.
+Each merge to `main` publishes the chart and image with the same version. Pin the chart version when installing or upgrading so you know exactly which build is running. Chart versions omit the leading `v` from the Git tag. A chart installed from a local checkout uses the `latest` image unless you set `image.tag` yourself.
 
-Then apply the schema (see [Migrations](#migrations)) and create the first user
-— a fresh database has no way in through the API:
+After installing, apply the database schema (see [Migrations](#migrations)) and create your first user. A new database has no user account yet, so you cannot sign in until you do:
 
 ```sh
 kubectl exec -i deploy/gojellyfin -- gojellyfin adduser Dean
@@ -54,16 +45,11 @@ same `server` command, and what makes them the streaming pods is the HTTPRoute:
 serves the stream is the pod that runs ffmpeg, so no encode crosses the network
 twice. Disable `streaming` and the API serves those paths itself.
 
-The media is yours, not the chart's — it creates no PersistentVolumeClaim and
-owns no storage. Point `media.volume` at whatever the media already lives on.
+**You provide the media storage.** The chart does not create a PersistentVolumeClaim or manage your files. Set `media.volume` to the volume where your library already lives.
 
 ## Values
 
-The chart aims to be configured in the concepts an operator has — a hostname, a
-volume the media lives on, how many replicas, how much cpu — rather than in
-Kubernetes fields it would then own forever. Everything a pod needs that is not
-one of those lives under `pod`, in one generic block rather than twenty named
-values.
+Most settings use terms you already work with: hostname, media volume, replica count and CPU. For Kubernetes pod settings that do not have a dedicated chart value, use the shared `pod` block. Workload-specific `pod` settings override the shared ones.
 
 ### The smallest install
 
@@ -100,8 +86,7 @@ else has to be set for a working install.
 
 ### Server environment
 
-Every variable below is read by `internal/env`, which is the only package that
-reads the environment.
+These settings become environment variables read by the server. You normally configure them through the chart rather than setting them inside the container.
 
 | Value | Environment variable | Default | Description |
 |---|---|---|---|
@@ -139,16 +124,9 @@ reads the environment.
 
 ### TRANSCODER_JOBS and the cpu request
 
-One encode saturates about a core, so `transcoderJobs` left empty is the
-workload's cpu request rounded down, and at least 1: 200m gets one slot, 2 gets
-two. Past its slots the pod answers 503 with a `Retry-After` and the gateway
-retries against another pod, and that refusal is the whole of the load
-balancing — there is no pool and no shared state.
+An encode uses about one CPU core. If you leave `transcoderJobs` empty, the chart derives the number of concurrent jobs from the workload's CPU request, rounded down with a minimum of one. For example, a 200m request gives one slot; a 2 CPU request gives two. When all slots are busy, the pod returns 503 with `Retry-After` and the gateway can retry another pod. There is no shared encode queue.
 
-A picture encode, the 1080p H.264 the server makes when no copy of a title
-plays untouched, is pinned to three threads and takes three slots, so a pod
-with four slots runs one of those and one audio encode at a time. A pod with
-fewer than three slots gives a picture encode all of them.
+Picture transcoding (1080p H.264, used when no copy can play untouched) uses three threads and therefore three slots. A pod with four slots can run one picture encode and one audio encode at the same time. If it has fewer than three slots, a picture encode uses all available slots.
 
 Raising the request raises the slots with it. Setting `transcoderJobs`
 explicitly overrides that in either direction, including above the request if
@@ -201,11 +179,7 @@ item is an API path, and nothing else has a reason to.
 
 ### Pods
 
-`pod` is merged into every pod the chart renders, and each workload's own `pod`
-overrides it key by key. Every key except `annotations`, `labels` and
-`containerSecurityContext` is passed through to the pod spec verbatim, so
-anything Kubernetes accepts there works without the chart naming it. A `false`
-or a `0` is passed through too; only an empty value is left out.
+The shared `pod` settings apply to every workload. A workload's own `pod` block overrides the shared settings one key at a time. Except for `annotations`, `labels` and `containerSecurityContext`, values are passed directly to the Kubernetes pod spec, so you can use supported Kubernetes fields without waiting for the chart to add a dedicated setting. Explicit `false` and `0` values are preserved.
 
 | Value | Default | Description |
 |---|---|---|
@@ -258,10 +232,7 @@ reads perfectly well.
 | `migration.enabled` | `false` | Runs `gojellyfin migrate` as a `pre-install,pre-upgrade` hook Job. A release that carries a migration defaults it to true |
 | `migration.resources` | 100m/128Mi, limits 500m/256Mi | The Job takes its pod plumbing from `pod`, and its retries and TTL from the chart |
 
-Nothing migrates at startup. The image's `entrypoint.sh` will migrate when
-`MIGRATE_ON_START=true`, and the chart does not offer it: every replica would
-race the same apply on every rollout, which is unsafe as soon as there is more
-than one. The choice is between two safe options.
+Database migrations do not run when the server starts. Although the image supports `MIGRATE_ON_START=true`, the chart does not expose it: with multiple replicas, each pod could try to apply the same migration during a rollout. Use one of the two supported approaches below instead.
 
 **The hook, `migration.enabled=true`.** One Job per release, before the pods
 roll, and the upgrade fails without rolling anything if it fails. It costs the
@@ -356,9 +327,7 @@ that live under those prefixes — `/Videos/{id}/Subtitles`, `/Audio/{id}/Lyrics
 `/Videos/MergeVersions` — are served correctly by the streaming pods: they are
 full API pods that happen to be the ones running ffmpeg.
 
-There is no Ingress template: an Ingress needs a controller and a class this
-repository cannot guess, and the routing split the streaming pods depend on is
-already expressed in Gateway API terms.
+This chart does not create an Ingress. Ingress behaviour depends on the controller and class in your cluster. The chart supports Gateway API `HTTPRoute`, which also handles the separate streaming route.
 
 ## Not in the chart
 
