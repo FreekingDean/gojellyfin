@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"runtime"
 
 	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
@@ -17,6 +16,8 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 )
+
+const enqueueConcurrency = 32
 
 type Reports interface {
 	File(ctx context.Context, filing reports.Filing) error
@@ -79,20 +80,22 @@ func (s *Prober) run(ctx context.Context) error {
 		return err
 	}
 
-	group, probing := errgroup.WithContext(ctx)
-	group.SetLimit(runtime.GOMAXPROCS(0))
+	enqueuing, enqueueCtx := errgroup.WithContext(ctx)
+	enqueuing.SetLimit(enqueueConcurrency)
 
 	for _, file := range files {
-		group.Go(func() error {
-			if err := s.ProbeSource(probing, file); err != nil && !store.IsNotFound(err) {
-				log.Printf("probe failed %s: %v", file, err)
+		jobs.Heartbeat(ctx, file)
+
+		enqueuing.Go(func() error {
+			if err := jobs.Enqueue(enqueueCtx, jobs.ProbeFile, jobs.With(jobs.ParamSource, file)); err != nil {
+				log.Printf("failed to enqueue the probe of %s: %v", file, err)
 			}
 
-			return probing.Err()
+			return enqueueCtx.Err()
 		})
 	}
 
-	return group.Wait()
+	return enqueuing.Wait()
 }
 
 func unreadable(err error, path string) bool {
