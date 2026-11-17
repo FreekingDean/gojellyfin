@@ -53,7 +53,85 @@ func TestService_RefreshItem(t *testing.T) {
 		}
 	})
 
-	t.Run("asks for neither once the file is probed and the title identified", func(t *testing.T) {
+	t.Run("asks for neither once the file is probed and the title identified", asksForNeitherOnceTheFileIsProbedAndTheTitleIdentified())
+
+	t.Run("deletes the title a file was moved off when it has no file left", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+		path := "/media/Renumbered/" + uuid.NewString() + ".mkv"
+
+		before := Scanned{
+			Key:      MovieKey(tmdbID()),
+			Kind:     itemmodel.KindMovie,
+			Name:     "Renumbered",
+			SortName: "renumbered",
+			Files:    []ScannedFile{{Path: path, DateModified: time.Now()}},
+		}
+		fixture.refresh(t, before)
+
+		after := before
+		after.Key = MovieKey(tmdbID())
+		fixture.refresh(t, after)
+
+		left, err := fixture.service.ItemByKey(ctx, before.Key)
+		if err != nil {
+			t.Fatalf("failed to read the old title back: %v", err)
+		}
+		if left.DeletedAt == nil {
+			t.Error("the title the file moved off is still live with nothing to play")
+		}
+
+		took, err := fixture.service.ItemByKey(ctx, after.Key)
+		if err != nil {
+			t.Fatalf("failed to read the new title back: %v", err)
+		}
+		if took.DeletedAt != nil {
+			t.Error("the title the file moved onto was deleted")
+		}
+	})
+
+	t.Run("asks to listen for the intro of the season a new episode lands in", asksToListenForTheIntroOfTheSeasonANewEpisodeLandsIn())
+}
+
+func asksToListenForTheIntroOfTheSeasonANewEpisodeLandsIn() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+		show := tmdbID()
+		one := int32(1)
+
+		fixture.refresh(t, Scanned{Key: SeriesKey(show), Kind: itemmodel.KindSeries, Name: "Show", SortName: "show"})
+		fixture.refresh(t, Scanned{
+			Key: SeasonKey(show, 1), ParentKey: SeriesKey(show), Kind: itemmodel.KindSeason,
+			Name: "Season 1", SortName: "season 1", Index: &one,
+		})
+		enqueued := fixture.refresh(t, Scanned{
+			Key: EpisodeKey(show, 1, 1), ParentKey: SeasonKey(show, 1), Kind: itemmodel.KindEpisode,
+			Name: "Pilot", SortName: "pilot", Index: &one, ParentIndex: &one,
+			Files: []ScannedFile{{Path: "/media/Show/" + uuid.NewString() + ".mkv", DateModified: time.Now()}},
+		})
+
+		season, err := fixture.service.ItemByKey(ctx, SeasonKey(show, 1))
+		if err != nil {
+			t.Fatal(err)
+		}
+		asked := jobs.Enqueued(t, enqueued, jobs.DetectSeasonIntros)
+		if len(asked) != 1 || asked[0][jobs.ParamSeason] != `"`+season.ID.String()+`"` {
+			t.Errorf("detections = %v, want one for season %s", asked, season.ID)
+		}
+
+		movie := fixture.refresh(t, Scanned{
+			Key: MovieKey(tmdbID()), Kind: itemmodel.KindMovie, Name: "Film", SortName: "film",
+			Files: []ScannedFile{{Path: "/media/Film/" + uuid.NewString() + ".mkv", DateModified: time.Now()}},
+		})
+		if asked := jobs.Enqueued(t, movie, jobs.DetectSeasonIntros); len(asked) != 0 {
+			t.Errorf("detections = %d, want none for a movie", len(asked))
+		}
+	}
+}
+
+func asksForNeitherOnceTheFileIsProbedAndTheTitleIdentified() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 		path := "/media/The Matrix/" + uuid.NewString() + ".mkv"
@@ -93,77 +171,7 @@ func TestService_RefreshItem(t *testing.T) {
 		if identify := jobs.Enqueued(t, enqueued, jobs.RefreshItemMetadata); len(identify) != 0 {
 			t.Errorf("metadata = %d, want the identified title left alone", len(identify))
 		}
-	})
-
-	t.Run("deletes the title a file was moved off when it has no file left", func(t *testing.T) {
-		fixture := newFixture(t)
-		ctx := context.Background()
-		path := "/media/Renumbered/" + uuid.NewString() + ".mkv"
-
-		before := Scanned{
-			Key:      MovieKey(tmdbID()),
-			Kind:     itemmodel.KindMovie,
-			Name:     "Renumbered",
-			SortName: "renumbered",
-			Files:    []ScannedFile{{Path: path, DateModified: time.Now()}},
-		}
-		fixture.refresh(t, before)
-
-		after := before
-		after.Key = MovieKey(tmdbID())
-		fixture.refresh(t, after)
-
-		left, err := fixture.service.ItemByKey(ctx, before.Key)
-		if err != nil {
-			t.Fatalf("failed to read the old title back: %v", err)
-		}
-		if left.DeletedAt == nil {
-			t.Error("the title the file moved off is still live with nothing to play")
-		}
-
-		took, err := fixture.service.ItemByKey(ctx, after.Key)
-		if err != nil {
-			t.Fatalf("failed to read the new title back: %v", err)
-		}
-		if took.DeletedAt != nil {
-			t.Error("the title the file moved onto was deleted")
-		}
-	})
-
-	t.Run("asks to listen for the intro of the season a new episode lands in", func(t *testing.T) {
-		fixture := newFixture(t)
-		ctx := context.Background()
-		show := tmdbID()
-		one := int32(1)
-
-		fixture.refresh(t, Scanned{Key: SeriesKey(show), Kind: itemmodel.KindSeries, Name: "Show", SortName: "show"})
-		fixture.refresh(t, Scanned{
-			Key: SeasonKey(show, 1), ParentKey: SeriesKey(show), Kind: itemmodel.KindSeason,
-			Name: "Season 1", SortName: "season 1", Index: &one,
-		})
-		enqueued := fixture.refresh(t, Scanned{
-			Key: EpisodeKey(show, 1, 1), ParentKey: SeasonKey(show, 1), Kind: itemmodel.KindEpisode,
-			Name: "Pilot", SortName: "pilot", Index: &one, ParentIndex: &one,
-			Files: []ScannedFile{{Path: "/media/Show/" + uuid.NewString() + ".mkv", DateModified: time.Now()}},
-		})
-
-		season, err := fixture.service.ItemByKey(ctx, SeasonKey(show, 1))
-		if err != nil {
-			t.Fatal(err)
-		}
-		asked := jobs.Enqueued(t, enqueued, jobs.DetectSeasonIntros)
-		if len(asked) != 1 || asked[0][jobs.ParamSeason] != `"`+season.ID.String()+`"` {
-			t.Errorf("detections = %v, want one for season %s", asked, season.ID)
-		}
-
-		movie := fixture.refresh(t, Scanned{
-			Key: MovieKey(tmdbID()), Kind: itemmodel.KindMovie, Name: "Film", SortName: "film",
-			Files: []ScannedFile{{Path: "/media/Film/" + uuid.NewString() + ".mkv", DateModified: time.Now()}},
-		})
-		if asked := jobs.Enqueued(t, movie, jobs.DetectSeasonIntros); len(asked) != 0 {
-			t.Errorf("detections = %d, want none for a movie", len(asked))
-		}
-	})
+	}
 }
 
 func TestService_RefreshItem_Music(t *testing.T) {

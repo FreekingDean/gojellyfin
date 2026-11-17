@@ -84,7 +84,39 @@ func TestService_SweepUnreachable(t *testing.T) {
 		}
 	})
 
-	t.Run("keeps a series while one episode still has a file", func(t *testing.T) {
+	t.Run("keeps a series while one episode still has a file", keepsASeriesWhileOneEpisodeStillHasAFile())
+
+	t.Run("leaves the artwork attached for the title's return", leavesTheArtworkAttachedForTheTitleSReturn())
+}
+
+func leavesTheArtworkAttachedForTheTitleSReturn() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+
+		gone := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Returning"})
+		if err := fixture.service.SaveImage(ctx, gone, Image{
+			Kind: imagemodel.KindPrimary, URL: "https://image.tmdb.org/t/p/w780/poster.jpg", Tag: "tag",
+		}); err != nil {
+			t.Fatalf("failed to save the image: %v", err)
+		}
+
+		if err := fixture.service.SweepUnreachable(ctx, fixture.everything(t)); err != nil {
+			t.Fatalf("failed to sweep: %v", err)
+		}
+
+		images, err := fixture.service.Images(ctx, gone)
+		if err != nil {
+			t.Fatalf("failed to query the images: %v", err)
+		}
+		if len(images) != 1 {
+			t.Errorf("images = %d, want the artwork kept for the title's return", len(images))
+		}
+	}
+}
+
+func keepsASeriesWhileOneEpisodeStillHasAFile() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
@@ -110,31 +142,7 @@ func TestService_SweepUnreachable(t *testing.T) {
 				t.Errorf("the %s was swept while a file remained: %v", name, err)
 			}
 		}
-	})
-
-	t.Run("leaves the artwork attached for the title's return", func(t *testing.T) {
-		fixture := newFixture(t)
-		ctx := context.Background()
-
-		gone := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Returning"})
-		if err := fixture.service.SaveImage(ctx, gone, Image{
-			Kind: imagemodel.KindPrimary, URL: "https://image.tmdb.org/t/p/w780/poster.jpg", Tag: "tag",
-		}); err != nil {
-			t.Fatalf("failed to save the image: %v", err)
-		}
-
-		if err := fixture.service.SweepUnreachable(ctx, fixture.everything(t)); err != nil {
-			t.Fatalf("failed to sweep: %v", err)
-		}
-
-		images, err := fixture.service.Images(ctx, gone)
-		if err != nil {
-			t.Fatalf("failed to query the images: %v", err)
-		}
-		if len(images) != 1 {
-			t.Errorf("images = %d, want the artwork kept for the title's return", len(images))
-		}
-	})
+	}
 }
 
 func TestViewer_Visible(t *testing.T) {

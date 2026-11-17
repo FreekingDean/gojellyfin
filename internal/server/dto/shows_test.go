@@ -80,7 +80,53 @@ func TestItemDtos(t *testing.T) {
 		byID[*record.Id] = record
 	}
 
-	t.Run("an episode carries its season and its series", func(t *testing.T) {
+	t.Run("an episode carries its season and its series", anEpisodeCarriesItsSeasonAndItsSeries(byID, episode, series, season))
+
+	t.Run("a season carries its series and no season of its own", aSeasonCarriesItsSeriesAndNoSeasonOfItsOwn(byID, season, series))
+
+	t.Run("a series carries no series of its own", func(t *testing.T) {
+		record := byID[series.ID]
+		if record.SeriesId != nil {
+			t.Errorf("series id = %v, want nothing", record.SeriesId)
+		}
+	})
+
+	t.Run("a movie carries nothing", aMovieCarriesNothing(byID, movie))
+}
+
+func aMovieCarriesNothing(byID map[uuid.UUID]api.BaseItemDto, movie *items.Item) func(*testing.T) {
+	return func(t *testing.T) {
+		record := byID[movie.ID]
+		if record.SeriesId != nil || record.SeasonId != nil {
+			t.Errorf("series id = %v and season id = %v, want nothing", record.SeriesId, record.SeasonId)
+		}
+		if record.ParentBackdropItemId != nil || record.ParentThumbItemId != nil {
+			t.Errorf("parent backdrop = %v and parent thumb = %v, want nothing", record.ParentBackdropItemId, record.ParentThumbItemId)
+		}
+		if record.BackdropImageTags == nil || !slices.Equal(*record.BackdropImageTags, []string{"movie-backdrop"}) {
+			t.Errorf("backdrop image tags = %v, want its own backdrop", record.BackdropImageTags)
+		}
+	}
+}
+
+func aSeasonCarriesItsSeriesAndNoSeasonOfItsOwn(byID map[uuid.UUID]api.BaseItemDto, season *items.Item, series *items.Item) func(*testing.T) {
+	return func(t *testing.T) {
+		record := byID[season.ID]
+		if record.SeriesId == nil || *record.SeriesId != series.ID {
+			t.Errorf("series id = %v, want %s", record.SeriesId, series.ID)
+		}
+		if record.SeriesName == nil || *record.SeriesName != series.Name {
+			t.Errorf("series name = %v, want %s", record.SeriesName, series.Name)
+		}
+		if record.SeasonId != nil {
+			t.Errorf("season id = %v, want nothing", record.SeasonId)
+		}
+		landscape(t, record, series.ID)
+	}
+}
+
+func anEpisodeCarriesItsSeasonAndItsSeries(byID map[uuid.UUID]api.BaseItemDto, episode *items.Item, series *items.Item, season *items.Item) func(*testing.T) {
+	return func(t *testing.T) {
 		record := byID[episode.ID]
 		if record.SeriesId == nil || *record.SeriesId != series.ID {
 			t.Errorf("series id = %v, want %s", record.SeriesId, series.ID)
@@ -98,41 +144,7 @@ func TestItemDtos(t *testing.T) {
 			t.Errorf("series primary image tag = %v, want poster", record.SeriesPrimaryImageTag)
 		}
 		landscape(t, record, series.ID)
-	})
-
-	t.Run("a season carries its series and no season of its own", func(t *testing.T) {
-		record := byID[season.ID]
-		if record.SeriesId == nil || *record.SeriesId != series.ID {
-			t.Errorf("series id = %v, want %s", record.SeriesId, series.ID)
-		}
-		if record.SeriesName == nil || *record.SeriesName != series.Name {
-			t.Errorf("series name = %v, want %s", record.SeriesName, series.Name)
-		}
-		if record.SeasonId != nil {
-			t.Errorf("season id = %v, want nothing", record.SeasonId)
-		}
-		landscape(t, record, series.ID)
-	})
-
-	t.Run("a series carries no series of its own", func(t *testing.T) {
-		record := byID[series.ID]
-		if record.SeriesId != nil {
-			t.Errorf("series id = %v, want nothing", record.SeriesId)
-		}
-	})
-
-	t.Run("a movie carries nothing", func(t *testing.T) {
-		record := byID[movie.ID]
-		if record.SeriesId != nil || record.SeasonId != nil {
-			t.Errorf("series id = %v and season id = %v, want nothing", record.SeriesId, record.SeasonId)
-		}
-		if record.ParentBackdropItemId != nil || record.ParentThumbItemId != nil {
-			t.Errorf("parent backdrop = %v and parent thumb = %v, want nothing", record.ParentBackdropItemId, record.ParentThumbItemId)
-		}
-		if record.BackdropImageTags == nil || !slices.Equal(*record.BackdropImageTags, []string{"movie-backdrop"}) {
-			t.Errorf("backdrop image tags = %v, want its own backdrop", record.BackdropImageTags)
-		}
-	})
+	}
 }
 
 func landscape(t *testing.T, record api.BaseItemDto, seriesID uuid.UUID) {

@@ -69,26 +69,7 @@ func TestServer_FavoriteAnUnownedTitle(t *testing.T) {
 	signedIn := auth.ContextWithSession(context.Background(), &sessions.Session{UserID: &userID})
 	held := library(t)
 
-	t.Run("a heart is a request", func(t *testing.T) {
-		asked := &stubRequests{}
-		s := &Server{items: held, unowned: stubUnowned{title}, requests: asked}
-
-		response, err := s.MarkFavoriteItem(signedIn, api.MarkFavoriteItemRequestObject{ItemId: title.ID})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		answered, ok := response.(api.MarkFavoriteItem200JSONResponse)
-		if !ok {
-			t.Fatalf("got %T, want a 200", response)
-		}
-		if answered.IsFavorite == nil || !*answered.IsFavorite {
-			t.Errorf("got IsFavorite %v, want true", answered.IsFavorite)
-		}
-		if !slices.Equal(asked.requested, []string{title.Key}) {
-			t.Errorf("got requests %v, want %s", asked.requested, title.Key)
-		}
-	})
+	t.Run("a heart is a request", aHeartIsARequest(held, title, signedIn))
 
 	t.Run("taking the heart off withdraws it", func(t *testing.T) {
 		asked := &stubRequests{}
@@ -124,4 +105,27 @@ func TestServer_FavoriteAnUnownedTitle(t *testing.T) {
 			t.Errorf("got error %v and requests %v, want a refusal and none", err, asked.requested)
 		}
 	})
+}
+
+func aHeartIsARequest(held *items.Service, title discover.Title, signedIn context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		asked := &stubRequests{}
+		s := &Server{items: held, unowned: stubUnowned{title}, requests: asked}
+
+		response, err := s.MarkFavoriteItem(signedIn, api.MarkFavoriteItemRequestObject{ItemId: title.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		answered, ok := response.(api.MarkFavoriteItem200JSONResponse)
+		if !ok {
+			t.Fatalf("got %T, want a 200", response)
+		}
+		if answered.IsFavorite == nil || !*answered.IsFavorite {
+			t.Errorf("got IsFavorite %v, want true", answered.IsFavorite)
+		}
+		if !slices.Equal(asked.requested, []string{title.Key}) {
+			t.Errorf("got requests %v, want %s", asked.requested, title.Key)
+		}
+	}
 }

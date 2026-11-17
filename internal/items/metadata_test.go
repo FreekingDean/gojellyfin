@@ -64,7 +64,11 @@ func TestService_ItemsNeedingMetadata(t *testing.T) {
 		}
 	})
 
-	t.Run("takes a series scope down to its episodes", func(t *testing.T) {
+	t.Run("takes a series scope down to its episodes", takesASeriesScopeDownToItsEpisodes(wanted))
+}
+
+func takesASeriesScopeDownToItsEpisodes(wanted []Kind) func(*testing.T) {
+	return func(t *testing.T) {
 		fixed := newFixture(t)
 		series := fixed.add(t, seed{kind: itemmodel.KindSeries, name: "Breaking Bad"})
 		season := fixed.add(t, seed{kind: itemmodel.KindSeason, name: "Season 1", parentID: &series})
@@ -84,5 +88,5 @@ func TestService_ItemsNeedingMetadata(t *testing.T) {
 		if slices.Contains(pending, elsewhere) {
 			t.Error("an unrelated item was selected, want the scope to stop at the series")
 		}
-	})
+	}
 }

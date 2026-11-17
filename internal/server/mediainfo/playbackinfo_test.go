@@ -465,33 +465,9 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		}
 	})
 
-	t.Run("a song is encoded into what the client asked a transcode to be", func(t *testing.T) {
-		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodel.KindAudio, "flac", "flac")
-		profile := profileFrom(t, `{
-			"DirectPlayProfiles": [{"Container": "mp3", "Type": "Audio"}],
-			"TranscodingProfiles": [
-				{"Container": "ts", "Type": "Audio", "AudioCodec": "aac", "Protocol": "hls"},
-				{"Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Protocol": "http"}
-			]
-		}`)
+	t.Run("a song is encoded into what the client asked a transcode to be", aSongIsEncodedIntoWhatTheClientAskedATranscodeToBe())
 
-		url := apiutil.Deref(fixture.source(t, id, firstPlay(&profile)).TranscodingUrl)
-
-		if !strings.Contains(url, "/stream.opus?") {
-			t.Errorf("transcoding url = %q, want the http transcoding profile's opus rather than hls or the direct play mp3", url)
-		}
-	})
-
-	t.Run("a song nothing the client takes can carry is no compatible stream", func(t *testing.T) {
-		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodel.KindAudio, "flac", "flac")
-		profile := profileFrom(t, `{"DirectPlayProfiles": [{"Container": "wav", "Type": "Audio"}]}`)
-
-		if fixture.answer(t, id, firstPlay(&profile)).ErrorCode == nil {
-			t.Error("a song no client container can carry was answered as playable")
-		}
-	})
+	t.Run("a song nothing the client takes can carry is no compatible stream", aSongNothingTheClientTakesCanCarryIsNoCompatibleStream())
 
 	t.Run("audio the client cannot decode is answered in a container it can", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -546,19 +522,7 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		}
 	})
 
-	t.Run("a client that declared nothing is handed the source", func(t *testing.T) {
-		fixture := newFixture(t)
-		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
-
-		source := fixture.source(t, id, firstPlay(nil))
-
-		if got := apiutil.Deref(source.TranscodingContainer); got != "mkv" {
-			t.Errorf("transcoding container = %q, want the source left alone", got)
-		}
-		if got := apiutil.Deref(source.TranscodingUrl); !strings.Contains(got, "audioCodec=ac3") {
-			t.Errorf("transcoding url = %q, want the source audio named", got)
-		}
-	})
+	t.Run("a client that declared nothing is handed the source", aClientThatDeclaredNothingIsHandedTheSource())
 
 	t.Run("a seek is asked for by position", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -651,6 +615,54 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 			}
 		}
 	})
+}
+
+func aSongNothingTheClientTakesCanCarryIsNoCompatibleStream() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.addRip(t, itemmodel.KindAudio, "flac", "flac")
+		profile := profileFrom(t, `{"DirectPlayProfiles": [{"Container": "wav", "Type": "Audio"}]}`)
+
+		if fixture.answer(t, id, firstPlay(&profile)).ErrorCode == nil {
+			t.Error("a song no client container can carry was answered as playable")
+		}
+	}
+}
+
+func aClientThatDeclaredNothingIsHandedTheSource() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
+
+		source := fixture.source(t, id, firstPlay(nil))
+
+		if got := apiutil.Deref(source.TranscodingContainer); got != "mkv" {
+			t.Errorf("transcoding container = %q, want the source left alone", got)
+		}
+		if got := apiutil.Deref(source.TranscodingUrl); !strings.Contains(got, "audioCodec=ac3") {
+			t.Errorf("transcoding url = %q, want the source audio named", got)
+		}
+	}
+}
+
+func aSongIsEncodedIntoWhatTheClientAskedATranscodeToBe() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.addRip(t, itemmodel.KindAudio, "flac", "flac")
+		profile := profileFrom(t, `{
+			"DirectPlayProfiles": [{"Container": "mp3", "Type": "Audio"}],
+			"TranscodingProfiles": [
+				{"Container": "ts", "Type": "Audio", "AudioCodec": "aac", "Protocol": "hls"},
+				{"Container": "opus", "Type": "Audio", "AudioCodec": "opus", "Protocol": "http"}
+			]
+		}`)
+
+		url := apiutil.Deref(fixture.source(t, id, firstPlay(&profile)).TranscodingUrl)
+
+		if !strings.Contains(url, "/stream.opus?") {
+			t.Errorf("transcoding url = %q, want the http transcoding profile's opus rather than hls or the direct play mp3", url)
+		}
+	}
 }
 
 func (f *fixture) newDownloader(t *testing.T) uuid.UUID {

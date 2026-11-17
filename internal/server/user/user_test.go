@@ -68,7 +68,11 @@ func TestServer_ForgotPasswordPin(t *testing.T) {
 }
 
 func TestServer_AuthenticateUserByName(t *testing.T) {
-	t.Run("records an authentication that leaks no secret", func(t *testing.T) {
+	t.Run("records an authentication that leaks no secret", recordsAnAuthenticationThatLeaksNoSecret())
+}
+
+func recordsAnAuthenticationThatLeaksNoSecret() func(*testing.T) {
+	return func(t *testing.T) {
 
 		connection := storetest.Open(t)
 
@@ -167,7 +171,7 @@ func TestServer_AuthenticateUserByName(t *testing.T) {
 		if found != 1 {
 			t.Errorf("entries for the user = %d, want 1", found)
 		}
-	})
+	}
 }
 
 func TestServer_AuthenticateWithQuickConnect(t *testing.T) {

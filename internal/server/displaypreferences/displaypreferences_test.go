@@ -160,57 +160,7 @@ func (f *fixture) rows(t *testing.T) int {
 }
 
 func TestServer_UpdateDisplayPreferences(t *testing.T) {
-	t.Run("round trips every field", func(t *testing.T) {
-		fixture := newFixture(t)
-
-		fixture.save(t, "usersettings", "emby", api.DisplayPreferencesDto{
-			ViewType:          apiutil.Ptr("Poster"),
-			SortBy:            apiutil.Ptr("DateCreated"),
-			IndexBy:           apiutil.Ptr("Genre"),
-			SortOrder:         apiutil.Ptr(api.SortOrder("Descending")),
-			ScrollDirection:   apiutil.Ptr(api.ScrollDirection("Vertical")),
-			RememberSorting:   apiutil.Ptr(true),
-			ShowSidebar:       apiutil.Ptr(true),
-			CustomPrefs:       &map[string]*string{"landing-movies": apiutil.Ptr("suggestions")},
-			PrimaryImageWidth: apiutil.Ptr(int32(320)),
-		})
-
-		dto := fixture.load(t, "usersettings", "emby")
-
-		if got := apiutil.Deref(dto.Id); got != "usersettings" {
-			t.Errorf("Id = %q, want %q", got, "usersettings")
-		}
-		if got := apiutil.Deref(dto.Client); got != "emby" {
-			t.Errorf("Client = %q, want %q", got, "emby")
-		}
-		if got := apiutil.Deref(dto.ViewType); got != "Poster" {
-			t.Errorf("ViewType = %q, want %q", got, "Poster")
-		}
-		if got := apiutil.Deref(dto.SortBy); got != "DateCreated" {
-			t.Errorf("SortBy = %q, want %q", got, "DateCreated")
-		}
-		if got := apiutil.Deref(dto.IndexBy); got != "Genre" {
-			t.Errorf("IndexBy = %q, want %q", got, "Genre")
-		}
-		if got := apiutil.Deref(dto.SortOrder); got != api.SortOrder("Descending") {
-			t.Errorf("SortOrder = %q, want %q", got, "Descending")
-		}
-		if got := apiutil.Deref(dto.ScrollDirection); got != api.ScrollDirection("Vertical") {
-			t.Errorf("ScrollDirection = %q, want %q", got, "Vertical")
-		}
-		if got := apiutil.Deref(dto.RememberSorting); !got {
-			t.Error("RememberSorting = false, want true")
-		}
-		if got := apiutil.Deref(dto.ShowSidebar); !got {
-			t.Error("ShowSidebar = false, want true")
-		}
-		if got := apiutil.Deref(dto.PrimaryImageWidth); got != 320 {
-			t.Errorf("PrimaryImageWidth = %d, want 320", got)
-		}
-		if got := apiutil.Deref(apiutil.Deref(dto.CustomPrefs)["landing-movies"]); got != "suggestions" {
-			t.Errorf("CustomPrefs[landing-movies] = %q, want %q", got, "suggestions")
-		}
-	})
+	t.Run("round trips every field", roundTripsEveryField())
 
 	t.Run("a second save replaces the first", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -260,7 +210,11 @@ func TestServer_UpdateDisplayPreferences(t *testing.T) {
 		}
 	})
 
-	t.Run("concurrent saves leave one row", func(t *testing.T) {
+	t.Run("concurrent saves leave one row", concurrentSavesLeaveOneRow())
+}
+
+func concurrentSavesLeaveOneRow() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 
 		const callers = 8
@@ -296,7 +250,61 @@ func TestServer_UpdateDisplayPreferences(t *testing.T) {
 		if got := fixture.rows(t); got != 1 {
 			t.Errorf("rows = %d, want 1", got)
 		}
-	})
+	}
+}
+
+func roundTripsEveryField() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+
+		fixture.save(t, "usersettings", "emby", api.DisplayPreferencesDto{
+			ViewType:          apiutil.Ptr("Poster"),
+			SortBy:            apiutil.Ptr("DateCreated"),
+			IndexBy:           apiutil.Ptr("Genre"),
+			SortOrder:         apiutil.Ptr(api.SortOrder("Descending")),
+			ScrollDirection:   apiutil.Ptr(api.ScrollDirection("Vertical")),
+			RememberSorting:   apiutil.Ptr(true),
+			ShowSidebar:       apiutil.Ptr(true),
+			CustomPrefs:       &map[string]*string{"landing-movies": apiutil.Ptr("suggestions")},
+			PrimaryImageWidth: apiutil.Ptr(int32(320)),
+		})
+
+		dto := fixture.load(t, "usersettings", "emby")
+
+		if got := apiutil.Deref(dto.Id); got != "usersettings" {
+			t.Errorf("Id = %q, want %q", got, "usersettings")
+		}
+		if got := apiutil.Deref(dto.Client); got != "emby" {
+			t.Errorf("Client = %q, want %q", got, "emby")
+		}
+		if got := apiutil.Deref(dto.ViewType); got != "Poster" {
+			t.Errorf("ViewType = %q, want %q", got, "Poster")
+		}
+		if got := apiutil.Deref(dto.SortBy); got != "DateCreated" {
+			t.Errorf("SortBy = %q, want %q", got, "DateCreated")
+		}
+		if got := apiutil.Deref(dto.IndexBy); got != "Genre" {
+			t.Errorf("IndexBy = %q, want %q", got, "Genre")
+		}
+		if got := apiutil.Deref(dto.SortOrder); got != api.SortOrder("Descending") {
+			t.Errorf("SortOrder = %q, want %q", got, "Descending")
+		}
+		if got := apiutil.Deref(dto.ScrollDirection); got != api.ScrollDirection("Vertical") {
+			t.Errorf("ScrollDirection = %q, want %q", got, "Vertical")
+		}
+		if got := apiutil.Deref(dto.RememberSorting); !got {
+			t.Error("RememberSorting = false, want true")
+		}
+		if got := apiutil.Deref(dto.ShowSidebar); !got {
+			t.Error("ShowSidebar = false, want true")
+		}
+		if got := apiutil.Deref(dto.PrimaryImageWidth); got != 320 {
+			t.Errorf("PrimaryImageWidth = %d, want 320", got)
+		}
+		if got := apiutil.Deref(apiutil.Deref(dto.CustomPrefs)["landing-movies"]); got != "suggestions" {
+			t.Errorf("CustomPrefs[landing-movies] = %q, want %q", got, "suggestions")
+		}
+	}
 }
 
 func TestServer_GetDisplayPreferences(t *testing.T) {

@@ -12,29 +12,7 @@ import (
 )
 
 func TestStreamTracing(t *testing.T) {
-	t.Run("the span ends at the first byte, before the relay", func(t *testing.T) {
-		traces, recorder := tracing.Recorded()
-		var during []string
-		var traced string
-		handler := StreamTracing(traces, "GetVideoStream", func(w http.ResponseWriter, r *http.Request) {
-			traced = tracing.TraceID(r.Context())
-			_, _ = w.Write([]byte("first"))
-			during = recorder.Names()
-			_, _ = w.Write([]byte("rest"))
-		})
-
-		handler(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/Videos/6f1b/stream?api_key=hunter2", nil))
-
-		if len(during) != 1 || during[0] != "GetVideoStream" {
-			t.Errorf("after the first byte want the span ended, got %v", during)
-		}
-		if traced == "" {
-			t.Error("the handler's context carries no span for ffmpeg to hang off")
-		}
-		if values := recorder.Values(); values["http.response.status_code"] != "200" {
-			t.Errorf("status = %q", values["http.response.status_code"])
-		}
-	})
+	t.Run("the span ends at the first byte, before the relay", theSpanEndsAtTheFirstByteBeforeTheRelay())
 
 	t.Run("a refusal ends it with the status", func(t *testing.T) {
 		traces, recorder := tracing.Recorded()
@@ -85,4 +63,30 @@ func TestStreamTracing(t *testing.T) {
 			t.Error("the writer was wrapped with tracing off")
 		}
 	})
+}
+
+func theSpanEndsAtTheFirstByteBeforeTheRelay() func(*testing.T) {
+	return func(t *testing.T) {
+		traces, recorder := tracing.Recorded()
+		var during []string
+		var traced string
+		handler := StreamTracing(traces, "GetVideoStream", func(w http.ResponseWriter, r *http.Request) {
+			traced = tracing.TraceID(r.Context())
+			_, _ = w.Write([]byte("first"))
+			during = recorder.Names()
+			_, _ = w.Write([]byte("rest"))
+		})
+
+		handler(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/Videos/6f1b/stream?api_key=hunter2", nil))
+
+		if len(during) != 1 || during[0] != "GetVideoStream" {
+			t.Errorf("after the first byte want the span ended, got %v", during)
+		}
+		if traced == "" {
+			t.Error("the handler's context carries no span for ffmpeg to hang off")
+		}
+		if values := recorder.Values(); values["http.response.status_code"] != "200" {
+			t.Errorf("status = %q", values["http.response.status_code"])
+		}
+	}
 }

@@ -81,76 +81,7 @@ func at(hours int) *time.Time {
 }
 
 func TestService_Swap(t *testing.T) {
-	cases := []struct {
-		name     string
-		override func(w *world) Override
-		user     func(w *world) uuid.UUID
-		item     func(w *world) *items.Item
-		swapped  bool
-	}{
-		{
-			name: "an episode becomes the stand-in inside the window",
-			override: func(w *world) Override {
-				return Override{Enabled: true, ItemID: &w.standIn.ID, From: at(-1), Until: at(1)}
-			},
-			swapped: true,
-		},
-		{
-			name:     "nothing is swapped while it is off",
-			override: func(w *world) Override { return Override{ItemID: &w.standIn.ID} },
-		},
-		{
-			name: "nothing is swapped before the window opens",
-			override: func(w *world) Override {
-				return Override{Enabled: true, ItemID: &w.standIn.ID, From: at(1), Until: at(2)}
-			},
-		},
-		{
-			name: "nothing is swapped once the window closes",
-			override: func(w *world) Override {
-				return Override{Enabled: true, ItemID: &w.standIn.ID, From: at(-2), Until: at(-1)}
-			},
-		},
-		{
-			name:     "no window means for as long as it is on",
-			override: func(w *world) Override { return Override{Enabled: true, ItemID: &w.standIn.ID} },
-			swapped:  true,
-		},
-		{
-			name:     "an administrator is pranked like anyone else",
-			override: func(w *world) Override { return Override{Enabled: true, ItemID: &w.standIn.ID} },
-			user:     func(w *world) uuid.UUID { return w.admin },
-			swapped:  true,
-		},
-		{
-			name: "an administrator can be the only one on the list",
-			override: func(w *world) Override {
-				return Override{Enabled: true, ItemID: &w.standIn.ID, UserIDs: []uuid.UUID{w.admin}}
-			},
-			user:    func(w *world) uuid.UUID { return w.admin },
-			swapped: true,
-		},
-		{
-			name: "a user outside the chosen list is left alone",
-			override: func(w *world) Override {
-				return Override{Enabled: true, ItemID: &w.standIn.ID, UserIDs: []uuid.UUID{w.other}}
-			},
-		},
-		{
-			name: "a user on the chosen list is pranked",
-			override: func(w *world) Override {
-				return Override{Enabled: true, ItemID: &w.standIn.ID, UserIDs: []uuid.UUID{w.viewer}}
-			},
-			swapped: true,
-		},
-		{
-			name:     "music plays as it is",
-			override: func(w *world) Override { return Override{Enabled: true, ItemID: &w.standIn.ID} },
-			item:     func(w *world) *items.Item { return w.song },
-		},
-	}
-
-	for _, tc := range cases {
+	for _, tc := range serviceSwapCases {
 		t.Run(tc.name, func(t *testing.T) {
 			w := newWorld(t)
 			w.save(t, tc.override(w))
@@ -186,6 +117,77 @@ func TestService_Swap(t *testing.T) {
 			}
 		})
 	}
+}
+
+type serviceSwapCase struct {
+	name     string
+	override func(w *world) Override
+	user     func(w *world) uuid.UUID
+	item     func(w *world) *items.Item
+	swapped  bool
+}
+
+var serviceSwapCases = []serviceSwapCase{
+	{
+		name: "an episode becomes the stand-in inside the window",
+		override: func(w *world) Override {
+			return Override{Enabled: true, ItemID: &w.standIn.ID, From: at(-1), Until: at(1)}
+		},
+		swapped: true,
+	},
+	{
+		name:     "nothing is swapped while it is off",
+		override: func(w *world) Override { return Override{ItemID: &w.standIn.ID} },
+	},
+	{
+		name: "nothing is swapped before the window opens",
+		override: func(w *world) Override {
+			return Override{Enabled: true, ItemID: &w.standIn.ID, From: at(1), Until: at(2)}
+		},
+	},
+	{
+		name: "nothing is swapped once the window closes",
+		override: func(w *world) Override {
+			return Override{Enabled: true, ItemID: &w.standIn.ID, From: at(-2), Until: at(-1)}
+		},
+	},
+	{
+		name:     "no window means for as long as it is on",
+		override: func(w *world) Override { return Override{Enabled: true, ItemID: &w.standIn.ID} },
+		swapped:  true,
+	},
+	{
+		name:     "an administrator is pranked like anyone else",
+		override: func(w *world) Override { return Override{Enabled: true, ItemID: &w.standIn.ID} },
+		user:     func(w *world) uuid.UUID { return w.admin },
+		swapped:  true,
+	},
+	{
+		name: "an administrator can be the only one on the list",
+		override: func(w *world) Override {
+			return Override{Enabled: true, ItemID: &w.standIn.ID, UserIDs: []uuid.UUID{w.admin}}
+		},
+		user:    func(w *world) uuid.UUID { return w.admin },
+		swapped: true,
+	},
+	{
+		name: "a user outside the chosen list is left alone",
+		override: func(w *world) Override {
+			return Override{Enabled: true, ItemID: &w.standIn.ID, UserIDs: []uuid.UUID{w.other}}
+		},
+	},
+	{
+		name: "a user on the chosen list is pranked",
+		override: func(w *world) Override {
+			return Override{Enabled: true, ItemID: &w.standIn.ID, UserIDs: []uuid.UUID{w.viewer}}
+		},
+		swapped: true,
+	},
+	{
+		name:     "music plays as it is",
+		override: func(w *world) Override { return Override{Enabled: true, ItemID: &w.standIn.ID} },
+		item:     func(w *world) *items.Item { return w.song },
+	},
 }
 
 func TestService_Save(t *testing.T) {

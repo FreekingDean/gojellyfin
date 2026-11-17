@@ -147,81 +147,16 @@ func TestRun(t *testing.T) {
 			source := read(t, layout)
 			signedIn := sessions.New(h.client, activity.New(h.client))
 
-			t.Run("a dry run reports and writes nothing", func(t *testing.T) {
-				report, err := Run(ctx, h.client, source, true)
-				require.NoError(t, err)
-				require.Equal(t, 3, report.SessionsCarried)
-				require.Equal(t, 8, report.WatchedCarried)
-
-				exists, err := h.client.User.Query().Where(usermodel.ID(aliceID)).Exist(ctx)
-				require.NoError(t, err)
-				require.False(t, exists)
-			})
+			t.Run("a dry run reports and writes nothing", aDryRunReportsAndWritesNothing(ctx, h, source))
 
 			report, err := Run(ctx, h.client, source, false)
 			require.NoError(t, err)
 
-			t.Run("reports what it carried and what it could not", func(t *testing.T) {
-				require.Equal(t, fixture.ServerID, report.ServerID)
-				require.Equal(t, []UserOutcome{
-					{Username: fixture.CarolUsername, State: UserNameTaken},
-					{Username: fixture.AliceUsername, State: UserCreated},
-					{Username: "bob", State: UserCreated, SignInUnset: true, Restricted: true},
-				}, report.Users)
-				require.Equal(t, 3, report.SessionsCarried)
-				require.Equal(t, 1, report.SessionsSkipped)
-				require.Equal(t, 1, report.IntegrationsCarried)
-				require.Equal(t, 8, report.WatchedCarried)
-				require.Equal(t, 1, report.WatchedSkipped)
-				require.Equal(t, 2, report.Orphaned)
+			t.Run("reports what it carried and what it could not", reportsWhatItCarriedAndWhatItCouldNot(report))
 
-				missing := report.Unmatched()
-				require.Len(t, missing, 1)
-				require.Equal(t, fixture.UnmatchedTitle, missing[0].Name)
-				require.Equal(t, 1, missing[0].Users)
-				require.Contains(t, report.String(), "SERVER_ID="+fixture.ServerID)
-			})
+			t.Run("a user keeps their id, their password and their policy", aUserKeepsTheirIdTheirPasswordAndTheirPolicy(h, ctx))
 
-			t.Run("a user keeps their id, their password and their policy", func(t *testing.T) {
-				alice, err := h.client.User.Query().Where(usermodel.ID(aliceID)).WithPolicy().WithConfiguration().Only(ctx)
-				require.NoError(t, err)
-				require.Equal(t, fixture.AliceUsername, alice.Username)
-				require.True(t, alice.Edges.Policy.IsAdministrator)
-				require.True(t, alice.Edges.Policy.EnableContentDeletion)
-				require.Equal(t, "Smart", string(alice.Edges.Configuration.SubtitleMode))
-				require.Equal(t, "eng", alice.Edges.Configuration.AudioLanguagePreference)
-				require.NotNil(t, alice.LastLoginAt)
-
-				matches, err := auth.Verify(fixture.AlicePassword, alice.PasswordHash)
-				require.NoError(t, err)
-				require.True(t, matches)
-
-				bob, err := h.client.User.Query().Where(usermodel.ID(bobID)).WithPolicy().Only(ctx)
-				require.NoError(t, err)
-				require.Empty(t, bob.PasswordHash)
-				require.False(t, bob.Edges.Policy.IsAdministrator)
-				require.False(t, bob.Edges.Policy.EnableAllFolders)
-				require.False(t, bob.Edges.Policy.EnableContentDownloading)
-				require.Equal(t, int32(8000000), bob.Edges.Policy.RemoteClientBitrateLimit)
-				require.Equal(t, "JoinGroups", string(bob.Edges.Policy.SyncPlayAccess))
-			})
-
-			t.Run("a token Jellyfin issued signs in as the same user", func(t *testing.T) {
-				for token, user := range map[string]uuid.UUID{
-					fixture.AliceWebToken: aliceID,
-					fixture.AliceTVToken:  aliceID,
-					fixture.BobToken:      bobID,
-				} {
-					session, err := signedIn.ByToken(ctx, token)
-					require.NoError(t, err)
-					require.Equal(t, user, session.User.ID)
-				}
-
-				web, err := signedIn.ByToken(ctx, fixture.AliceWebToken)
-				require.NoError(t, err)
-				require.Equal(t, fixture.AliceWebDevice, web.Device.ClientID)
-				require.Equal(t, "Jellyfin Web", web.Device.AppName)
-			})
+			t.Run("a token Jellyfin issued signs in as the same user", aTokenJellyfinIssuedSignsInAsTheSameUser(signedIn, ctx))
 
 			t.Run("a signed out device and a skipped user's device stay behind", func(t *testing.T) {
 				for _, token := range []string{fixture.AliceOldToken, fixture.CarolToken} {
@@ -261,38 +196,127 @@ func TestRun(t *testing.T) {
 				require.Equal(t, int64(fixture.ResumePosition), h.state(t, aliceID, items.MovieKey(pathOnlyTmdb)).PlaybackPositionTicks)
 			})
 
-			t.Run("a second run carries nothing twice", func(t *testing.T) {
-				again, err := Run(ctx, h.client, source, false)
-				require.NoError(t, err)
-				require.Equal(t, UserAlreadyHere, again.Users[1].State)
-				require.Equal(t, UserAlreadyHere, again.Users[2].State)
-				require.Zero(t, again.SessionsCarried)
-				require.Equal(t, 3, again.SessionsAlreadyHere)
-				require.Zero(t, again.IntegrationsCarried)
-				require.Zero(t, again.WatchedCarried)
-				require.Zero(t, again.WatchedMerged)
-				require.Equal(t, 8, again.WatchedAlreadyHere)
-			})
+			t.Run("a second run carries nothing twice", aSecondRunCarriesNothingTwice(ctx, h, source))
 
-			t.Run("a later run keeps whichever answer is further along", func(t *testing.T) {
-				key := items.MovieKey(fixture.MovieTmdb)
-				err := h.client.UserItemData.UpdateOne(h.state(t, bobID, key)).
-					SetPlayed(true).
-					SetPlayCount(4).
-					SetPlaybackPositionTicks(0).
-					Exec(ctx)
-				require.NoError(t, err)
-
-				again, err := Run(ctx, h.client, source, false)
-				require.NoError(t, err)
-				require.Equal(t, 1, again.WatchedMerged)
-
-				merged := h.state(t, bobID, key)
-				require.True(t, merged.Played)
-				require.Equal(t, int32(4), merged.PlayCount)
-				require.Equal(t, int64(500000000), merged.PlaybackPositionTicks)
-			})
+			t.Run("a later run keeps whichever answer is further along", aLaterRunKeepsWhicheverAnswerIsFurtherAlong(h, ctx, source))
 		})
+	}
+}
+
+func aDryRunReportsAndWritesNothing(ctx context.Context, h *harness, source *Source) func(*testing.T) {
+	return func(t *testing.T) {
+		report, err := Run(ctx, h.client, source, true)
+		require.NoError(t, err)
+		require.Equal(t, 3, report.SessionsCarried)
+		require.Equal(t, 8, report.WatchedCarried)
+
+		exists, err := h.client.User.Query().Where(usermodel.ID(aliceID)).Exist(ctx)
+		require.NoError(t, err)
+		require.False(t, exists)
+	}
+}
+
+func aSecondRunCarriesNothingTwice(ctx context.Context, h *harness, source *Source) func(*testing.T) {
+	return func(t *testing.T) {
+		again, err := Run(ctx, h.client, source, false)
+		require.NoError(t, err)
+		require.Equal(t, UserAlreadyHere, again.Users[1].State)
+		require.Equal(t, UserAlreadyHere, again.Users[2].State)
+		require.Zero(t, again.SessionsCarried)
+		require.Equal(t, 3, again.SessionsAlreadyHere)
+		require.Zero(t, again.IntegrationsCarried)
+		require.Zero(t, again.WatchedCarried)
+		require.Zero(t, again.WatchedMerged)
+		require.Equal(t, 8, again.WatchedAlreadyHere)
+	}
+}
+
+func aTokenJellyfinIssuedSignsInAsTheSameUser(signedIn *sessions.Service, ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		for token, user := range map[string]uuid.UUID{
+			fixture.AliceWebToken: aliceID,
+			fixture.AliceTVToken:  aliceID,
+			fixture.BobToken:      bobID,
+		} {
+			session, err := signedIn.ByToken(ctx, token)
+			require.NoError(t, err)
+			require.Equal(t, user, session.User.ID)
+		}
+
+		web, err := signedIn.ByToken(ctx, fixture.AliceWebToken)
+		require.NoError(t, err)
+		require.Equal(t, fixture.AliceWebDevice, web.Device.ClientID)
+		require.Equal(t, "Jellyfin Web", web.Device.AppName)
+	}
+}
+
+func aLaterRunKeepsWhicheverAnswerIsFurtherAlong(h *harness, ctx context.Context, source *Source) func(*testing.T) {
+	return func(t *testing.T) {
+		key := items.MovieKey(fixture.MovieTmdb)
+		err := h.client.UserItemData.UpdateOne(h.state(t, bobID, key)).
+			SetPlayed(true).
+			SetPlayCount(4).
+			SetPlaybackPositionTicks(0).
+			Exec(ctx)
+		require.NoError(t, err)
+
+		again, err := Run(ctx, h.client, source, false)
+		require.NoError(t, err)
+		require.Equal(t, 1, again.WatchedMerged)
+
+		merged := h.state(t, bobID, key)
+		require.True(t, merged.Played)
+		require.Equal(t, int32(4), merged.PlayCount)
+		require.Equal(t, int64(500000000), merged.PlaybackPositionTicks)
+	}
+}
+
+func reportsWhatItCarriedAndWhatItCouldNot(report *Report) func(*testing.T) {
+	return func(t *testing.T) {
+		require.Equal(t, fixture.ServerID, report.ServerID)
+		require.Equal(t, []UserOutcome{
+			{Username: fixture.CarolUsername, State: UserNameTaken},
+			{Username: fixture.AliceUsername, State: UserCreated},
+			{Username: "bob", State: UserCreated, SignInUnset: true, Restricted: true},
+		}, report.Users)
+		require.Equal(t, 3, report.SessionsCarried)
+		require.Equal(t, 1, report.SessionsSkipped)
+		require.Equal(t, 1, report.IntegrationsCarried)
+		require.Equal(t, 8, report.WatchedCarried)
+		require.Equal(t, 1, report.WatchedSkipped)
+		require.Equal(t, 2, report.Orphaned)
+
+		missing := report.Unmatched()
+		require.Len(t, missing, 1)
+		require.Equal(t, fixture.UnmatchedTitle, missing[0].Name)
+		require.Equal(t, 1, missing[0].Users)
+		require.Contains(t, report.String(), "SERVER_ID="+fixture.ServerID)
+	}
+}
+
+func aUserKeepsTheirIdTheirPasswordAndTheirPolicy(h *harness, ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		alice, err := h.client.User.Query().Where(usermodel.ID(aliceID)).WithPolicy().WithConfiguration().Only(ctx)
+		require.NoError(t, err)
+		require.Equal(t, fixture.AliceUsername, alice.Username)
+		require.True(t, alice.Edges.Policy.IsAdministrator)
+		require.True(t, alice.Edges.Policy.EnableContentDeletion)
+		require.Equal(t, "Smart", string(alice.Edges.Configuration.SubtitleMode))
+		require.Equal(t, "eng", alice.Edges.Configuration.AudioLanguagePreference)
+		require.NotNil(t, alice.LastLoginAt)
+
+		matches, err := auth.Verify(fixture.AlicePassword, alice.PasswordHash)
+		require.NoError(t, err)
+		require.True(t, matches)
+
+		bob, err := h.client.User.Query().Where(usermodel.ID(bobID)).WithPolicy().Only(ctx)
+		require.NoError(t, err)
+		require.Empty(t, bob.PasswordHash)
+		require.False(t, bob.Edges.Policy.IsAdministrator)
+		require.False(t, bob.Edges.Policy.EnableAllFolders)
+		require.False(t, bob.Edges.Policy.EnableContentDownloading)
+		require.Equal(t, int32(8000000), bob.Edges.Policy.RemoteClientBitrateLimit)
+		require.Equal(t, "JoinGroups", string(bob.Edges.Policy.SyncPlayAccess))
 	}
 }
 

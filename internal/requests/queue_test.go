@@ -54,66 +54,9 @@ func TestService_Allowance(t *testing.T) {
 		}
 	})
 
-	t.Run("the quota counts titles, and asking again for one is free", func(t *testing.T) {
-		fixture := newFixture(t)
-		fixture.allow(t, fixture.users[0], Allowance{CanRequest: true, Quota: quota(1)})
-		first, second := wanted(itemmodel.KindMovie, nil), wanted(itemmodel.KindMovie, nil)
+	t.Run("the quota counts titles, and asking again for one is free", theQuotaCountsTitlesAndAskingAgainForOneIsFree(ctx))
 
-		if err := fixture.service.Request(ctx, fixture.users[0], first); err != nil {
-			t.Fatalf("failed to request: %v", err)
-		}
-		if err := fixture.service.Request(ctx, fixture.users[0], first); err != nil {
-			t.Errorf("asking again for the same title = %v", err)
-		}
-		if err := fixture.service.Request(ctx, fixture.users[0], second); !errors.Is(err, ErrQuota) {
-			t.Errorf("err = %v, want ErrQuota", err)
-		}
-		if err := fixture.service.Request(ctx, fixture.users[1], second); err != nil {
-			t.Errorf("another user's request = %v", err)
-		}
-
-		askers, err := fixture.service.Askers(ctx)
-		if err != nil {
-			t.Fatalf("failed to list the askers: %v", err)
-		}
-		for _, asker := range askers {
-			if asker.ID == fixture.users[0] && (asker.Used != 1 || asker.Quota == nil || *asker.Quota != 1) {
-				t.Errorf("asker = %+v", asker)
-			}
-		}
-	})
-
-	t.Run("a request that needs approval waits, and approving it asks the downloader", func(t *testing.T) {
-		fixture := newFixture(t)
-		fixture.allow(t, fixture.users[0], Allowance{CanRequest: true, NeedsApproval: true})
-		title := wanted(itemmodel.KindMovie, nil)
-
-		if err := fixture.service.Request(ctx, fixture.users[0], title); err != nil {
-			t.Fatalf("failed to request: %v", err)
-		}
-		if got := fixture.mark(t, fixture.users[0], title.Key); got.Requested || !got.Pending || !got.Mine {
-			t.Errorf("mark while waiting = %+v", got)
-		}
-		if len(fixture.downloaders.submitted) != 0 {
-			t.Fatalf("submitted %v before approval", fixture.downloaders.submitted)
-		}
-
-		waiting := fixture.asked(t, title.Key)
-		if len(waiting.Requests) != 1 || waiting.Requests[0].Status != StatusPending || waiting.Requests[0].User == nil {
-			t.Fatalf("queue entry = %+v", waiting)
-		}
-
-		if err := fixture.service.Approve(ctx, waiting.Requests[0].ID); err != nil {
-			t.Fatalf("failed to approve: %v", err)
-		}
-		if got := fixture.mark(t, fixture.users[0], title.Key); !got.Requested || got.Pending {
-			t.Errorf("mark once approved = %+v", got)
-		}
-		approved := fixture.asked(t, title.Key)
-		if len(approved.Submissions) != 1 || approved.Submissions[0].Source == nil || approved.Submissions[0].AcceptedAt == nil {
-			t.Errorf("submissions = %+v", approved.Submissions)
-		}
-	})
+	t.Run("a request that needs approval waits, and approving it asks the downloader", aRequestThatNeedsApprovalWaitsAndApprovingItAsksTheDownloader(ctx))
 
 	t.Run("a declined request marks nothing and asks nobody", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -147,6 +90,71 @@ func TestService_Allowance(t *testing.T) {
 			t.Errorf("allow = %v, want ErrNotFound", err)
 		}
 	})
+}
+
+func theQuotaCountsTitlesAndAskingAgainForOneIsFree(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.allow(t, fixture.users[0], Allowance{CanRequest: true, Quota: quota(1)})
+		first, second := wanted(itemmodel.KindMovie, nil), wanted(itemmodel.KindMovie, nil)
+
+		if err := fixture.service.Request(ctx, fixture.users[0], first); err != nil {
+			t.Fatalf("failed to request: %v", err)
+		}
+		if err := fixture.service.Request(ctx, fixture.users[0], first); err != nil {
+			t.Errorf("asking again for the same title = %v", err)
+		}
+		if err := fixture.service.Request(ctx, fixture.users[0], second); !errors.Is(err, ErrQuota) {
+			t.Errorf("err = %v, want ErrQuota", err)
+		}
+		if err := fixture.service.Request(ctx, fixture.users[1], second); err != nil {
+			t.Errorf("another user's request = %v", err)
+		}
+
+		askers, err := fixture.service.Askers(ctx)
+		if err != nil {
+			t.Fatalf("failed to list the askers: %v", err)
+		}
+		for _, asker := range askers {
+			if asker.ID == fixture.users[0] && (asker.Used != 1 || asker.Quota == nil || *asker.Quota != 1) {
+				t.Errorf("asker = %+v", asker)
+			}
+		}
+	}
+}
+
+func aRequestThatNeedsApprovalWaitsAndApprovingItAsksTheDownloader(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.allow(t, fixture.users[0], Allowance{CanRequest: true, NeedsApproval: true})
+		title := wanted(itemmodel.KindMovie, nil)
+
+		if err := fixture.service.Request(ctx, fixture.users[0], title); err != nil {
+			t.Fatalf("failed to request: %v", err)
+		}
+		if got := fixture.mark(t, fixture.users[0], title.Key); got.Requested || !got.Pending || !got.Mine {
+			t.Errorf("mark while waiting = %+v", got)
+		}
+		if len(fixture.downloaders.submitted) != 0 {
+			t.Fatalf("submitted %v before approval", fixture.downloaders.submitted)
+		}
+
+		waiting := fixture.asked(t, title.Key)
+		if len(waiting.Requests) != 1 || waiting.Requests[0].Status != StatusPending || waiting.Requests[0].User == nil {
+			t.Fatalf("queue entry = %+v", waiting)
+		}
+
+		if err := fixture.service.Approve(ctx, waiting.Requests[0].ID); err != nil {
+			t.Fatalf("failed to approve: %v", err)
+		}
+		if got := fixture.mark(t, fixture.users[0], title.Key); !got.Requested || got.Pending {
+			t.Errorf("mark once approved = %+v", got)
+		}
+		approved := fixture.asked(t, title.Key)
+		if len(approved.Submissions) != 1 || approved.Submissions[0].Source == nil || approved.Submissions[0].AcceptedAt == nil {
+			t.Errorf("submissions = %+v", approved.Submissions)
+		}
+	}
 }
 
 func TestService_Mine(t *testing.T) {

@@ -241,51 +241,7 @@ func TestHandler_ReturnsToTheRouteTheLinkPageLeft(t *testing.T) {
 }
 
 func TestHandler_Refuses(t *testing.T) {
-	tests := []struct {
-		name      string
-		configure func(*env.OIDC)
-		claims    func(username string) ssotest.Claims
-		forge     string
-		existing  bool
-		want      int
-		says      string
-	}{
-		{
-			name:   "a provider that declines",
-			claims: func(string) ssotest.Claims { return nil },
-			want:   http.StatusForbidden,
-			says:   "access_denied",
-		},
-		{
-			name:      "an account outside the allowed group",
-			configure: func(c *env.OIDC) { c.AllowedGroup = "jellyfin" },
-			claims: func(username string) ssotest.Claims {
-				return ssotest.Claims{"sub": username, "preferred_username": username, "groups": []string{"other"}}
-			},
-			want: http.StatusForbidden,
-			says: "not in the group",
-		},
-		{
-			name: "an id_token for another sign-in",
-			claims: func(username string) ssotest.Claims {
-				return ssotest.Claims{"sub": username, "preferred_username": username}
-			},
-			forge: "replayed",
-			want:  http.StatusBadRequest,
-			says:  "expired",
-		},
-		{
-			name: "a username a local account holds",
-			claims: func(username string) ssotest.Claims {
-				return ssotest.Claims{"sub": username, "preferred_username": username}
-			},
-			existing: true,
-			want:     http.StatusForbidden,
-			says:     "local account",
-		},
-	}
-
-	for _, test := range tests {
+	for _, test := range handlerRefusesCases {
 		t.Run(test.name, func(t *testing.T) {
 			f := newFixture(t, test.configure)
 			username := f.username(t)
@@ -308,6 +264,52 @@ func TestHandler_Refuses(t *testing.T) {
 			}
 		})
 	}
+}
+
+type handlerRefusesCase struct {
+	name      string
+	configure func(*env.OIDC)
+	claims    func(username string) ssotest.Claims
+	forge     string
+	existing  bool
+	want      int
+	says      string
+}
+
+var handlerRefusesCases = []handlerRefusesCase{
+	{
+		name:   "a provider that declines",
+		claims: func(string) ssotest.Claims { return nil },
+		want:   http.StatusForbidden,
+		says:   "access_denied",
+	},
+	{
+		name:      "an account outside the allowed group",
+		configure: func(c *env.OIDC) { c.AllowedGroup = "jellyfin" },
+		claims: func(username string) ssotest.Claims {
+			return ssotest.Claims{"sub": username, "preferred_username": username, "groups": []string{"other"}}
+		},
+		want: http.StatusForbidden,
+		says: "not in the group",
+	},
+	{
+		name: "an id_token for another sign-in",
+		claims: func(username string) ssotest.Claims {
+			return ssotest.Claims{"sub": username, "preferred_username": username}
+		},
+		forge: "replayed",
+		want:  http.StatusBadRequest,
+		says:  "expired",
+	},
+	{
+		name: "a username a local account holds",
+		claims: func(username string) ssotest.Claims {
+			return ssotest.Claims{"sub": username, "preferred_username": username}
+		},
+		existing: true,
+		want:     http.StatusForbidden,
+		says:     "local account",
+	},
 }
 
 func TestHandler_CallbackWithoutAStartIsRefused(t *testing.T) {

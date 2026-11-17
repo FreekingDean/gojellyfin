@@ -72,40 +72,11 @@ func planFor(container, audio string) items.Plan {
 func TestStreamURL(t *testing.T) {
 	item := uuid.New()
 
-	t.Run("the suffix names the container the response will carry", func(t *testing.T) {
-		plan := planFor("mp4", "aac")
-
-		path, values := splitURL(t, streamURL("Videos", item, plan, "the-token", "the-session", 0))
-
-		if want := "/Videos/" + item.String() + "/stream.mp4"; path != want {
-			t.Errorf("path = %q, want %q", path, want)
-		}
-		if got := values.Get("container"); got != "mp4" {
-			t.Errorf("container = %q, want mp4", got)
-		}
-		if got := values.Get("audioCodec"); got != "aac" {
-			t.Errorf("audio codec = %q, want aac", got)
-		}
-	})
+	t.Run("the suffix names the container the response will carry", theSuffixNamesTheContainerTheResponseWillCarry(item))
 
 	untouched := planFor("mkv", "ac3")
 
-	t.Run("the client is given no way to ask for the source instead", func(t *testing.T) {
-		_, values := splitURL(t, streamURL("Videos", item, untouched, "the-token", "the-session", 0))
-
-		if values.Has("static") {
-			t.Error("the url lets the client ask for the file as it is")
-		}
-		for name, want := range map[string]string{
-			"api_key":       "the-token",
-			"playSessionId": "the-session",
-			"mediaSourceId": untouched.Source.ID.String(),
-		} {
-			if got := values.Get(name); got != want {
-				t.Errorf("%s = %q, want %q", name, got, want)
-			}
-		}
-	})
+	t.Run("the client is given no way to ask for the source instead", theClientIsGivenNoWayToAskForTheSourceInstead(item, untouched))
 
 	t.Run("a seek carries the position rather than a byte offset", func(t *testing.T) {
 		_, values := splitURL(t, streamURL("Videos", item, untouched, "t", "s", 25_000_000))
@@ -148,6 +119,43 @@ func TestStreamURL(t *testing.T) {
 			}
 		}
 	})
+}
+
+func theSuffixNamesTheContainerTheResponseWillCarry(item uuid.UUID) func(*testing.T) {
+	return func(t *testing.T) {
+		plan := planFor("mp4", "aac")
+
+		path, values := splitURL(t, streamURL("Videos", item, plan, "the-token", "the-session", 0))
+
+		if want := "/Videos/" + item.String() + "/stream.mp4"; path != want {
+			t.Errorf("path = %q, want %q", path, want)
+		}
+		if got := values.Get("container"); got != "mp4" {
+			t.Errorf("container = %q, want mp4", got)
+		}
+		if got := values.Get("audioCodec"); got != "aac" {
+			t.Errorf("audio codec = %q, want aac", got)
+		}
+	}
+}
+
+func theClientIsGivenNoWayToAskForTheSourceInstead(item uuid.UUID, untouched items.Plan) func(*testing.T) {
+	return func(t *testing.T) {
+		_, values := splitURL(t, streamURL("Videos", item, untouched, "the-token", "the-session", 0))
+
+		if values.Has("static") {
+			t.Error("the url lets the client ask for the file as it is")
+		}
+		for name, want := range map[string]string{
+			"api_key":       "the-token",
+			"playSessionId": "the-session",
+			"mediaSourceId": untouched.Source.ID.String(),
+		} {
+			if got := values.Get(name); got != want {
+				t.Errorf("%s = %q, want %q", name, got, want)
+			}
+		}
+	}
 }
 
 func splitURL(t *testing.T, raw string) (string, url.Values) {

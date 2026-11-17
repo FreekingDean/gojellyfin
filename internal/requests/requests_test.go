@@ -141,36 +141,7 @@ func (f *fixture) mark(t *testing.T, userID uuid.UUID, key string) Mark {
 func TestService_Request(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("a movie goes to the Radarr and is marked for whoever asked", func(t *testing.T) {
-		fixture := newFixture(t)
-		title := wanted(itemmodel.KindMovie, nil)
-		asker, other := fixture.users[0], fixture.users[1]
-
-		if err := fixture.service.Request(ctx, asker, title); err != nil {
-			t.Fatalf("failed to request: %v", err)
-		}
-
-		if got := fixture.downloaders.submitted; !slices.Equal(got, []string{fixture.radarr.Name}) {
-			t.Errorf("submitted to %v, want the Radarr alone", got)
-		}
-		if got := fixture.downloaders.wanted[0]; got.TmdbID != int(title.TmdbID) || got.Name != "Wanted" {
-			t.Errorf("wanted = %+v", got)
-		}
-		if got := fixture.mark(t, asker, title.Key); !got.Requested || !got.Mine {
-			t.Errorf("the asker's mark = %+v", got)
-		}
-		if got := fixture.mark(t, other, title.Key); !got.Requested || got.Mine {
-			t.Errorf("another user's mark = %+v", got)
-		}
-
-		submissions, err := fixture.service.Submissions(ctx, title.Key)
-		if err != nil {
-			t.Fatalf("failed to read the submissions: %v", err)
-		}
-		if len(submissions) != 1 || submissions[0].SourceID != fixture.radarr.ID || submissions[0].AcceptedAt == nil || submissions[0].LastError != "" {
-			t.Errorf("submissions = %+v", submissions)
-		}
-	})
+	t.Run("a movie goes to the Radarr and is marked for whoever asked", aMovieGoesToTheRadarrAndIsMarkedForWhoeverAsked(ctx))
 
 	t.Run("a series goes to the Sonarr with its TVDB id", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -206,7 +177,24 @@ func TestService_Request(t *testing.T) {
 		}
 	})
 
-	t.Run("an instance that refuses keeps the request and is asked again next time", func(t *testing.T) {
+	t.Run("an instance that refuses keeps the request and is asked again next time", anInstanceThatRefusesKeepsTheRequestAndIsAskedAgainNextTime(ctx))
+
+	t.Run("with no source taking requests nothing is recorded", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.downloaders.targets = nil
+		title := wanted(itemmodel.KindMovie, nil)
+
+		if err := fixture.service.Request(ctx, fixture.users[0], title); !errors.Is(err, ErrNowhere) {
+			t.Errorf("err = %v, want ErrNowhere", err)
+		}
+		if got := fixture.mark(t, fixture.users[0], title.Key); got.Requested {
+			t.Error("a request nobody can take was recorded")
+		}
+	})
+}
+
+func anInstanceThatRefusesKeepsTheRequestAndIsAskedAgainNextTime(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.downloaders.refusing = true
 		title := wanted(itemmodel.KindMovie, nil)
@@ -230,20 +218,40 @@ func TestService_Request(t *testing.T) {
 		if len(submissions) != 1 || submissions[0].AcceptedAt == nil || submissions[0].LastError != "" {
 			t.Errorf("submissions after the retry = %+v", submissions)
 		}
-	})
+	}
+}
 
-	t.Run("with no source taking requests nothing is recorded", func(t *testing.T) {
+func aMovieGoesToTheRadarrAndIsMarkedForWhoeverAsked(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
-		fixture.downloaders.targets = nil
 		title := wanted(itemmodel.KindMovie, nil)
+		asker, other := fixture.users[0], fixture.users[1]
 
-		if err := fixture.service.Request(ctx, fixture.users[0], title); !errors.Is(err, ErrNowhere) {
-			t.Errorf("err = %v, want ErrNowhere", err)
+		if err := fixture.service.Request(ctx, asker, title); err != nil {
+			t.Fatalf("failed to request: %v", err)
 		}
-		if got := fixture.mark(t, fixture.users[0], title.Key); got.Requested {
-			t.Error("a request nobody can take was recorded")
+
+		if got := fixture.downloaders.submitted; !slices.Equal(got, []string{fixture.radarr.Name}) {
+			t.Errorf("submitted to %v, want the Radarr alone", got)
 		}
-	})
+		if got := fixture.downloaders.wanted[0]; got.TmdbID != int(title.TmdbID) || got.Name != "Wanted" {
+			t.Errorf("wanted = %+v", got)
+		}
+		if got := fixture.mark(t, asker, title.Key); !got.Requested || !got.Mine {
+			t.Errorf("the asker's mark = %+v", got)
+		}
+		if got := fixture.mark(t, other, title.Key); !got.Requested || got.Mine {
+			t.Errorf("another user's mark = %+v", got)
+		}
+
+		submissions, err := fixture.service.Submissions(ctx, title.Key)
+		if err != nil {
+			t.Fatalf("failed to read the submissions: %v", err)
+		}
+		if len(submissions) != 1 || submissions[0].SourceID != fixture.radarr.ID || submissions[0].AcceptedAt == nil || submissions[0].LastError != "" {
+			t.Errorf("submissions = %+v", submissions)
+		}
+	}
 }
 
 func TestService_Withdraw(t *testing.T) {

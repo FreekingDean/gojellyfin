@@ -70,21 +70,7 @@ func TestServer_RefreshItem(t *testing.T) {
 		}
 	})
 
-	t.Run("answers 204 without queuing when the mode asks for nothing", func(t *testing.T) {
-		fixed := newFixture(t)
-		movie := fixed.add(t, seed{kind: itemmodel.KindMovie, name: "The Matrix"})
-
-		response, err := fixed.server.RefreshItem(
-			context.Background(),
-			refreshRequest(movie, api.MetadataRefreshModeNone, true),
-		)
-		if err != nil {
-			t.Fatalf("failed to refresh: %v", err)
-		}
-		if _, queued := response.(api.RefreshItem204Response); !queued {
-			t.Errorf("response = %T, want a 204", response)
-		}
-	})
+	t.Run("answers 204 without queuing when the mode asks for nothing", answers204WithoutQueuingWhenTheModeAsksForNothing())
 
 	t.Run("starts the metadata job for an item", func(t *testing.T) {
 		fixed := newFixture(t)
@@ -125,4 +111,22 @@ func TestServer_RefreshItem(t *testing.T) {
 			t.Fatalf("err = %v, want only the queue missing", err)
 		}
 	})
+}
+
+func answers204WithoutQueuingWhenTheModeAsksForNothing() func(*testing.T) {
+	return func(t *testing.T) {
+		fixed := newFixture(t)
+		movie := fixed.add(t, seed{kind: itemmodel.KindMovie, name: "The Matrix"})
+
+		response, err := fixed.server.RefreshItem(
+			context.Background(),
+			refreshRequest(movie, api.MetadataRefreshModeNone, true),
+		)
+		if err != nil {
+			t.Fatalf("failed to refresh: %v", err)
+		}
+		if _, queued := response.(api.RefreshItem204Response); !queued {
+			t.Errorf("response = %T, want a 204", response)
+		}
+	}
 }

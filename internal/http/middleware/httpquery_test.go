@@ -55,7 +55,11 @@ func TestCanonicalQuery(t *testing.T) {
 		}
 	})
 
-	t.Run("leaves free text whole", func(t *testing.T) {
+	t.Run("leaves free text whole", leavesFreeTextWhole())
+}
+
+func leavesFreeTextWhole() func(*testing.T) {
+	return func(t *testing.T) {
 		got, changed := canonicalQuery(url.Values{
 			"searchTerm": {"red, white and blue"},
 			"genres":     {"Sci-Fi, Fantasy"},
@@ -67,5 +71,5 @@ func TestCanonicalQuery(t *testing.T) {
 		if got.Get("searchTerm") != "red, white and blue" || len(got["genres"]) != 1 {
 			t.Errorf("free text was split: %v", got)
 		}
-	})
+	}
 }

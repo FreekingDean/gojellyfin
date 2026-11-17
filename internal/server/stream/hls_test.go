@@ -176,27 +176,7 @@ func TestHandler_HLS(t *testing.T) {
 	fixture.withEncoder(t)
 	query := "api_key=" + fixture.token
 
-	t.Run("the master playlist names the picture and the sound", func(t *testing.T) {
-		id := fixture.addFilm(t, "aac", true)
-		listed := fixture.hls(t, fixture.handler.ServeMasterPlaylist, "/Videos/"+id.String()+"/master.m3u8?"+query, map[string]string{"itemId": id.String()})
-		if listed.Code != http.StatusOK {
-			t.Fatalf("status = %d: %s", listed.Code, listed.Body)
-		}
-		if got := listed.Header().Get("Content-Type"); got != playlistType {
-			t.Errorf("content type = %q", got)
-		}
-
-		body := listed.Body.String()
-		for _, want := range []string{
-			`#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",NAME="Audio",DEFAULT=YES,AUTOSELECT=YES,URI="audio.m3u8?` + query + `"`,
-			`RESOLUTION=320x240,CODECS="avc1.64000d,mp4a.40.2",AUDIO="audio"`,
-			"\nmain.m3u8?" + query + "\n",
-		} {
-			if !strings.Contains(body, want) {
-				t.Errorf("master playlist lacks %q:\n%s", want, body)
-			}
-		}
-	})
+	t.Run("the master playlist names the picture and the sound", theMasterPlaylistNamesThePictureAndTheSound(fixture, query))
 
 	t.Run("a copied picture and sound play end to end", func(t *testing.T) {
 		id := fixture.addFilm(t, "aac", true)
@@ -221,17 +201,7 @@ func TestHandler_HLS(t *testing.T) {
 		}
 	})
 
-	t.Run("a start cuts the playlists from the window holding it", func(t *testing.T) {
-		id := fixture.addFilm(t, "ac3", false)
-		from := query + "&videoCodec=h264&audioCodec=aac&fromTicks=" + strconv.Itoa(7*10_000_000)
-
-		if frames := count(t, fixture.play(t, id, mainPlaylist, from), "h264"); frames != (filmSeconds-6)*filmRate {
-			t.Errorf("%d frames, want the %d from the window at six seconds", frames, (filmSeconds-6)*filmRate)
-		}
-		if frames := count(t, fixture.play(t, id, audioPlaylist, from), "aac"); frames >= filmSeconds*48000/1024-2 {
-			t.Errorf("%d audio frames, want fewer than the whole film's", frames)
-		}
-	})
+	t.Run("a start cuts the playlists from the window holding it", aStartCutsThePlaylistsFromTheWindowHoldingIt(fixture, query))
 
 	t.Run("a copied picture without a keyframe index has no playlist", func(t *testing.T) {
 		id := fixture.addFilm(t, "aac", false)
@@ -258,6 +228,44 @@ func TestHandler_HLS(t *testing.T) {
 			t.Errorf("status = %d, want %d", listed.Code, http.StatusUnauthorized)
 		}
 	})
+}
+
+func aStartCutsThePlaylistsFromTheWindowHoldingIt(fixture *fixture, query string) func(*testing.T) {
+	return func(t *testing.T) {
+		id := fixture.addFilm(t, "ac3", false)
+		from := query + "&videoCodec=h264&audioCodec=aac&fromTicks=" + strconv.Itoa(7*10_000_000)
+
+		if frames := count(t, fixture.play(t, id, mainPlaylist, from), "h264"); frames != (filmSeconds-6)*filmRate {
+			t.Errorf("%d frames, want the %d from the window at six seconds", frames, (filmSeconds-6)*filmRate)
+		}
+		if frames := count(t, fixture.play(t, id, audioPlaylist, from), "aac"); frames >= filmSeconds*48000/1024-2 {
+			t.Errorf("%d audio frames, want fewer than the whole film's", frames)
+		}
+	}
+}
+
+func theMasterPlaylistNamesThePictureAndTheSound(fixture *fixture, query string) func(*testing.T) {
+	return func(t *testing.T) {
+		id := fixture.addFilm(t, "aac", true)
+		listed := fixture.hls(t, fixture.handler.ServeMasterPlaylist, "/Videos/"+id.String()+"/master.m3u8?"+query, map[string]string{"itemId": id.String()})
+		if listed.Code != http.StatusOK {
+			t.Fatalf("status = %d: %s", listed.Code, listed.Body)
+		}
+		if got := listed.Header().Get("Content-Type"); got != playlistType {
+			t.Errorf("content type = %q", got)
+		}
+
+		body := listed.Body.String()
+		for _, want := range []string{
+			`#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",NAME="Audio",DEFAULT=YES,AUTOSELECT=YES,URI="audio.m3u8?` + query + `"`,
+			`RESOLUTION=320x240,CODECS="avc1.64000d,mp4a.40.2",AUDIO="audio"`,
+			"\nmain.m3u8?" + query + "\n",
+		} {
+			if !strings.Contains(body, want) {
+				t.Errorf("master playlist lacks %q:\n%s", want, body)
+			}
+		}
+	}
 }
 
 func TestSegmented(t *testing.T) {

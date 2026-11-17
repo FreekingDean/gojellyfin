@@ -173,34 +173,7 @@ func TestService_File(t *testing.T) {
 func TestService_Replace(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("the named file is replaced and the title's open reports resolved", func(t *testing.T) {
-		fixture := newFixture(t)
-		copies := []sources.Copy{{TitleID: 12, FileID: 34}}
-		movie := fixture.movie(t, copies...)
-
-		for _, kind := range []Kind{KindVideo, KindAudio} {
-			if err := fixture.service.File(ctx, Filing{ItemID: movie, UserID: &fixture.user, Kind: kind, Origin: OriginUser}); err != nil {
-				t.Fatalf("failed to file the report: %v", err)
-			}
-		}
-		filed := fixture.reported(t, movie)
-		if !Replaceable(filed[0]) {
-			t.Fatalf("a title with a named file is not offered a replacement")
-		}
-
-		if err := fixture.service.Replace(ctx, filed[0].ID); err != nil {
-			t.Fatalf("failed to replace: %v", err)
-		}
-
-		if !slices.Equal(fixture.downloaders.replaced, copies) {
-			t.Errorf("replaced %v, want %v", fixture.downloaders.replaced, copies)
-		}
-		for _, report := range fixture.reported(t, movie) {
-			if report.Status != StatusResolved {
-				t.Errorf("a %s report is still %s", report.Kind, report.Status)
-			}
-		}
-	})
+	t.Run("the named file is replaced and the title's open reports resolved", theNamedFileIsReplacedAndTheTitleSOpenReportsResolved(ctx))
 
 	t.Run("a title nobody names a file for has nothing to replace", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -244,4 +217,35 @@ func TestService_Replace(t *testing.T) {
 			}
 		}
 	})
+}
+
+func theNamedFileIsReplacedAndTheTitleSOpenReportsResolved(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		copies := []sources.Copy{{TitleID: 12, FileID: 34}}
+		movie := fixture.movie(t, copies...)
+
+		for _, kind := range []Kind{KindVideo, KindAudio} {
+			if err := fixture.service.File(ctx, Filing{ItemID: movie, UserID: &fixture.user, Kind: kind, Origin: OriginUser}); err != nil {
+				t.Fatalf("failed to file the report: %v", err)
+			}
+		}
+		filed := fixture.reported(t, movie)
+		if !Replaceable(filed[0]) {
+			t.Fatalf("a title with a named file is not offered a replacement")
+		}
+
+		if err := fixture.service.Replace(ctx, filed[0].ID); err != nil {
+			t.Fatalf("failed to replace: %v", err)
+		}
+
+		if !slices.Equal(fixture.downloaders.replaced, copies) {
+			t.Errorf("replaced %v, want %v", fixture.downloaders.replaced, copies)
+		}
+		for _, report := range fixture.reported(t, movie) {
+			if report.Status != StatusResolved {
+				t.Errorf("a %s report is still %s", report.Kind, report.Status)
+			}
+		}
+	}
 }

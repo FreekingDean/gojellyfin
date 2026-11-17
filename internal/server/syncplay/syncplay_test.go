@@ -320,7 +320,52 @@ func TestServer_SyncPlayJoinGroup(t *testing.T) {
 		}
 	})
 
-	t.Run("the joiner is told the group and the members are told the user", func(t *testing.T) {
+	t.Run("the joiner is told the group and the members are told the user", theJoinerIsToldTheGroupAndTheMembersAreToldTheUser())
+
+	t.Run("a repeated join does not announce the same user twice", aRepeatedJoinDoesNotAnnounceTheSameUserTwice())
+
+	t.Run("joining a second group leaves the first and tells it", joiningASecondGroupLeavesTheFirstAndTellsIt())
+
+	t.Run("a membership change advances the group's LastUpdatedAt", func(t *testing.T) {
+		f := newFixture(t)
+		owner := f.signIn(t, "owner")
+		guest := f.signIn(t, "guest")
+
+		created := f.create(t, owner, t.Name())
+		before := apiutil.Deref(created.LastUpdatedAt)
+
+		f.join(t, guest, *created.GroupId)
+
+		after := apiutil.Deref(f.group(t, owner, *created.GroupId).LastUpdatedAt)
+		if !after.After(before) {
+			t.Fatalf("LastUpdatedAt = %v, want later than %v", after, before)
+		}
+	})
+}
+
+func aRepeatedJoinDoesNotAnnounceTheSameUserTwice() func(*testing.T) {
+	return func(t *testing.T) {
+		f := newFixture(t)
+		owner := f.signIn(t, "owner")
+		guest := f.signIn(t, "guest")
+
+		created := f.create(t, owner, t.Name())
+		f.join(t, guest, *created.GroupId)
+		f.join(t, guest, *created.GroupId)
+
+		if announced := f.published.of(userJoined); len(announced) != 1 {
+			t.Fatalf("published %d UserJoined updates for one user, want 1", len(announced))
+		}
+
+		participants := apiutil.Deref(f.group(t, owner, *created.GroupId).Participants)
+		if len(participants) != 2 {
+			t.Fatalf("participants = %v, want two", participants)
+		}
+	}
+}
+
+func theJoinerIsToldTheGroupAndTheMembersAreToldTheUser() func(*testing.T) {
+	return func(t *testing.T) {
 		f := newFixture(t)
 		owner := f.signIn(t, "owner")
 		guest := f.signIn(t, "guest")
@@ -341,28 +386,11 @@ func TestServer_SyncPlayJoinGroup(t *testing.T) {
 		if announced[0].update.Data != "guest" {
 			t.Fatalf("UserJoined data = %v, want guest", announced[0].update.Data)
 		}
-	})
+	}
+}
 
-	t.Run("a repeated join does not announce the same user twice", func(t *testing.T) {
-		f := newFixture(t)
-		owner := f.signIn(t, "owner")
-		guest := f.signIn(t, "guest")
-
-		created := f.create(t, owner, t.Name())
-		f.join(t, guest, *created.GroupId)
-		f.join(t, guest, *created.GroupId)
-
-		if announced := f.published.of(userJoined); len(announced) != 1 {
-			t.Fatalf("published %d UserJoined updates for one user, want 1", len(announced))
-		}
-
-		participants := apiutil.Deref(f.group(t, owner, *created.GroupId).Participants)
-		if len(participants) != 2 {
-			t.Fatalf("participants = %v, want two", participants)
-		}
-	})
-
-	t.Run("joining a second group leaves the first and tells it", func(t *testing.T) {
+func joiningASecondGroupLeavesTheFirstAndTellsIt() func(*testing.T) {
+	return func(t *testing.T) {
 		f := newFixture(t)
 		owner := f.signIn(t, "owner")
 		guest := f.signIn(t, "guest")
@@ -383,23 +411,7 @@ func TestServer_SyncPlayJoinGroup(t *testing.T) {
 		if !slices.Equal(participants, []string{"guest", "mover"}) {
 			t.Fatalf("participants = %v, want [guest mover]", participants)
 		}
-	})
-
-	t.Run("a membership change advances the group's LastUpdatedAt", func(t *testing.T) {
-		f := newFixture(t)
-		owner := f.signIn(t, "owner")
-		guest := f.signIn(t, "guest")
-
-		created := f.create(t, owner, t.Name())
-		before := apiutil.Deref(created.LastUpdatedAt)
-
-		f.join(t, guest, *created.GroupId)
-
-		after := apiutil.Deref(f.group(t, owner, *created.GroupId).LastUpdatedAt)
-		if !after.After(before) {
-			t.Fatalf("LastUpdatedAt = %v, want later than %v", after, before)
-		}
-	})
+	}
 }
 
 func TestServer_SyncPlayLeaveGroup(t *testing.T) {
@@ -448,73 +460,11 @@ func TestServer_SyncPlayLeaveGroup(t *testing.T) {
 }
 
 func TestServer_SyncPlayGetGroups(t *testing.T) {
-	t.Run("a group with members is listed", func(t *testing.T) {
-		f := newFixture(t)
-		owner := f.signIn(t, "owner")
+	t.Run("a group with members is listed", aGroupWithMembersIsListed())
 
-		created := f.create(t, owner, t.Name())
+	t.Run("a group whose sessions are all gone is not listed", aGroupWhoseSessionsAreAllGoneIsNotListed())
 
-		response, err := f.server.SyncPlayGetGroups(owner, api.SyncPlayGetGroupsRequestObject{})
-		if err != nil {
-			t.Fatalf("failed to list the groups: %v", err)
-		}
-
-		listed, ok := response.(api.SyncPlayGetGroups200JSONResponse)
-		if !ok {
-			t.Fatalf("response = %T, want api.SyncPlayGetGroups200JSONResponse", response)
-		}
-
-		if !slices.ContainsFunc(listed, func(group api.GroupInfoDto) bool {
-			return apiutil.Deref(group.GroupId) == apiutil.Deref(created.GroupId)
-		}) {
-			t.Fatalf("group %v missing from %d listed groups", apiutil.Deref(created.GroupId), len(listed))
-		}
-	})
-
-	t.Run("a group whose sessions are all gone is not listed", func(t *testing.T) {
-		f := newFixture(t)
-		owner := f.signIn(t, "owner")
-
-		created := f.create(t, owner, t.Name())
-
-		if err := f.sessions.DeleteByToken(context.Background(), auth.SessionFrom(owner).AccessToken); err != nil {
-			t.Fatalf("failed to delete the session: %v", err)
-		}
-
-		response, err := f.server.SyncPlayGetGroups(context.Background(), api.SyncPlayGetGroupsRequestObject{})
-		if err != nil {
-			t.Fatalf("failed to list the groups: %v", err)
-		}
-
-		listed := response.(api.SyncPlayGetGroups200JSONResponse)
-		if slices.ContainsFunc(listed, func(group api.GroupInfoDto) bool {
-			return apiutil.Deref(group.GroupId) == apiutil.Deref(created.GroupId)
-		}) {
-			t.Fatalf("group %v is listed with no members left", apiutil.Deref(created.GroupId))
-		}
-	})
-
-	t.Run("a deleted session stops being a participant", func(t *testing.T) {
-		f := newFixture(t)
-		owner := f.signIn(t, "owner")
-		guest := f.signIn(t, "guest")
-
-		created := f.create(t, owner, t.Name())
-		f.join(t, guest, *created.GroupId)
-
-		if err := f.sessions.DeleteByToken(context.Background(), auth.SessionFrom(guest).AccessToken); err != nil {
-			t.Fatalf("failed to delete the guest session: %v", err)
-		}
-
-		if participants := apiutil.Deref(f.group(t, owner, *created.GroupId).Participants); !slices.Equal(participants, []string{"owner"}) {
-			t.Fatalf("participants = %v, want [owner]", participants)
-		}
-
-		left := f.published.of("UserLeft")
-		if len(left) != 1 || !slices.Equal(left[0].sessionIDs, []uuid.UUID{auth.SessionFrom(owner).ID}) || left[0].update.Data != "guest" {
-			t.Fatalf("UserLeft = %+v, want guest announced to the owner", left)
-		}
-	})
+	t.Run("a deleted session stops being a participant", aDeletedSessionStopsBeingAParticipant())
 
 	t.Run("removing a device announces its sessions leaving", func(t *testing.T) {
 		f := newFixture(t)
@@ -553,6 +503,80 @@ func TestServer_SyncPlayGetGroups(t *testing.T) {
 			t.Fatalf("UserLeft = %+v, want one", left)
 		}
 	})
+}
+
+func aDeletedSessionStopsBeingAParticipant() func(*testing.T) {
+	return func(t *testing.T) {
+		f := newFixture(t)
+		owner := f.signIn(t, "owner")
+		guest := f.signIn(t, "guest")
+
+		created := f.create(t, owner, t.Name())
+		f.join(t, guest, *created.GroupId)
+
+		if err := f.sessions.DeleteByToken(context.Background(), auth.SessionFrom(guest).AccessToken); err != nil {
+			t.Fatalf("failed to delete the guest session: %v", err)
+		}
+
+		if participants := apiutil.Deref(f.group(t, owner, *created.GroupId).Participants); !slices.Equal(participants, []string{"owner"}) {
+			t.Fatalf("participants = %v, want [owner]", participants)
+		}
+
+		left := f.published.of("UserLeft")
+		if len(left) != 1 || !slices.Equal(left[0].sessionIDs, []uuid.UUID{auth.SessionFrom(owner).ID}) || left[0].update.Data != "guest" {
+			t.Fatalf("UserLeft = %+v, want guest announced to the owner", left)
+		}
+	}
+}
+
+func aGroupWithMembersIsListed() func(*testing.T) {
+	return func(t *testing.T) {
+		f := newFixture(t)
+		owner := f.signIn(t, "owner")
+
+		created := f.create(t, owner, t.Name())
+
+		response, err := f.server.SyncPlayGetGroups(owner, api.SyncPlayGetGroupsRequestObject{})
+		if err != nil {
+			t.Fatalf("failed to list the groups: %v", err)
+		}
+
+		listed, ok := response.(api.SyncPlayGetGroups200JSONResponse)
+		if !ok {
+			t.Fatalf("response = %T, want api.SyncPlayGetGroups200JSONResponse", response)
+		}
+
+		if !slices.ContainsFunc(listed, func(group api.GroupInfoDto) bool {
+			return apiutil.Deref(group.GroupId) == apiutil.Deref(created.GroupId)
+		}) {
+			t.Fatalf("group %v missing from %d listed groups", apiutil.Deref(created.GroupId), len(listed))
+		}
+	}
+}
+
+func aGroupWhoseSessionsAreAllGoneIsNotListed() func(*testing.T) {
+	return func(t *testing.T) {
+		f := newFixture(t)
+		owner := f.signIn(t, "owner")
+
+		created := f.create(t, owner, t.Name())
+
+		if err := f.sessions.DeleteByToken(context.Background(), auth.SessionFrom(owner).AccessToken); err != nil {
+			t.Fatalf("failed to delete the session: %v", err)
+		}
+
+		response, err := f.server.SyncPlayGetGroups(context.Background(), api.SyncPlayGetGroupsRequestObject{})
+		if err != nil {
+			t.Fatalf("failed to list the groups: %v", err)
+		}
+
+		listed := response.(api.SyncPlayGetGroups200JSONResponse)
+		if slices.ContainsFunc(listed, func(group api.GroupInfoDto) bool {
+			return apiutil.Deref(group.GroupId) == apiutil.Deref(created.GroupId)
+		}) {
+			t.Fatalf("group %v is listed with no members left", apiutil.Deref(created.GroupId))
+		}
+	}
 }
 
 func TestService_CollectEmpty(t *testing.T) {

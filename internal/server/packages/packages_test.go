@@ -44,7 +44,11 @@ func TestServer(t *testing.T) {
 		})
 	})
 
-	t.Run("mutations are refused", func(t *testing.T) {
+	t.Run("mutations are refused", mutationsAreRefused())
+}
+
+func mutationsAreRefused() func(*testing.T) {
+	return func(t *testing.T) {
 		server := New()
 		ctx := context.Background()
 
@@ -86,5 +90,5 @@ func TestServer(t *testing.T) {
 				}
 			})
 		}
-	})
+	}
 }

@@ -30,76 +30,11 @@ func (f *fixture) scan(t *testing.T, name string, year *int32) *Item {
 }
 
 func TestService_SaveScannedTitleOwnership(t *testing.T) {
-	t.Run("renames an item nothing else has claimed", func(t *testing.T) {
-		fixture := newFixture(t)
+	t.Run("renames an item nothing else has claimed", renamesAnItemNothingElseHasClaimed())
 
-		first := fixture.scan(t, "the matrix", number(1999))
-		second := fixture.scan(t, "The Matrix", number(2000))
+	t.Run("keeps what identification wrote", keepsWhatIdentificationWrote())
 
-		if second.ID != first.ID {
-			t.Fatalf("the rescan created a second item: %s, was %s", second.ID, first.ID)
-		}
-		if second.Name != "The Matrix" {
-			t.Errorf("name = %q, want the renamed file's title", second.Name)
-		}
-		if second.SortName != "The Matrix" {
-			t.Errorf("sort name = %q, want the renamed file's title", second.SortName)
-		}
-		if second.ProductionYear == nil || *second.ProductionYear != 2000 {
-			t.Errorf("production year = %v, want 2000", year(second.ProductionYear))
-		}
-	})
-
-	t.Run("keeps what identification wrote", func(t *testing.T) {
-		fixture := newFixture(t)
-		ctx := context.Background()
-
-		scanned := fixture.scan(t, "Series S01E01", number(1999))
-
-		if _, err := fixture.service.UpdateMetadata(ctx, scanned.ID, Metadata{
-			Name:           ptr("Pilot"),
-			SortName:       ptr("pilot"),
-			ProductionYear: number(2002),
-			ProviderIds:    &map[string]string{"Tmdb": "1438"},
-		}); err != nil {
-			t.Fatalf("failed to identify the item: %v", err)
-		}
-
-		rescanned := fixture.scan(t, "Series S01E01", number(1999))
-
-		if rescanned.Name != "Pilot" {
-			t.Errorf("name = %q, want the identified title to survive a rescan", rescanned.Name)
-		}
-		if rescanned.SortName != "pilot" {
-			t.Errorf("sort name = %q, want the identified sort name to survive a rescan", rescanned.SortName)
-		}
-		if rescanned.ProductionYear == nil || *rescanned.ProductionYear != 2002 {
-			t.Errorf("production year = %v, want the identified year to survive a rescan", year(rescanned.ProductionYear))
-		}
-	})
-
-	t.Run("keeps what an editor claimed", func(t *testing.T) {
-		fixture := newFixture(t)
-		ctx := context.Background()
-
-		scanned := fixture.scan(t, "the matrix", number(1999))
-
-		if _, err := fixture.service.EditMetadata(ctx, scanned, Metadata{
-			Name:           ptr("The Matrix"),
-			ProductionYear: number(2000),
-		}); err != nil {
-			t.Fatalf("failed to edit the item: %v", err)
-		}
-
-		rescanned := fixture.scan(t, "the matrix", number(1999))
-
-		if rescanned.Name != "The Matrix" {
-			t.Errorf("name = %q, want the edited title to survive a rescan", rescanned.Name)
-		}
-		if rescanned.ProductionYear == nil || *rescanned.ProductionYear != 2000 {
-			t.Errorf("production year = %v, want the edited year to survive a rescan", year(rescanned.ProductionYear))
-		}
-	})
+	t.Run("keeps what an editor claimed", keepsWhatAnEditorClaimed())
 
 	t.Run("keeps a locked title", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -154,7 +89,88 @@ func TestService_SaveScannedTitleOwnership(t *testing.T) {
 		}
 	})
 
-	t.Run("keeps the episode numbers the filename gives", func(t *testing.T) {
+	t.Run("keeps the episode numbers the filename gives", keepsTheEpisodeNumbersTheFilenameGives())
+}
+
+func renamesAnItemNothingElseHasClaimed() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+
+		first := fixture.scan(t, "the matrix", number(1999))
+		second := fixture.scan(t, "The Matrix", number(2000))
+
+		if second.ID != first.ID {
+			t.Fatalf("the rescan created a second item: %s, was %s", second.ID, first.ID)
+		}
+		if second.Name != "The Matrix" {
+			t.Errorf("name = %q, want the renamed file's title", second.Name)
+		}
+		if second.SortName != "The Matrix" {
+			t.Errorf("sort name = %q, want the renamed file's title", second.SortName)
+		}
+		if second.ProductionYear == nil || *second.ProductionYear != 2000 {
+			t.Errorf("production year = %v, want 2000", year(second.ProductionYear))
+		}
+	}
+}
+
+func keepsWhatAnEditorClaimed() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+
+		scanned := fixture.scan(t, "the matrix", number(1999))
+
+		if _, err := fixture.service.EditMetadata(ctx, scanned, Metadata{
+			Name:           ptr("The Matrix"),
+			ProductionYear: number(2000),
+		}); err != nil {
+			t.Fatalf("failed to edit the item: %v", err)
+		}
+
+		rescanned := fixture.scan(t, "the matrix", number(1999))
+
+		if rescanned.Name != "The Matrix" {
+			t.Errorf("name = %q, want the edited title to survive a rescan", rescanned.Name)
+		}
+		if rescanned.ProductionYear == nil || *rescanned.ProductionYear != 2000 {
+			t.Errorf("production year = %v, want the edited year to survive a rescan", year(rescanned.ProductionYear))
+		}
+	}
+}
+
+func keepsWhatIdentificationWrote() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+
+		scanned := fixture.scan(t, "Series S01E01", number(1999))
+
+		if _, err := fixture.service.UpdateMetadata(ctx, scanned.ID, Metadata{
+			Name:           ptr("Pilot"),
+			SortName:       ptr("pilot"),
+			ProductionYear: number(2002),
+			ProviderIds:    &map[string]string{"Tmdb": "1438"},
+		}); err != nil {
+			t.Fatalf("failed to identify the item: %v", err)
+		}
+
+		rescanned := fixture.scan(t, "Series S01E01", number(1999))
+
+		if rescanned.Name != "Pilot" {
+			t.Errorf("name = %q, want the identified title to survive a rescan", rescanned.Name)
+		}
+		if rescanned.SortName != "pilot" {
+			t.Errorf("sort name = %q, want the identified sort name to survive a rescan", rescanned.SortName)
+		}
+		if rescanned.ProductionYear == nil || *rescanned.ProductionYear != 2002 {
+			t.Errorf("production year = %v, want the identified year to survive a rescan", year(rescanned.ProductionYear))
+		}
+	}
+}
+
+func keepsTheEpisodeNumbersTheFilenameGives() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
@@ -197,7 +213,7 @@ func TestService_SaveScannedTitleOwnership(t *testing.T) {
 		if rescanned.IndexNumber == nil || *rescanned.IndexNumber != 3 {
 			t.Errorf("index number = %v, want the filename's episode number", year(rescanned.IndexNumber))
 		}
-	})
+	}
 }
 
 func TestService_EditMetadata(t *testing.T) {

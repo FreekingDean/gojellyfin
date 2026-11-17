@@ -88,58 +88,7 @@ func TestHandler_Live(t *testing.T) {
 	})
 
 	for _, playlist := range []string{mainPlaylist, audioPlaylist} {
-		t.Run("the "+playlist+" playlist is live and every piece plays", func(t *testing.T) {
-			handler := fixture.handler.ServeMediaPlaylist
-			if playlist == audioPlaylist {
-				handler = fixture.handler.ServeAudioPlaylist
-			}
-			listed := fixture.hls(t, handler, "/Videos/"+id.String()+"/"+playlist+".m3u8?"+query, values)
-			if listed.Code != http.StatusOK {
-				t.Fatalf("status = %d: %s", listed.Code, listed.Body)
-			}
-
-			body := listed.Body.String()
-			if strings.Contains(body, "#EXT-X-ENDLIST") || strings.Contains(body, "#EXT-X-PLAYLIST-TYPE") {
-				t.Errorf("a live playlist ends:\n%s", body)
-			}
-			for _, want := range []string{"#EXT-X-MEDIA-SEQUENCE:", "#EXT-X-DISCONTINUITY-SEQUENCE:", "\n#EXT-X-DISCONTINUITY\n", "#EXT-X-PROGRAM-DATE-TIME:"} {
-				if !strings.Contains(body, want) {
-					t.Errorf("live playlist lacks %q:\n%s", want, body)
-				}
-			}
-
-			header := ""
-			pieces := 0
-			for _, line := range lines(body) {
-				if after, found := strings.CutPrefix(line, "#EXT-X-MAP:URI=\""); found {
-					header = fixture.fetch(t, id, strings.TrimSuffix(after, "\""))
-					continue
-				}
-				if line == "" || strings.HasPrefix(line, "#") {
-					continue
-				}
-				if header == "" {
-					t.Fatalf("%s comes before any header:\n%s", line, body)
-				}
-
-				path := filepath.Join(t.TempDir(), strconv.Itoa(pieces)+".mp4")
-				joined := append(readAll(t, header), readAll(t, fixture.fetch(t, id, line))...)
-				if err := os.WriteFile(path, joined, 0o600); err != nil {
-					t.Fatal(err)
-				}
-				kind := "h264"
-				if playlist == audioPlaylist {
-					kind = "aac"
-				}
-				if frames := count(t, path, kind); frames == 0 {
-					t.Errorf("%s decodes to no frames", line)
-				}
-				pieces++
-			}
-			if pieces < 3 {
-				t.Errorf("%d pieces listed, want several:\n%s", pieces, body)
-			}
-		})
+		t.Run("the "+playlist+" playlist is live and every piece plays", thePlaylistPlaylistIsLiveAndEveryPiecePlays(fixture, playlist, id, query, values))
 	}
 
 	t.Run("a piece is found by its number whenever it is asked for", func(t *testing.T) {
@@ -173,6 +122,61 @@ func TestHandler_Live(t *testing.T) {
 			t.Errorf("status = %d:\n%s", listed.Code, listed.Body)
 		}
 	})
+}
+
+func thePlaylistPlaylistIsLiveAndEveryPiecePlays(fixture *fixture, playlist string, id uuid.UUID, query string, values map[string]string) func(*testing.T) {
+	return func(t *testing.T) {
+		handler := fixture.handler.ServeMediaPlaylist
+		if playlist == audioPlaylist {
+			handler = fixture.handler.ServeAudioPlaylist
+		}
+		listed := fixture.hls(t, handler, "/Videos/"+id.String()+"/"+playlist+".m3u8?"+query, values)
+		if listed.Code != http.StatusOK {
+			t.Fatalf("status = %d: %s", listed.Code, listed.Body)
+		}
+
+		body := listed.Body.String()
+		if strings.Contains(body, "#EXT-X-ENDLIST") || strings.Contains(body, "#EXT-X-PLAYLIST-TYPE") {
+			t.Errorf("a live playlist ends:\n%s", body)
+		}
+		for _, want := range []string{"#EXT-X-MEDIA-SEQUENCE:", "#EXT-X-DISCONTINUITY-SEQUENCE:", "\n#EXT-X-DISCONTINUITY\n", "#EXT-X-PROGRAM-DATE-TIME:"} {
+			if !strings.Contains(body, want) {
+				t.Errorf("live playlist lacks %q:\n%s", want, body)
+			}
+		}
+
+		header := ""
+		pieces := 0
+		for _, line := range lines(body) {
+			if after, found := strings.CutPrefix(line, "#EXT-X-MAP:URI=\""); found {
+				header = fixture.fetch(t, id, strings.TrimSuffix(after, "\""))
+				continue
+			}
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			if header == "" {
+				t.Fatalf("%s comes before any header:\n%s", line, body)
+			}
+
+			path := filepath.Join(t.TempDir(), strconv.Itoa(pieces)+".mp4")
+			joined := append(readAll(t, header), readAll(t, fixture.fetch(t, id, line))...)
+			if err := os.WriteFile(path, joined, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			kind := "h264"
+			if playlist == audioPlaylist {
+				kind = "aac"
+			}
+			if frames := count(t, path, kind); frames == 0 {
+				t.Errorf("%s decodes to no frames", line)
+			}
+			pieces++
+		}
+		if pieces < 3 {
+			t.Errorf("%d pieces listed, want several:\n%s", pieces, body)
+		}
+	}
 }
 
 func (f *fixture) fetch(t *testing.T, id uuid.UUID, uri string) string {

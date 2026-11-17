@@ -250,24 +250,7 @@ func TestHandler_Serve(t *testing.T) {
 		}
 	})
 
-	t.Run("answers a range request", func(t *testing.T) {
-		request := fixture.get(t, http.MethodGet, target, id)
-		request.Header.Set("Range", "bytes=4-8")
-		recorder := httptest.NewRecorder()
-
-		fixture.handler.Serve(recorder, request)
-
-		if recorder.Code != http.StatusPartialContent {
-			t.Fatalf("status = %d, want %d", recorder.Code, http.StatusPartialContent)
-		}
-		if got := recorder.Body.String(); got != string(song[4:9]) {
-			t.Errorf("body = %q, want %q", got, song[4:9])
-		}
-		want := fmt.Sprintf("bytes 4-8/%d", len(song))
-		if got := recorder.Header().Get("Content-Range"); got != want {
-			t.Errorf("content range = %q, want %q", got, want)
-		}
-	})
+	t.Run("answers a range request", answersARangeRequest(fixture, target, id))
 
 	t.Run("sends no body for a head request", func(t *testing.T) {
 		recorder := httptest.NewRecorder()
@@ -296,7 +279,33 @@ func TestHandler_Serve(t *testing.T) {
 			t.Errorf("status = %d, want %d", recorder.Code, http.StatusUnauthorized)
 		}
 	})
-	t.Run("by container", func(t *testing.T) {
+	t.Run("by container", byContainer())
+
+}
+
+func answersARangeRequest(fixture *fixture, target string, id uuid.UUID) func(*testing.T) {
+	return func(t *testing.T) {
+		request := fixture.get(t, http.MethodGet, target, id)
+		request.Header.Set("Range", "bytes=4-8")
+		recorder := httptest.NewRecorder()
+
+		fixture.handler.Serve(recorder, request)
+
+		if recorder.Code != http.StatusPartialContent {
+			t.Fatalf("status = %d, want %d", recorder.Code, http.StatusPartialContent)
+		}
+		if got := recorder.Body.String(); got != string(song[4:9]) {
+			t.Errorf("body = %q, want %q", got, song[4:9])
+		}
+		want := fmt.Sprintf("bytes 4-8/%d", len(song))
+		if got := recorder.Header().Get("Content-Range"); got != want {
+			t.Errorf("content range = %q, want %q", got, want)
+		}
+	}
+}
+
+func byContainer() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.add(t, "track.flac", "flac")
 
@@ -324,8 +333,7 @@ func TestHandler_Serve(t *testing.T) {
 				}
 			})
 		}
-	})
-
+	}
 }
 
 func TestHandler_ServeUniversal(t *testing.T) {
@@ -368,7 +376,23 @@ func TestHandler_ServeUniversal(t *testing.T) {
 		})
 	}
 
-	t.Run("sends no body for a head request", func(t *testing.T) {
+	t.Run("sends no body for a head request", sendsNoBodyForAHeadRequest(mp3, fixture))
+
+	t.Run("rejects an unauthenticated request", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/Audio/"+mp3.String()+"/universal", nil)
+		request.SetPathValue("itemId", mp3.String())
+		recorder := httptest.NewRecorder()
+
+		fixture.handler.ServeUniversal(recorder, request)
+
+		if recorder.Code != http.StatusUnauthorized {
+			t.Errorf("status = %d, want %d", recorder.Code, http.StatusUnauthorized)
+		}
+	})
+}
+
+func sendsNoBodyForAHeadRequest(mp3 uuid.UUID, fixture *fixture) func(*testing.T) {
+	return func(t *testing.T) {
 		target := "/Audio/" + mp3.String() + "/universal?container=mp3&"
 		recorder := httptest.NewRecorder()
 
@@ -383,19 +407,7 @@ func TestHandler_ServeUniversal(t *testing.T) {
 		if got := recorder.Header().Get("Content-Length"); got != strconv.Itoa(len(song)) {
 			t.Errorf("content length = %q, want %d", got, len(song))
 		}
-	})
-
-	t.Run("rejects an unauthenticated request", func(t *testing.T) {
-		request := httptest.NewRequest(http.MethodGet, "/Audio/"+mp3.String()+"/universal", nil)
-		request.SetPathValue("itemId", mp3.String())
-		recorder := httptest.NewRecorder()
-
-		fixture.handler.ServeUniversal(recorder, request)
-
-		if recorder.Code != http.StatusUnauthorized {
-			t.Errorf("status = %d, want %d", recorder.Code, http.StatusUnauthorized)
-		}
-	})
+	}
 }
 
 func (f *fixture) newDownloader(t *testing.T) uuid.UUID {

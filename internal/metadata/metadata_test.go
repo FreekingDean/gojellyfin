@@ -391,7 +391,266 @@ func TestService_IdentifyItems(t *testing.T) {
 		}
 	})
 
-	t.Run("walks a series to its episode", func(t *testing.T) {
+	t.Run("walks a series to its episode", walksASeriesToItsEpisode())
+
+	t.Run("identifies specials as season zero", identifiesSpecialsAsSeasonZero())
+
+	t.Run("keeps an unmatched season out of its episode", keepsAnUnmatchedSeasonOutOfItsEpisode())
+
+	t.Run("keeps a locked season field", keepsALockedSeasonField())
+
+	t.Run("leaves a locked item alone", leavesALockedItemAlone())
+
+	t.Run("fetches artwork for an identified item that has none", fetchesArtworkForAnIdentifiedItemThatHasNone())
+
+	t.Run("keeps a locked field", keepsALockedField())
+
+	t.Run("does nothing without a provider", doesNothingWithoutAProvider())
+
+	t.Run("leaves an unmatched item for the next run", leavesAnUnmatchedItemForTheNextRun())
+
+	t.Run("asks nothing for a key without a TMDB id", asksNothingForAKeyWithoutATMDBId())
+}
+
+func doesNothingWithoutAProvider() func(*testing.T) {
+	return func(t *testing.T) {
+		fixed := newFixtureEnabled(t, false)
+		movie := fixed.add(t, items.Item{
+			Kind:           itemmodel.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		})
+
+		fixed.identify(t)
+
+		if asked := fixed.provider.requests(); len(asked) != 0 {
+			t.Errorf("requests = %v, want none from a disabled provider", asked)
+		}
+		if identified := fixed.reload(t, movie.ID); identified.ProviderIds != nil {
+			t.Errorf("ProviderIds = %v, want nothing written", identified.ProviderIds)
+		}
+	}
+}
+
+func leavesAnUnmatchedItemForTheNextRun() func(*testing.T) {
+	return func(t *testing.T) {
+		fixed := newFixture(t)
+		unknown := fixed.add(t, items.Item{
+			Kind: itemmodel.KindMovie,
+			Name: "A Film Nobody Carries",
+			Key:  items.MovieKey(unmatched),
+		})
+
+		fixed.identify(t)
+
+		if identified := fixed.reload(t, unknown.ID); identified.ProviderIds != nil {
+			t.Errorf("ProviderIds = %v, want a miss to write nothing", identified.ProviderIds)
+		}
+		if asked := fixed.provider.requests(); len(asked) != 1 {
+			t.Errorf("requests = %v, want the miss to have been asked once", asked)
+		}
+	}
+}
+
+func asksNothingForAKeyWithoutATMDBId() func(*testing.T) {
+	return func(t *testing.T) {
+		fixed := newFixture(t)
+		legacy := fixed.add(t, items.Item{
+			Kind: itemmodel.KindMovie,
+			Name: "The Matrix",
+			Key:  "movie:" + fixed.libraryID.String(),
+		})
+
+		fixed.identify(t)
+
+		if identified := fixed.reload(t, legacy.ID); identified.ProviderIds != nil {
+			t.Errorf("ProviderIds = %v, want nothing written", identified.ProviderIds)
+		}
+		if asked := fixed.provider.requests(); len(asked) != 0 {
+			t.Errorf("requests = %v, want the provider left alone", asked)
+		}
+	}
+}
+
+func identifiesSpecialsAsSeasonZero() func(*testing.T) {
+	return func(t *testing.T) {
+		fixed := newFixture(t)
+		series := fixed.add(t, items.Item{
+			Kind:           itemmodel.KindSeries,
+			Name:           "Breaking Bad",
+			ProductionYear: index(2008),
+		})
+		specials := fixed.add(t, items.Item{
+			Kind:        itemmodel.KindSeason,
+			ParentID:    &series.ID,
+			Name:        "Specials",
+			IndexNumber: index(0),
+		})
+
+		fixed.identify(t)
+
+		identified := fixed.reload(t, specials.ID)
+		if identified.ProviderIds["Stub"] != "3577" {
+			t.Errorf("specials provider id = %q, want 3577", identified.ProviderIds["Stub"])
+		}
+	}
+}
+
+func keepsALockedSeasonField() func(*testing.T) {
+	return func(t *testing.T) {
+		fixed := newFixture(t)
+		series := fixed.add(t, items.Item{
+			Kind:           itemmodel.KindSeries,
+			Name:           "Breaking Bad",
+			ProductionYear: index(2008),
+		})
+		season := fixed.lock(t, fixed.add(t, items.Item{
+			Kind:        itemmodel.KindSeason,
+			ParentID:    &series.ID,
+			Name:        "The One With The Chemistry",
+			IndexNumber: index(1),
+		}), items.Metadata{LockedFields: &[]string{"Name"}})
+
+		fixed.identify(t)
+
+		identified := fixed.reload(t, season.ID)
+		if identified.Name != "The One With The Chemistry" {
+			t.Errorf("season Name = %q, want the manual edit kept", identified.Name)
+		}
+		if !strings.HasPrefix(identified.Overview, "Walter White turns") {
+			t.Errorf("season Overview = %q, want an unlocked field written", identified.Overview)
+		}
+		if identified.ProviderIds["Stub"] != "3572" {
+			t.Errorf("season provider id = %q, want identity written through a field lock", identified.ProviderIds["Stub"])
+		}
+	}
+}
+
+func leavesALockedItemAlone() func(*testing.T) {
+	return func(t *testing.T) {
+		fixed := newFixture(t)
+		locked := fixed.lock(t, fixed.add(t, items.Item{
+			Kind:           itemmodel.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), items.Metadata{LockData: truth(true)})
+
+		witness := fixed.add(t, items.Item{
+			Kind:           itemmodel.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		})
+
+		fixed.identify(t)
+
+		untouched := fixed.reload(t, locked.ID)
+		if untouched.ProviderIds != nil {
+			t.Errorf("ProviderIds = %v, want a locked item left alone", untouched.ProviderIds)
+		}
+		if untouched.Overview != "" {
+			t.Errorf("Overview = %q, want a locked item left alone", untouched.Overview)
+		}
+		if fixed.reload(t, witness.ID).ProviderIds["Stub"] != "603" {
+			t.Fatal("the run identified nothing, so the lock proves nothing")
+		}
+	}
+}
+
+func fetchesArtworkForAnIdentifiedItemThatHasNone() func(*testing.T) {
+	return func(t *testing.T) {
+		fixed := newFixture(t)
+		fixed.provider.images = []items.RemoteImage{
+			{Kind: imagemodel.KindPrimary, URL: "https://image.example/w780/poster.jpg"},
+			{Kind: imagemodel.KindBackdrop, URL: "https://image.example/w1280/backdrop.jpg"},
+		}
+		movie := fixed.lock(t, fixed.add(t, items.Item{
+			Kind:           itemmodel.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), items.Metadata{ProviderIds: &map[string]string{"Stub": "603"}})
+
+		fixed.identify(t)
+
+		saved, err := fixed.items.Images(context.Background(), movie.ID)
+		if err != nil {
+			t.Fatalf("failed to read the artwork back: %v", err)
+		}
+		kinds := make([]items.ImageKind, 0, len(saved))
+		for _, image := range saved {
+			kinds = append(kinds, image.Kind)
+		}
+		slices.Sort(kinds)
+		if !slices.Equal(kinds, []items.ImageKind{imagemodel.KindBackdrop, imagemodel.KindPrimary}) {
+			t.Errorf("artwork = %v, want the poster and the backdrop", kinds)
+		}
+	}
+}
+
+func keepsALockedField() func(*testing.T) {
+	return func(t *testing.T) {
+		fixed := newFixture(t)
+		movie := fixed.lock(t, fixed.add(t, items.Item{
+			Kind:           itemmodel.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), items.Metadata{
+			Overview:     text("A summary somebody wrote by hand."),
+			LockedFields: &[]string{"Overview"},
+		})
+
+		fixed.identify(t)
+
+		identified := fixed.reload(t, movie.ID)
+		if identified.Overview != "A summary somebody wrote by hand." {
+			t.Errorf("Overview = %q, want the manual edit kept", identified.Overview)
+		}
+		if len(identified.Taglines) != 0 {
+			t.Errorf("Taglines = %v, want the Overview lock to cover them", identified.Taglines)
+		}
+		if identified.OfficialRating != "R" {
+			t.Errorf("OfficialRating = %q, want an unlocked field written", identified.OfficialRating)
+		}
+		if identified.ProviderIds["Stub"] != "603" {
+			t.Errorf("provider id = %q, want identity written through a field lock", identified.ProviderIds["Stub"])
+		}
+	}
+}
+
+func keepsAnUnmatchedSeasonOutOfItsEpisode() func(*testing.T) {
+	return func(t *testing.T) {
+		fixed := newFixture(t)
+		series := fixed.add(t, items.Item{
+			Kind:           itemmodel.KindSeries,
+			Name:           "Breaking Bad",
+			ProductionYear: index(2008),
+		})
+		season := fixed.add(t, items.Item{
+			Kind:        itemmodel.KindSeason,
+			ParentID:    &series.ID,
+			Name:        "Season 9",
+			IndexNumber: index(9),
+		})
+		episode := fixed.add(t, items.Item{
+			Kind:              itemmodel.KindEpisode,
+			ParentID:          &season.ID,
+			Name:              "s01e01",
+			IndexNumber:       index(1),
+			ParentIndexNumber: index(1),
+		})
+
+		fixed.identify(t)
+
+		if unmatched := fixed.reload(t, season.ID); unmatched.ProviderIds != nil {
+			t.Errorf("season ProviderIds = %v, want a miss to write nothing", unmatched.ProviderIds)
+		}
+		if aired := fixed.reload(t, episode.ID); aired.Name != "Pilot" {
+			t.Errorf("episode Name = %q, want an unmatched season not to reach it", aired.Name)
+		}
+	}
+}
+
+func walksASeriesToItsEpisode() func(*testing.T) {
+	return func(t *testing.T) {
 		fixed := newFixture(t)
 		series := fixed.add(t, items.Item{
 			Kind:           itemmodel.KindSeries,
@@ -446,226 +705,7 @@ func TestService_IdentifyItems(t *testing.T) {
 		if aired.ProviderIds["StubExternal"] != "tt0959621" {
 			t.Errorf("episode external id = %q, want tt0959621", aired.ProviderIds["StubExternal"])
 		}
-	})
-
-	t.Run("identifies specials as season zero", func(t *testing.T) {
-		fixed := newFixture(t)
-		series := fixed.add(t, items.Item{
-			Kind:           itemmodel.KindSeries,
-			Name:           "Breaking Bad",
-			ProductionYear: index(2008),
-		})
-		specials := fixed.add(t, items.Item{
-			Kind:        itemmodel.KindSeason,
-			ParentID:    &series.ID,
-			Name:        "Specials",
-			IndexNumber: index(0),
-		})
-
-		fixed.identify(t)
-
-		identified := fixed.reload(t, specials.ID)
-		if identified.ProviderIds["Stub"] != "3577" {
-			t.Errorf("specials provider id = %q, want 3577", identified.ProviderIds["Stub"])
-		}
-	})
-
-	t.Run("keeps an unmatched season out of its episode", func(t *testing.T) {
-		fixed := newFixture(t)
-		series := fixed.add(t, items.Item{
-			Kind:           itemmodel.KindSeries,
-			Name:           "Breaking Bad",
-			ProductionYear: index(2008),
-		})
-		season := fixed.add(t, items.Item{
-			Kind:        itemmodel.KindSeason,
-			ParentID:    &series.ID,
-			Name:        "Season 9",
-			IndexNumber: index(9),
-		})
-		episode := fixed.add(t, items.Item{
-			Kind:              itemmodel.KindEpisode,
-			ParentID:          &season.ID,
-			Name:              "s01e01",
-			IndexNumber:       index(1),
-			ParentIndexNumber: index(1),
-		})
-
-		fixed.identify(t)
-
-		if unmatched := fixed.reload(t, season.ID); unmatched.ProviderIds != nil {
-			t.Errorf("season ProviderIds = %v, want a miss to write nothing", unmatched.ProviderIds)
-		}
-		if aired := fixed.reload(t, episode.ID); aired.Name != "Pilot" {
-			t.Errorf("episode Name = %q, want an unmatched season not to reach it", aired.Name)
-		}
-	})
-
-	t.Run("keeps a locked season field", func(t *testing.T) {
-		fixed := newFixture(t)
-		series := fixed.add(t, items.Item{
-			Kind:           itemmodel.KindSeries,
-			Name:           "Breaking Bad",
-			ProductionYear: index(2008),
-		})
-		season := fixed.lock(t, fixed.add(t, items.Item{
-			Kind:        itemmodel.KindSeason,
-			ParentID:    &series.ID,
-			Name:        "The One With The Chemistry",
-			IndexNumber: index(1),
-		}), items.Metadata{LockedFields: &[]string{"Name"}})
-
-		fixed.identify(t)
-
-		identified := fixed.reload(t, season.ID)
-		if identified.Name != "The One With The Chemistry" {
-			t.Errorf("season Name = %q, want the manual edit kept", identified.Name)
-		}
-		if !strings.HasPrefix(identified.Overview, "Walter White turns") {
-			t.Errorf("season Overview = %q, want an unlocked field written", identified.Overview)
-		}
-		if identified.ProviderIds["Stub"] != "3572" {
-			t.Errorf("season provider id = %q, want identity written through a field lock", identified.ProviderIds["Stub"])
-		}
-	})
-
-	t.Run("leaves a locked item alone", func(t *testing.T) {
-		fixed := newFixture(t)
-		locked := fixed.lock(t, fixed.add(t, items.Item{
-			Kind:           itemmodel.KindMovie,
-			Name:           "The Matrix",
-			ProductionYear: index(1999),
-		}), items.Metadata{LockData: truth(true)})
-
-		witness := fixed.add(t, items.Item{
-			Kind:           itemmodel.KindMovie,
-			Name:           "The Matrix",
-			ProductionYear: index(1999),
-		})
-
-		fixed.identify(t)
-
-		untouched := fixed.reload(t, locked.ID)
-		if untouched.ProviderIds != nil {
-			t.Errorf("ProviderIds = %v, want a locked item left alone", untouched.ProviderIds)
-		}
-		if untouched.Overview != "" {
-			t.Errorf("Overview = %q, want a locked item left alone", untouched.Overview)
-		}
-		if fixed.reload(t, witness.ID).ProviderIds["Stub"] != "603" {
-			t.Fatal("the run identified nothing, so the lock proves nothing")
-		}
-	})
-
-	t.Run("fetches artwork for an identified item that has none", func(t *testing.T) {
-		fixed := newFixture(t)
-		fixed.provider.images = []items.RemoteImage{
-			{Kind: imagemodel.KindPrimary, URL: "https://image.example/w780/poster.jpg"},
-			{Kind: imagemodel.KindBackdrop, URL: "https://image.example/w1280/backdrop.jpg"},
-		}
-		movie := fixed.lock(t, fixed.add(t, items.Item{
-			Kind:           itemmodel.KindMovie,
-			Name:           "The Matrix",
-			ProductionYear: index(1999),
-		}), items.Metadata{ProviderIds: &map[string]string{"Stub": "603"}})
-
-		fixed.identify(t)
-
-		saved, err := fixed.items.Images(context.Background(), movie.ID)
-		if err != nil {
-			t.Fatalf("failed to read the artwork back: %v", err)
-		}
-		kinds := make([]items.ImageKind, 0, len(saved))
-		for _, image := range saved {
-			kinds = append(kinds, image.Kind)
-		}
-		slices.Sort(kinds)
-		if !slices.Equal(kinds, []items.ImageKind{imagemodel.KindBackdrop, imagemodel.KindPrimary}) {
-			t.Errorf("artwork = %v, want the poster and the backdrop", kinds)
-		}
-	})
-
-	t.Run("keeps a locked field", func(t *testing.T) {
-		fixed := newFixture(t)
-		movie := fixed.lock(t, fixed.add(t, items.Item{
-			Kind:           itemmodel.KindMovie,
-			Name:           "The Matrix",
-			ProductionYear: index(1999),
-		}), items.Metadata{
-			Overview:     text("A summary somebody wrote by hand."),
-			LockedFields: &[]string{"Overview"},
-		})
-
-		fixed.identify(t)
-
-		identified := fixed.reload(t, movie.ID)
-		if identified.Overview != "A summary somebody wrote by hand." {
-			t.Errorf("Overview = %q, want the manual edit kept", identified.Overview)
-		}
-		if len(identified.Taglines) != 0 {
-			t.Errorf("Taglines = %v, want the Overview lock to cover them", identified.Taglines)
-		}
-		if identified.OfficialRating != "R" {
-			t.Errorf("OfficialRating = %q, want an unlocked field written", identified.OfficialRating)
-		}
-		if identified.ProviderIds["Stub"] != "603" {
-			t.Errorf("provider id = %q, want identity written through a field lock", identified.ProviderIds["Stub"])
-		}
-	})
-
-	t.Run("does nothing without a provider", func(t *testing.T) {
-		fixed := newFixtureEnabled(t, false)
-		movie := fixed.add(t, items.Item{
-			Kind:           itemmodel.KindMovie,
-			Name:           "The Matrix",
-			ProductionYear: index(1999),
-		})
-
-		fixed.identify(t)
-
-		if asked := fixed.provider.requests(); len(asked) != 0 {
-			t.Errorf("requests = %v, want none from a disabled provider", asked)
-		}
-		if identified := fixed.reload(t, movie.ID); identified.ProviderIds != nil {
-			t.Errorf("ProviderIds = %v, want nothing written", identified.ProviderIds)
-		}
-	})
-
-	t.Run("leaves an unmatched item for the next run", func(t *testing.T) {
-		fixed := newFixture(t)
-		unknown := fixed.add(t, items.Item{
-			Kind: itemmodel.KindMovie,
-			Name: "A Film Nobody Carries",
-			Key:  items.MovieKey(unmatched),
-		})
-
-		fixed.identify(t)
-
-		if identified := fixed.reload(t, unknown.ID); identified.ProviderIds != nil {
-			t.Errorf("ProviderIds = %v, want a miss to write nothing", identified.ProviderIds)
-		}
-		if asked := fixed.provider.requests(); len(asked) != 1 {
-			t.Errorf("requests = %v, want the miss to have been asked once", asked)
-		}
-	})
-
-	t.Run("asks nothing for a key without a TMDB id", func(t *testing.T) {
-		fixed := newFixture(t)
-		legacy := fixed.add(t, items.Item{
-			Kind: itemmodel.KindMovie,
-			Name: "The Matrix",
-			Key:  "movie:" + fixed.libraryID.String(),
-		})
-
-		fixed.identify(t)
-
-		if identified := fixed.reload(t, legacy.ID); identified.ProviderIds != nil {
-			t.Errorf("ProviderIds = %v, want nothing written", identified.ProviderIds)
-		}
-		if asked := fixed.provider.requests(); len(asked) != 0 {
-			t.Errorf("requests = %v, want the provider left alone", asked)
-		}
-	})
+	}
 }
 
 func TestService_IdentifyItem(t *testing.T) {
@@ -716,23 +756,7 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 		}
 	})
 
-	t.Run("leaves an identified item alone without it", func(t *testing.T) {
-		fixed := newFixture(t)
-		movie := fixed.identified(t, fixed.add(t, items.Item{
-			Kind:           itemmodel.KindMovie,
-			Name:           "The Matrix",
-			ProductionYear: index(1999),
-		}), "Whatever the last provider said.")
-
-		fixed.identify(t)
-
-		if left := fixed.reload(t, movie.ID); left.Overview != "Whatever the last provider said." {
-			t.Errorf("Overview = %q, want an identified item left alone", left.Overview)
-		}
-		if requests := fixed.provider.requests(); len(requests) != 0 {
-			t.Errorf("requests = %v, want nothing fetched", requests)
-		}
-	})
+	t.Run("leaves an identified item alone without it", leavesAnIdentifiedItemAloneWithoutIt())
 
 	t.Run("keeps a locked field", func(t *testing.T) {
 		fixed := newFixture(t)
@@ -803,6 +827,26 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 	})
 }
 
+func leavesAnIdentifiedItemAloneWithoutIt() func(*testing.T) {
+	return func(t *testing.T) {
+		fixed := newFixture(t)
+		movie := fixed.identified(t, fixed.add(t, items.Item{
+			Kind:           itemmodel.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), "Whatever the last provider said.")
+
+		fixed.identify(t)
+
+		if left := fixed.reload(t, movie.ID); left.Overview != "Whatever the last provider said." {
+			t.Errorf("Overview = %q, want an identified item left alone", left.Overview)
+		}
+		if requests := fixed.provider.requests(); len(requests) != 0 {
+			t.Errorf("requests = %v, want nothing fetched", requests)
+		}
+	}
+}
+
 func TestService_IdentifyItems_Scope(t *testing.T) {
 	t.Run("refreshes only the item it names", func(t *testing.T) {
 		fixed := newFixture(t)
@@ -827,7 +871,33 @@ func TestService_IdentifyItems_Scope(t *testing.T) {
 		}
 	})
 
-	t.Run("follows a series down to its episodes", func(t *testing.T) {
+	t.Run("follows a series down to its episodes", followsASeriesDownToItsEpisodes())
+
+	t.Run("refreshes everything in a library it names", func(t *testing.T) {
+		fixed := newFixture(t)
+		first := fixed.identified(t, fixed.add(t, items.Item{
+			Kind:           itemmodel.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), "Whatever the last provider said.")
+		second := fixed.identified(t, fixed.add(t, items.Item{
+			Kind:           itemmodel.KindMovie,
+			Name:           "The Matrix",
+			ProductionYear: index(1999),
+		}), "Whatever the last provider said.")
+
+		fixed.run(t, fixed.libraryID, true)
+
+		for _, id := range []uuid.UUID{first.ID, second.ID} {
+			if refreshed := fixed.reload(t, id); !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {
+				t.Errorf("Overview = %q, want everything in the library refreshed", refreshed.Overview)
+			}
+		}
+	})
+}
+
+func followsASeriesDownToItsEpisodes() func(*testing.T) {
+	return func(t *testing.T) {
 		fixed := newFixture(t)
 		series := fixed.add(t, items.Item{
 			Kind:           itemmodel.KindSeries,
@@ -865,27 +935,5 @@ func TestService_IdentifyItems_Scope(t *testing.T) {
 		if left := fixed.reload(t, elsewhere.ID); left.Overview != "Whatever the last provider said." {
 			t.Errorf("Overview = %q, want an item outside the scope left alone", left.Overview)
 		}
-	})
-
-	t.Run("refreshes everything in a library it names", func(t *testing.T) {
-		fixed := newFixture(t)
-		first := fixed.identified(t, fixed.add(t, items.Item{
-			Kind:           itemmodel.KindMovie,
-			Name:           "The Matrix",
-			ProductionYear: index(1999),
-		}), "Whatever the last provider said.")
-		second := fixed.identified(t, fixed.add(t, items.Item{
-			Kind:           itemmodel.KindMovie,
-			Name:           "The Matrix",
-			ProductionYear: index(1999),
-		}), "Whatever the last provider said.")
-
-		fixed.run(t, fixed.libraryID, true)
-
-		for _, id := range []uuid.UUID{first.ID, second.ID} {
-			if refreshed := fixed.reload(t, id); !strings.HasPrefix(refreshed.Overview, "Set in the 22nd century") {
-				t.Errorf("Overview = %q, want everything in the library refreshed", refreshed.Overview)
-			}
-		}
-	})
+	}
 }

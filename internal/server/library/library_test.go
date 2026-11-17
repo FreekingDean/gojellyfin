@@ -343,7 +343,25 @@ func TestServer_DeleteItem(t *testing.T) {
 		}
 	})
 
-	t.Run("refuses while the filesystem cannot remove media", func(t *testing.T) {
+	t.Run("refuses while the filesystem cannot remove media", refusesWhileTheFilesystemCannotRemoveMedia(fixture, series, episodePath, episode))
+
+	t.Run("a title is reported broken rather than deleted", aTitleIsReportedBrokenRatherThanDeleted(fixture, episode, episodePath))
+
+	t.Run("an item that is already gone is already deleted", func(t *testing.T) {
+		ctx := fixture.signIn(t, "second-admin", true)
+
+		response, err := fixture.server.DeleteItem(ctx, api.DeleteItemRequestObject{ItemId: uuid.New()})
+		if err != nil {
+			t.Fatalf("failed to delete the item: %v", err)
+		}
+		if _, ok := response.(api.DeleteItem204Response); !ok {
+			t.Fatalf("response = %T, want api.DeleteItem204Response", response)
+		}
+	})
+}
+
+func refusesWhileTheFilesystemCannotRemoveMedia(fixture *fixture, series uuid.UUID, episodePath string, episode uuid.UUID) func(*testing.T) {
+	return func(t *testing.T) {
 		ctx := fixture.signIn(t, "admin", true)
 
 		response, err := fixture.server.DeleteItem(ctx, api.DeleteItemRequestObject{ItemId: series})
@@ -367,9 +385,11 @@ func TestServer_DeleteItem(t *testing.T) {
 		if remaining != 2 {
 			t.Errorf("remaining items = %d, want 2; a refused delete must not orphan rows", remaining)
 		}
-	})
+	}
+}
 
-	t.Run("a title is reported broken rather than deleted", func(t *testing.T) {
+func aTitleIsReportedBrokenRatherThanDeleted(fixture *fixture, episode uuid.UUID, episodePath string) func(*testing.T) {
+	return func(t *testing.T) {
 		ctx := fixture.signIn(t, "reporter", false)
 
 		for range 2 {
@@ -396,19 +416,7 @@ func TestServer_DeleteItem(t *testing.T) {
 		if filed[0].Origin != reports.OriginDelete || filed[0].Kind != reports.KindUnplayable || filed[0].UserID == nil {
 			t.Errorf("got a %s report of %s from %v, want Delete, Unplayable and the user", filed[0].Origin, filed[0].Kind, filed[0].UserID)
 		}
-	})
-
-	t.Run("an item that is already gone is already deleted", func(t *testing.T) {
-		ctx := fixture.signIn(t, "second-admin", true)
-
-		response, err := fixture.server.DeleteItem(ctx, api.DeleteItemRequestObject{ItemId: uuid.New()})
-		if err != nil {
-			t.Fatalf("failed to delete the item: %v", err)
-		}
-		if _, ok := response.(api.DeleteItem204Response); !ok {
-			t.Fatalf("response = %T, want api.DeleteItem204Response", response)
-		}
-	})
+	}
 }
 
 func TestServer_GetDownload(t *testing.T) {
@@ -420,30 +428,7 @@ func TestServer_GetDownload(t *testing.T) {
 	}
 	movie := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Movie", path: path})
 
-	t.Run("streams the file back", func(t *testing.T) {
-		ctx := fixture.signIn(t, "viewer", false)
-
-		response, err := fixture.server.GetDownload(ctx, api.GetDownloadRequestObject{ItemId: movie})
-		if err != nil {
-			t.Fatalf("failed to download the item: %v", err)
-		}
-
-		download, ok := response.(api.GetDownload200VideoResponse)
-		if !ok {
-			t.Fatalf("response = %T, want api.GetDownload200VideoResponse", response)
-		}
-
-		body, err := io.ReadAll(download.Body)
-		if err != nil {
-			t.Fatalf("failed to read the body: %v", err)
-		}
-		if string(body) != "media" {
-			t.Errorf("body = %q, want %q", body, "media")
-		}
-		if download.ContentLength != int64(len("media")) {
-			t.Errorf("ContentLength = %d, want %d", download.ContentLength, len("media"))
-		}
-	})
+	t.Run("streams the file back", streamsTheFileBack(fixture, movie))
 
 	t.Run("refuses a user without the downloading policy", func(t *testing.T) {
 		ctx := fixture.signIn(t, "restricted", false)
@@ -475,6 +460,33 @@ func TestServer_GetDownload(t *testing.T) {
 			t.Fatalf("response = %T, want api.GetFile404JSONResponse", response)
 		}
 	})
+}
+
+func streamsTheFileBack(fixture *fixture, movie uuid.UUID) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx := fixture.signIn(t, "viewer", false)
+
+		response, err := fixture.server.GetDownload(ctx, api.GetDownloadRequestObject{ItemId: movie})
+		if err != nil {
+			t.Fatalf("failed to download the item: %v", err)
+		}
+
+		download, ok := response.(api.GetDownload200VideoResponse)
+		if !ok {
+			t.Fatalf("response = %T, want api.GetDownload200VideoResponse", response)
+		}
+
+		body, err := io.ReadAll(download.Body)
+		if err != nil {
+			t.Fatalf("failed to read the body: %v", err)
+		}
+		if string(body) != "media" {
+			t.Errorf("body = %q, want %q", body, "media")
+		}
+		if download.ContentLength != int64(len("media")) {
+			t.Errorf("ContentLength = %d, want %d", download.ContentLength, len("media"))
+		}
+	}
 }
 
 func disconnected(t *testing.T) *jobs.Client {

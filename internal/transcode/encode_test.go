@@ -60,35 +60,7 @@ func streamOf(probed *ffmpeg.Probe, kind string) ffmpeg.Stream {
 }
 
 func TestStart_VideoEncode(t *testing.T) {
-	t.Run("an HDR hevc picture comes out as 1080p SDR h264", func(t *testing.T) {
-		uhd := pictureSource(t, "hdr.mkv", "2560x1440",
-			"-c:v", "libx265", "-pix_fmt", "yuv420p10le", "-x265-params", "log-level=error",
-			"-color_trc", "smpte2084", "-color_primaries", "bt2020", "-colorspace", "bt2020nc",
-			"-c:a", "ac3",
-		)
-
-		probed := encoded(t, Spec{Path: uhd, Container: VideoContainer, Video: true, VideoCodec: VideoCodec, Transfer: TransferPQ})
-		video, audio := streamOf(probed, "video"), streamOf(probed, "audio")
-
-		if video.CodecName != "h264" || video.Profile != "High" {
-			t.Errorf("video is %s %s, want h264 High", video.CodecName, video.Profile)
-		}
-		if video.Width != 1920 || video.Height != 1080 {
-			t.Errorf("video is %dx%d, want 1920x1080", video.Width, video.Height)
-		}
-		if video.PixelFormat != "yuv420p" {
-			t.Errorf("pixel format is %q, want 8-bit yuv420p", video.PixelFormat)
-		}
-		if video.ColorTransfer != "bt709" {
-			t.Errorf("transfer is %q, want the tone mapped bt709", video.ColorTransfer)
-		}
-		if video.Level > 41 {
-			t.Errorf("level is %v, want at most 4.1", video.Level)
-		}
-		if audio.CodecName != "aac" {
-			t.Errorf("audio is %q, want aac", audio.CodecName)
-		}
-	})
+	t.Run("an HDR hevc picture comes out as 1080p SDR h264", anHDRHevcPictureComesOutAs1080pSDRH264())
 
 	t.Run("a picture shorter than 1080p is not scaled up", func(t *testing.T) {
 		dvd := pictureSource(t, "dvd.mkv", "720x480", "-c:v", "mpeg4", "-c:a", "aac")
@@ -136,6 +108,38 @@ func TestStart_VideoEncode(t *testing.T) {
 			t.Errorf("seeking 2s into a %ds source produced %.2fs", sourceSeconds, seconds)
 		}
 	})
+}
+
+func anHDRHevcPictureComesOutAs1080pSDRH264() func(*testing.T) {
+	return func(t *testing.T) {
+		uhd := pictureSource(t, "hdr.mkv", "2560x1440",
+			"-c:v", "libx265", "-pix_fmt", "yuv420p10le", "-x265-params", "log-level=error",
+			"-color_trc", "smpte2084", "-color_primaries", "bt2020", "-colorspace", "bt2020nc",
+			"-c:a", "ac3",
+		)
+
+		probed := encoded(t, Spec{Path: uhd, Container: VideoContainer, Video: true, VideoCodec: VideoCodec, Transfer: TransferPQ})
+		video, audio := streamOf(probed, "video"), streamOf(probed, "audio")
+
+		if video.CodecName != "h264" || video.Profile != "High" {
+			t.Errorf("video is %s %s, want h264 High", video.CodecName, video.Profile)
+		}
+		if video.Width != 1920 || video.Height != 1080 {
+			t.Errorf("video is %dx%d, want 1920x1080", video.Width, video.Height)
+		}
+		if video.PixelFormat != "yuv420p" {
+			t.Errorf("pixel format is %q, want 8-bit yuv420p", video.PixelFormat)
+		}
+		if video.ColorTransfer != "bt709" {
+			t.Errorf("transfer is %q, want the tone mapped bt709", video.ColorTransfer)
+		}
+		if video.Level > 41 {
+			t.Errorf("level is %v, want at most 4.1", video.Level)
+		}
+		if audio.CodecName != "aac" {
+			t.Errorf("audio is %q, want aac", audio.CodecName)
+		}
+	}
 }
 
 func frameRate(t *testing.T, path string) string {

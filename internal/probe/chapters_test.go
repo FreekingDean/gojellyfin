@@ -127,13 +127,7 @@ func TestProber_ReadsChapterSegments(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []struct {
-		kind       segmentmodel.Kind
-		start, end int64
-	}{
-		{segmentmodel.KindIntro, 20_000_000, 50_000_000},
-		{segmentmodel.KindOutro, 80_000_000, 100_000_000},
-	}
+	want := proberReadsChapterSegmentsCases
 	if len(found) != len(want) {
 		t.Fatalf("segments = %d, want %d after probing twice", len(found), len(want))
 	}
@@ -145,4 +139,14 @@ func TestProber_ReadsChapterSegments(t *testing.T) {
 				want[i].kind, want[i].start, want[i].end)
 		}
 	}
+}
+
+type proberReadsChapterSegmentsCase struct {
+	kind       segmentmodel.Kind
+	start, end int64
+}
+
+var proberReadsChapterSegmentsCases = []proberReadsChapterSegmentsCase{
+	{segmentmodel.KindIntro, 20_000_000, 50_000_000},
+	{segmentmodel.KindOutro, 80_000_000, 100_000_000},
 }

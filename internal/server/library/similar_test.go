@@ -57,7 +57,11 @@ func TestServer_Similar(t *testing.T) {
 		})
 	}
 
-	t.Run("movies are ranked by what they share", func(t *testing.T) {
+	t.Run("movies are ranked by what they share", moviesAreRankedByWhatTheyShare(fixture, s, ctx))
+}
+
+func moviesAreRankedByWhatTheyShare(fixture *fixture, s *Server, ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
 		genre := "Drama " + uuid.NewString()
 		catalogue := items.New(fixture.client)
 		seedID := fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Seed"})
@@ -82,5 +86,5 @@ func TestServer_Similar(t *testing.T) {
 		if got := names(*found.Items); len(got) != 1 || got[0] != "Peer" {
 			t.Errorf("similar = %v, want Peer", got)
 		}
-	})
+	}
 }

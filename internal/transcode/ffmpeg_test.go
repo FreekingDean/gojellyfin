@@ -52,66 +52,9 @@ func probe(t *testing.T, body []byte, name string) *ffmpeg.Probe {
 }
 
 func TestStart(t *testing.T) {
-	t.Run("transcodes to each supported container", func(t *testing.T) {
-		flac := source(t, "tone.flac", sourceSeconds)
+	t.Run("transcodes to each supported container", transcodesToEachSupportedContainer())
 
-		for container, codec := range map[string]string{
-			"mp3":  "mp3",
-			"aac":  "aac",
-			"ts":   "aac",
-			"opus": "opus",
-		} {
-			t.Run(container, func(t *testing.T) {
-				output, err := start(context.Background(), Spec{Path: flac, Container: container})
-				if err != nil {
-					t.Fatalf("failed to start the transcode: %v", err)
-				}
-				defer func() { _ = output.Close() }()
-
-				body, err := io.ReadAll(output)
-				if err != nil {
-					t.Fatalf("failed to read the transcode: %v", err)
-				}
-				if len(body) == 0 {
-					t.Fatal("the transcode produced no bytes")
-				}
-
-				probed := probe(t, body, "out."+container)
-				if len(probed.Streams) == 0 {
-					t.Fatal("the output has no streams")
-				}
-				if got := probed.Streams[0].CodecName; got != codec {
-					t.Errorf("the output is %q, want %q", got, codec)
-				}
-				if seconds := probed.Format.Duration; math.Abs(seconds-sourceSeconds) > 1 {
-					t.Errorf("the output is %.2fs long, want about %ds", seconds, sourceSeconds)
-				}
-			})
-		}
-	})
-
-	t.Run("seeks to the requested offset", func(t *testing.T) {
-		flac := source(t, "tone.flac", sourceSeconds)
-
-		output, err := start(context.Background(), Spec{
-			Path:       flac,
-			Container:  "mp3",
-			StartTicks: 2 * 10_000_000,
-		})
-		if err != nil {
-			t.Fatalf("failed to start the transcode: %v", err)
-		}
-		defer func() { _ = output.Close() }()
-
-		body, err := io.ReadAll(output)
-		if err != nil {
-			t.Fatalf("failed to read the transcode: %v", err)
-		}
-
-		if seconds := probe(t, body, "out.mp3").Format.Duration; seconds > sourceSeconds-1 {
-			t.Errorf("seeking 2s into a %ds source produced %.2fs", sourceSeconds, seconds)
-		}
-	})
+	t.Run("seeks to the requested offset", seeksToTheRequestedOffset())
 
 	t.Run("rejects a source ffmpeg cannot read", func(t *testing.T) {
 		if !Available() {
@@ -150,7 +93,76 @@ func TestStart(t *testing.T) {
 		}
 	})
 
-	t.Run("a remux keeps the video and re-encodes the audio", func(t *testing.T) {
+	t.Run("a remux keeps the video and re-encodes the audio", aRemuxKeepsTheVideoAndReEncodesTheAudio())
+}
+
+func seeksToTheRequestedOffset() func(*testing.T) {
+	return func(t *testing.T) {
+		flac := source(t, "tone.flac", sourceSeconds)
+
+		output, err := start(context.Background(), Spec{
+			Path:       flac,
+			Container:  "mp3",
+			StartTicks: 2 * 10_000_000,
+		})
+		if err != nil {
+			t.Fatalf("failed to start the transcode: %v", err)
+		}
+		defer func() { _ = output.Close() }()
+
+		body, err := io.ReadAll(output)
+		if err != nil {
+			t.Fatalf("failed to read the transcode: %v", err)
+		}
+
+		if seconds := probe(t, body, "out.mp3").Format.Duration; seconds > sourceSeconds-1 {
+			t.Errorf("seeking 2s into a %ds source produced %.2fs", sourceSeconds, seconds)
+		}
+	}
+}
+
+func transcodesToEachSupportedContainer() func(*testing.T) {
+	return func(t *testing.T) {
+		flac := source(t, "tone.flac", sourceSeconds)
+
+		for container, codec := range map[string]string{
+			"mp3":  "mp3",
+			"aac":  "aac",
+			"ts":   "aac",
+			"opus": "opus",
+		} {
+			t.Run(container, func(t *testing.T) {
+				output, err := start(context.Background(), Spec{Path: flac, Container: container})
+				if err != nil {
+					t.Fatalf("failed to start the transcode: %v", err)
+				}
+				defer func() { _ = output.Close() }()
+
+				body, err := io.ReadAll(output)
+				if err != nil {
+					t.Fatalf("failed to read the transcode: %v", err)
+				}
+				if len(body) == 0 {
+					t.Fatal("the transcode produced no bytes")
+				}
+
+				probed := probe(t, body, "out."+container)
+				if len(probed.Streams) == 0 {
+					t.Fatal("the output has no streams")
+				}
+				if got := probed.Streams[0].CodecName; got != codec {
+					t.Errorf("the output is %q, want %q", got, codec)
+				}
+				if seconds := probed.Format.Duration; math.Abs(seconds-sourceSeconds) > 1 {
+					t.Errorf("the output is %.2fs long, want about %ds", seconds, sourceSeconds)
+				}
+			})
+		}
+	}
+}
+
+func aRemuxKeepsTheVideoAndReEncodesTheAudio() func(*testing.T) {
+	return func(t *testing.T) {
 		mkv := videoSource(t, "rip.mkv", sourceSeconds)
 
 		output, err := start(context.Background(), Spec{
@@ -189,5 +201,5 @@ func TestStart(t *testing.T) {
 		if audio != "aac" {
 			t.Errorf("audio is %q, want aac — the whole point is that ac3 is gone", audio)
 		}
-	})
+	}
 }

@@ -222,7 +222,55 @@ func TestPlanFor(t *testing.T) {
 		})
 	}
 
-	t.Run("the names the client writes are the names the probe wrote", func(t *testing.T) {
+	t.Run("the names the client writes are the names the probe wrote", theNamesTheClientWritesAreTheNamesTheProbeWrote())
+
+	t.Run("a profile that named no codecs named none it refuses", aProfileThatNamedNoCodecsNamedNoneItRefuses())
+
+	t.Run("a container the client declared that cannot be written down a pipe is passed over", aContainerTheClientDeclaredThatCannotBeWrittenDownAPipeIsPassedOver())
+
+	t.Run("a picture only an unwritable container declared is still carried", aPictureOnlyAnUnwritableContainerDeclaredIsStillCarried())
+}
+
+func aProfileThatNamedNoCodecsNamedNoneItRefuses() func(*testing.T) {
+	return func(t *testing.T) {
+		open := Capabilities{Profiles: []Profile{{Container: "mp4"}}}
+
+		if got := open.plan(rip("mp4", "ac3")).Change; got != ChangeNone {
+			t.Errorf("change = %v, want %v", got, ChangeNone)
+		}
+	}
+}
+
+func aContainerTheClientDeclaredThatCannotBeWrittenDownAPipeIsPassedOver() func(*testing.T) {
+	return func(t *testing.T) {
+		can := Capabilities{Profiles: []Profile{
+			{Container: "webm", VideoCodec: "h264", AudioCodec: "opus"},
+			{Container: "mp4", VideoCodec: "h264", AudioCodec: "aac"},
+		}}
+
+		if got := can.plan(rip("mkv", "ac3")).Container; got != "mp4" {
+			t.Errorf("container = %q, want mp4", got)
+		}
+	}
+}
+
+func aPictureOnlyAnUnwritableContainerDeclaredIsStillCarried() func(*testing.T) {
+	return func(t *testing.T) {
+		can := Capabilities{Profiles: []Profile{{Container: "webm", VideoCodec: "vp9", AudioCodec: "opus"}}}
+
+		plan := can.plan(ripped("mkv", "vp9", 1080, "ac3"))
+
+		if plan.Change != ChangeAudio {
+			t.Errorf("change = %v, want %v", plan.Change, ChangeAudio)
+		}
+		if plan.Container != "mp4" {
+			t.Errorf("container = %q, want mp4", plan.Container)
+		}
+	}
+}
+
+func theNamesTheClientWritesAreTheNamesTheProbeWrote() func(*testing.T) {
+	return func(t *testing.T) {
 		for _, tc := range []struct {
 			name   string
 			source *MediaSource
@@ -247,39 +295,7 @@ func TestPlanFor(t *testing.T) {
 				}
 			})
 		}
-	})
-
-	t.Run("a profile that named no codecs named none it refuses", func(t *testing.T) {
-		open := Capabilities{Profiles: []Profile{{Container: "mp4"}}}
-
-		if got := open.plan(rip("mp4", "ac3")).Change; got != ChangeNone {
-			t.Errorf("change = %v, want %v", got, ChangeNone)
-		}
-	})
-
-	t.Run("a container the client declared that cannot be written down a pipe is passed over", func(t *testing.T) {
-		can := Capabilities{Profiles: []Profile{
-			{Container: "webm", VideoCodec: "h264", AudioCodec: "opus"},
-			{Container: "mp4", VideoCodec: "h264", AudioCodec: "aac"},
-		}}
-
-		if got := can.plan(rip("mkv", "ac3")).Container; got != "mp4" {
-			t.Errorf("container = %q, want mp4", got)
-		}
-	})
-
-	t.Run("a picture only an unwritable container declared is still carried", func(t *testing.T) {
-		can := Capabilities{Profiles: []Profile{{Container: "webm", VideoCodec: "vp9", AudioCodec: "opus"}}}
-
-		plan := can.plan(ripped("mkv", "vp9", 1080, "ac3"))
-
-		if plan.Change != ChangeAudio {
-			t.Errorf("change = %v, want %v", plan.Change, ChangeAudio)
-		}
-		if plan.Container != "mp4" {
-			t.Errorf("container = %q, want mp4", plan.Container)
-		}
-	})
+	}
 }
 
 func TestService_SourceForOrder(t *testing.T) {
@@ -430,7 +446,47 @@ func TestService_SourceForOrder(t *testing.T) {
 		})
 	}
 
-	t.Run("the richer encode of two at one resolution", func(t *testing.T) {
+	t.Run("the richer encode of two at one resolution", theRicherEncodeOfTwoAtOneResolution(ctx))
+
+	t.Run("a lowered ceiling passes over every copy taller than it", aLoweredCeilingPassesOverEveryCopyTallerThanIt(ctx))
+
+	t.Run("a lowered ceiling refuses a title with nothing under it", aLoweredCeilingRefusesATitleWithNothingUnderIt(ctx))
+
+	t.Run("a lowered ceiling still plays a taller copy that needs no encode", aLoweredCeilingStillPlaysATallerCopyThatNeedsNoEncode(ctx))
+}
+
+func aLoweredCeilingRefusesATitleWithNothingUnderIt(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.service.EncodeAtMost(720)
+		film := fixture.film(t, "movie:ceiling-refused")
+		fixture.copy(t, film, "/hd.mkv", "mpeg4", "aac", 1080)
+
+		if _, err := fixture.service.SourceFor(ctx, film, chrome); !errors.Is(err, ErrNoPlayable) {
+			t.Fatalf("err = %v, want %v", err, ErrNoPlayable)
+		}
+	}
+}
+
+func aLoweredCeilingStillPlaysATallerCopyThatNeedsNoEncode(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.service.EncodeAtMost(720)
+		film := fixture.film(t, "movie:ceiling-untouched")
+		fixture.copy(t, film, "/hd.mkv", "h264", "aac", 1080)
+
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
+		if err != nil {
+			t.Fatalf("nothing was chosen: %v", err)
+		}
+		if plan.Change != ChangeNone {
+			t.Errorf("change = %v, want the file untouched", plan.Change)
+		}
+	}
+}
+
+func theRicherEncodeOfTwoAtOneResolution(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		film := fixture.film(t, "movie:bitrates")
 		fixture.copy(t, film, "/thin.mkv", "h264", "aac", 1080)
@@ -444,9 +500,11 @@ func TestService_SourceForOrder(t *testing.T) {
 		if plan.Source.Path != "/fat.mkv" {
 			t.Errorf("chose %q, want the richer encode", plan.Source.Path)
 		}
-	})
+	}
+}
 
-	t.Run("a lowered ceiling passes over every copy taller than it", func(t *testing.T) {
+func aLoweredCeilingPassesOverEveryCopyTallerThanIt(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.service.EncodeAtMost(720)
 		film := fixture.film(t, "movie:ceiling")
@@ -460,33 +518,7 @@ func TestService_SourceForOrder(t *testing.T) {
 		if plan.Source.Path != "/sd.mkv" {
 			t.Errorf("chose %q, want the copy at the ceiling", plan.Source.Path)
 		}
-	})
-
-	t.Run("a lowered ceiling refuses a title with nothing under it", func(t *testing.T) {
-		fixture := newFixture(t)
-		fixture.service.EncodeAtMost(720)
-		film := fixture.film(t, "movie:ceiling-refused")
-		fixture.copy(t, film, "/hd.mkv", "mpeg4", "aac", 1080)
-
-		if _, err := fixture.service.SourceFor(ctx, film, chrome); !errors.Is(err, ErrNoPlayable) {
-			t.Fatalf("err = %v, want %v", err, ErrNoPlayable)
-		}
-	})
-
-	t.Run("a lowered ceiling still plays a taller copy that needs no encode", func(t *testing.T) {
-		fixture := newFixture(t)
-		fixture.service.EncodeAtMost(720)
-		film := fixture.film(t, "movie:ceiling-untouched")
-		fixture.copy(t, film, "/hd.mkv", "h264", "aac", 1080)
-
-		plan, err := fixture.service.SourceFor(ctx, film, chrome)
-		if err != nil {
-			t.Fatalf("nothing was chosen: %v", err)
-		}
-		if plan.Change != ChangeNone {
-			t.Errorf("change = %v, want the file untouched", plan.Change)
-		}
-	})
+	}
 }
 
 func TestEncodableSources(t *testing.T) {
@@ -588,58 +620,11 @@ func (f *fixture) film(t *testing.T, key string) *Item {
 func TestService_SourceFor(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("answers with one file and never the others", func(t *testing.T) {
-		fixture := newFixture(t)
-		film := fixture.film(t, "movie:versions")
-		fixture.copy(t, film, "/media/uhd.mkv", "h264", "aac", 2160)
-		fixture.copy(t, film, "/media/hd.mkv", "h264", "aac", 1080)
+	t.Run("answers with one file and never the others", answersWithOneFileAndNeverTheOthers(ctx))
 
-		sources, err := fixture.service.MediaSources(ctx, film.ID)
-		if err != nil || len(sources) != 2 {
-			t.Fatalf("the fixture has %d sources: %v", len(sources), err)
-		}
+	t.Run("prefers the taller picture over the cheaper one to serve", prefersTheTallerPictureOverTheCheaperOneToServe(ctx))
 
-		plan, err := fixture.service.SourceFor(ctx, film, chrome)
-		if err != nil {
-			t.Fatalf("failed to choose a source: %v", err)
-		}
-		if plan.Source.Path != "/media/uhd.mkv" {
-			t.Errorf("chose %q, want the taller copy", plan.Source.Path)
-		}
-	})
-
-	t.Run("prefers the taller picture over the cheaper one to serve", func(t *testing.T) {
-		fixture := newFixture(t)
-		film := fixture.film(t, "movie:tiers")
-		fixture.copy(t, film, "/media/uhd.mkv", "h264", "ac3", 2160)
-		fixture.copy(t, film, "/media/hd.mkv", "h264", "aac", 1080)
-
-		plan, err := fixture.service.SourceFor(ctx, film, chrome)
-		if err != nil {
-			t.Fatalf("failed to choose a source: %v", err)
-		}
-		if plan.Source.Path != "/media/uhd.mkv" {
-			t.Errorf("chose %q, want the 4K that only needs its audio converted", plan.Source.Path)
-		}
-		if plan.Change != ChangeAudio {
-			t.Errorf("change = %v, want %v", plan.Change, ChangeAudio)
-		}
-	})
-
-	t.Run("drops a copy whose picture would have to be re-encoded", func(t *testing.T) {
-		fixture := newFixture(t)
-		film := fixture.film(t, "movie:oddball")
-		fixture.copy(t, film, "/media/uhd.mkv", "mpeg4", "aac", 2160)
-		fixture.copy(t, film, "/media/hd.mkv", "h264", "aac", 1080)
-
-		plan, err := fixture.service.SourceFor(ctx, film, chrome)
-		if err != nil {
-			t.Fatalf("failed to choose a source: %v", err)
-		}
-		if plan.Source.Path != "/media/hd.mkv" {
-			t.Errorf("chose %q, want the copy that needs no picture encode", plan.Source.Path)
-		}
-	})
+	t.Run("drops a copy whose picture would have to be re-encoded", dropsACopyWhosePictureWouldHaveToBeReEncoded(ctx))
 
 	t.Run("encodes the picture when every copy needs it", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -666,7 +651,114 @@ func TestService_SourceFor(t *testing.T) {
 		}
 	})
 
-	t.Run("an SDR client gets the 1080p rather than the HDR 4K beside it", func(t *testing.T) {
+	t.Run("an SDR client gets the 1080p rather than the HDR 4K beside it", anSDRClientGetsThe1080pRatherThanTheHDR4KBesideIt(ctx))
+
+	t.Run("encodes when the only copy is one the client cannot decode", encodesWhenTheOnlyCopyIsOneTheClientCannotDecode(ctx))
+
+	t.Run("a copy the probe never read the range of is still offered", aCopyTheProbeNeverReadTheRangeOfIsStillOffered(ctx))
+
+	t.Run("refuses an item with no file behind it", func(t *testing.T) {
+		fixture := newFixture(t)
+		film := fixture.film(t, "movie:nofile")
+
+		if _, err := fixture.service.SourceFor(ctx, film, chrome); !errors.Is(err, ErrNoSource) {
+			t.Errorf("err = %v, want %v", err, ErrNoSource)
+		}
+	})
+
+	t.Run("hands a client that declared nothing its own file", handsAClientThatDeclaredNothingItsOwnFile(ctx))
+}
+
+func aCopyTheProbeNeverReadTheRangeOfIsStillOffered(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		film := fixture.film(t, "movie:unread-range")
+		fixture.copy(t, film, "/media/only.mkv", "h264", "aac", 1080)
+
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
+		if err != nil {
+			t.Fatalf("a file whose range nobody probed was refused: %v", err)
+		}
+		if plan.Change != ChangeNone {
+			t.Errorf("change = %v, want %v", plan.Change, ChangeNone)
+		}
+	}
+}
+
+func handsAClientThatDeclaredNothingItsOwnFile(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		film := fixture.film(t, "movie:silent-client")
+		fixture.copy(t, film, "/media/only.mkv", "mpeg4", "ac3", 1080)
+
+		plan, err := fixture.service.SourceFor(ctx, film, Capabilities{})
+		if err != nil {
+			t.Fatalf("failed to choose a source: %v", err)
+		}
+		if plan.Change != ChangeNone {
+			t.Errorf("change = %v, want %v", plan.Change, ChangeNone)
+		}
+	}
+}
+
+func dropsACopyWhosePictureWouldHaveToBeReEncoded(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		film := fixture.film(t, "movie:oddball")
+		fixture.copy(t, film, "/media/uhd.mkv", "mpeg4", "aac", 2160)
+		fixture.copy(t, film, "/media/hd.mkv", "h264", "aac", 1080)
+
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
+		if err != nil {
+			t.Fatalf("failed to choose a source: %v", err)
+		}
+		if plan.Source.Path != "/media/hd.mkv" {
+			t.Errorf("chose %q, want the copy that needs no picture encode", plan.Source.Path)
+		}
+	}
+}
+
+func encodesWhenTheOnlyCopyIsOneTheClientCannotDecode(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		film := fixture.film(t, "movie:hdr-only")
+		fixture.copyRanged(t, film, "/media/only.mkv", "h264", "aac", 1080, ptr(streammodel.VideoRangeTypeHDR10))
+
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
+		if err != nil {
+			t.Fatalf("failed to choose a source: %v", err)
+		}
+		if plan.Change != ChangeVideo {
+			t.Errorf("change = %v, want %v", plan.Change, ChangeVideo)
+		}
+		if HDRTransfer(plan.Source) != "smpte2084" {
+			t.Error("the HDR source is not reported as HDR, so nothing would tone map it")
+		}
+	}
+}
+
+func prefersTheTallerPictureOverTheCheaperOneToServe(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		film := fixture.film(t, "movie:tiers")
+		fixture.copy(t, film, "/media/uhd.mkv", "h264", "ac3", 2160)
+		fixture.copy(t, film, "/media/hd.mkv", "h264", "aac", 1080)
+
+		plan, err := fixture.service.SourceFor(ctx, film, chrome)
+		if err != nil {
+			t.Fatalf("failed to choose a source: %v", err)
+		}
+		if plan.Source.Path != "/media/uhd.mkv" {
+			t.Errorf("chose %q, want the 4K that only needs its audio converted", plan.Source.Path)
+		}
+		if plan.Change != ChangeAudio {
+			t.Errorf("change = %v, want %v", plan.Change, ChangeAudio)
+		}
+	}
+}
+
+func anSDRClientGetsThe1080pRatherThanTheHDR4KBesideIt(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		film := fixture.film(t, "movie:hdr-tiers")
 		fixture.copyRanged(t, film, "/media/uhd.mkv", "h264", "aac", 2160, ptr(streammodel.VideoRangeTypeHDR10))
@@ -682,61 +774,29 @@ func TestService_SourceFor(t *testing.T) {
 		if plan.Change != ChangeNone {
 			t.Errorf("change = %v, want the SDR copy handed over untouched", plan.Change)
 		}
-	})
+	}
+}
 
-	t.Run("encodes when the only copy is one the client cannot decode", func(t *testing.T) {
+func answersWithOneFileAndNeverTheOthers(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
-		film := fixture.film(t, "movie:hdr-only")
-		fixture.copyRanged(t, film, "/media/only.mkv", "h264", "aac", 1080, ptr(streammodel.VideoRangeTypeHDR10))
+		film := fixture.film(t, "movie:versions")
+		fixture.copy(t, film, "/media/uhd.mkv", "h264", "aac", 2160)
+		fixture.copy(t, film, "/media/hd.mkv", "h264", "aac", 1080)
+
+		sources, err := fixture.service.MediaSources(ctx, film.ID)
+		if err != nil || len(sources) != 2 {
+			t.Fatalf("the fixture has %d sources: %v", len(sources), err)
+		}
 
 		plan, err := fixture.service.SourceFor(ctx, film, chrome)
 		if err != nil {
 			t.Fatalf("failed to choose a source: %v", err)
 		}
-		if plan.Change != ChangeVideo {
-			t.Errorf("change = %v, want %v", plan.Change, ChangeVideo)
+		if plan.Source.Path != "/media/uhd.mkv" {
+			t.Errorf("chose %q, want the taller copy", plan.Source.Path)
 		}
-		if HDRTransfer(plan.Source) != "smpte2084" {
-			t.Error("the HDR source is not reported as HDR, so nothing would tone map it")
-		}
-	})
-
-	t.Run("a copy the probe never read the range of is still offered", func(t *testing.T) {
-		fixture := newFixture(t)
-		film := fixture.film(t, "movie:unread-range")
-		fixture.copy(t, film, "/media/only.mkv", "h264", "aac", 1080)
-
-		plan, err := fixture.service.SourceFor(ctx, film, chrome)
-		if err != nil {
-			t.Fatalf("a file whose range nobody probed was refused: %v", err)
-		}
-		if plan.Change != ChangeNone {
-			t.Errorf("change = %v, want %v", plan.Change, ChangeNone)
-		}
-	})
-
-	t.Run("refuses an item with no file behind it", func(t *testing.T) {
-		fixture := newFixture(t)
-		film := fixture.film(t, "movie:nofile")
-
-		if _, err := fixture.service.SourceFor(ctx, film, chrome); !errors.Is(err, ErrNoSource) {
-			t.Errorf("err = %v, want %v", err, ErrNoSource)
-		}
-	})
-
-	t.Run("hands a client that declared nothing its own file", func(t *testing.T) {
-		fixture := newFixture(t)
-		film := fixture.film(t, "movie:silent-client")
-		fixture.copy(t, film, "/media/only.mkv", "mpeg4", "ac3", 1080)
-
-		plan, err := fixture.service.SourceFor(ctx, film, Capabilities{})
-		if err != nil {
-			t.Fatalf("failed to choose a source: %v", err)
-		}
-		if plan.Change != ChangeNone {
-			t.Errorf("change = %v, want %v", plan.Change, ChangeNone)
-		}
-	})
+	}
 }
 
 var listener = Capabilities{

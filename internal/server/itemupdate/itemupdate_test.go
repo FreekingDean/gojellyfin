@@ -202,7 +202,34 @@ func TestServer_UpdateItem(t *testing.T) {
 		}
 	})
 
-	t.Run("keeps a foreign rating", func(t *testing.T) {
+	t.Run("keeps a foreign rating", keepsAForeignRating())
+
+	t.Run("keeps the probed columns", keepsTheProbedColumns())
+
+	t.Run("claims the title it retitles", claimsTheTitleItRetitles())
+
+	t.Run("leaves an untouched title to the scan", leavesAnUntouchedTitleToTheScan())
+
+	t.Run("writes genres, studios and people and claims them", writesGenresStudiosAndPeopleAndClaimsThem())
+
+	t.Run("leaves unchanged genres to the provider", leavesUnchangedGenresToTheProvider())
+
+	t.Run("answers 404 for an unknown item", answers404ForAnUnknownItem())
+}
+
+func answers404ForAnUnknownItem() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+
+		response := fixture.update(t, uuid.New(), api.BaseItemDto{Name: apiutil.Ptr("Nowhere")})
+		if _, ok := response.(api.UpdateItem404JSONResponse); !ok {
+			t.Fatalf("response = %T, want UpdateItem404JSONResponse", response)
+		}
+	}
+}
+
+func keepsAForeignRating() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 
 		fixture.update(t, fixture.itemID, api.BaseItemDto{OfficialRating: apiutil.Ptr("FSK 16")})
@@ -210,9 +237,93 @@ func TestServer_UpdateItem(t *testing.T) {
 		if record := fixture.item(t); record.OfficialRating != "FSK 16" {
 			t.Errorf("official rating = %q, want %q", record.OfficialRating, "FSK 16")
 		}
-	})
+	}
+}
 
-	t.Run("keeps the probed columns", func(t *testing.T) {
+func claimsTheTitleItRetitles() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+
+		fixture.update(t, fixture.itemID, api.BaseItemDto{Name: apiutil.Ptr("The Matrix")})
+
+		if want := []string{"Name"}; !slices.Equal(fixture.item(t).LockedFields, want) {
+			t.Errorf("locked fields = %v, want %v: a rescan would take the edit back", fixture.item(t).LockedFields, want)
+		}
+	}
+}
+
+func leavesAnUntouchedTitleToTheScan() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+
+		fixture.update(t, fixture.itemID, api.BaseItemDto{
+			Name:     apiutil.Ptr("Original Name"),
+			Overview: apiutil.Ptr("A synopsis."),
+		})
+
+		if locked := fixture.item(t).LockedFields; len(locked) != 0 {
+			t.Errorf("locked fields = %v, want none", locked)
+		}
+	}
+}
+
+func leavesUnchangedGenresToTheProvider() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		if _, err := items.New(fixture.client).UpdateMetadata(context.Background(), fixture.itemID, items.Metadata{
+			Genres: &[]string{"Drama"},
+		}); err != nil {
+			t.Fatalf("failed to seed the genres: %v", err)
+		}
+
+		fixture.update(t, fixture.itemID, api.BaseItemDto{Genres: &[]string{"Drama"}, People: &[]api.BaseItemPerson{}})
+
+		if locked := fixture.item(t).LockedFields; len(locked) != 0 {
+			t.Errorf("locked fields = %v, want none", locked)
+		}
+	}
+}
+
+func writesGenresStudiosAndPeopleAndClaimsThem() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+
+		fixture.update(t, fixture.itemID, api.BaseItemDto{
+			Genres:  &[]string{"Science Fiction", "Action"},
+			Studios: &[]api.NameGuidPair{{Name: apiutil.Ptr("Example Pictures")}},
+			People: &[]api.BaseItemPerson{
+				{Name: apiutil.Ptr("Ada Example"), Role: apiutil.Ptr("Neo"), Type: apiutil.Ptr(api.PersonKindActor)},
+				{Name: apiutil.Ptr("Bo Example"), Type: apiutil.Ptr(api.PersonKindDirector)},
+				{Name: apiutil.Ptr("Cy Example"), Type: apiutil.Ptr(api.PersonKind("Narrator"))},
+			},
+		})
+
+		described, err := items.New(fixture.client).Description(ctx, fixture.itemID)
+		if err != nil {
+			t.Fatalf("failed to describe the item: %v", err)
+		}
+		if got, want := named(described.Genres), []string{"Action", "Science Fiction"}; !slices.Equal(got, want) {
+			t.Errorf("genres = %v, want %v", got, want)
+		}
+		if got, want := named(described.Studios), []string{"Example Pictures"}; !slices.Equal(got, want) {
+			t.Errorf("studios = %v, want %v", got, want)
+		}
+		people := make([]string, 0, len(described.People))
+		for _, person := range described.People {
+			people = append(people, person.Name+"/"+string(person.Kind)+"/"+person.Role)
+		}
+		if want := []string{"Ada Example/Actor/Neo", "Bo Example/Director/", "Cy Example/Unknown/"}; !slices.Equal(people, want) {
+			t.Errorf("people = %v, want %v", people, want)
+		}
+		if want := []string{"Genres", "Studios", "Cast"}; !slices.Equal(fixture.item(t).LockedFields, want) {
+			t.Errorf("locked fields = %v, want %v: the next identify run would take the edit back", fixture.item(t).LockedFields, want)
+		}
+	}
+}
+
+func keepsTheProbedColumns() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 
 		fixture.update(t, fixture.itemID, api.BaseItemDto{
@@ -254,90 +365,7 @@ func TestServer_UpdateItem(t *testing.T) {
 		} else if sources != 0 {
 			t.Errorf("media sources = %d, want none", sources)
 		}
-	})
-
-	t.Run("claims the title it retitles", func(t *testing.T) {
-		fixture := newFixture(t)
-
-		fixture.update(t, fixture.itemID, api.BaseItemDto{Name: apiutil.Ptr("The Matrix")})
-
-		if want := []string{"Name"}; !slices.Equal(fixture.item(t).LockedFields, want) {
-			t.Errorf("locked fields = %v, want %v: a rescan would take the edit back", fixture.item(t).LockedFields, want)
-		}
-	})
-
-	t.Run("leaves an untouched title to the scan", func(t *testing.T) {
-		fixture := newFixture(t)
-
-		fixture.update(t, fixture.itemID, api.BaseItemDto{
-			Name:     apiutil.Ptr("Original Name"),
-			Overview: apiutil.Ptr("A synopsis."),
-		})
-
-		if locked := fixture.item(t).LockedFields; len(locked) != 0 {
-			t.Errorf("locked fields = %v, want none", locked)
-		}
-	})
-
-	t.Run("writes genres, studios and people and claims them", func(t *testing.T) {
-		fixture := newFixture(t)
-		ctx := context.Background()
-
-		fixture.update(t, fixture.itemID, api.BaseItemDto{
-			Genres:  &[]string{"Science Fiction", "Action"},
-			Studios: &[]api.NameGuidPair{{Name: apiutil.Ptr("Example Pictures")}},
-			People: &[]api.BaseItemPerson{
-				{Name: apiutil.Ptr("Ada Example"), Role: apiutil.Ptr("Neo"), Type: apiutil.Ptr(api.PersonKindActor)},
-				{Name: apiutil.Ptr("Bo Example"), Type: apiutil.Ptr(api.PersonKindDirector)},
-				{Name: apiutil.Ptr("Cy Example"), Type: apiutil.Ptr(api.PersonKind("Narrator"))},
-			},
-		})
-
-		described, err := items.New(fixture.client).Description(ctx, fixture.itemID)
-		if err != nil {
-			t.Fatalf("failed to describe the item: %v", err)
-		}
-		if got, want := named(described.Genres), []string{"Action", "Science Fiction"}; !slices.Equal(got, want) {
-			t.Errorf("genres = %v, want %v", got, want)
-		}
-		if got, want := named(described.Studios), []string{"Example Pictures"}; !slices.Equal(got, want) {
-			t.Errorf("studios = %v, want %v", got, want)
-		}
-		people := make([]string, 0, len(described.People))
-		for _, person := range described.People {
-			people = append(people, person.Name+"/"+string(person.Kind)+"/"+person.Role)
-		}
-		if want := []string{"Ada Example/Actor/Neo", "Bo Example/Director/", "Cy Example/Unknown/"}; !slices.Equal(people, want) {
-			t.Errorf("people = %v, want %v", people, want)
-		}
-		if want := []string{"Genres", "Studios", "Cast"}; !slices.Equal(fixture.item(t).LockedFields, want) {
-			t.Errorf("locked fields = %v, want %v: the next identify run would take the edit back", fixture.item(t).LockedFields, want)
-		}
-	})
-
-	t.Run("leaves unchanged genres to the provider", func(t *testing.T) {
-		fixture := newFixture(t)
-		if _, err := items.New(fixture.client).UpdateMetadata(context.Background(), fixture.itemID, items.Metadata{
-			Genres: &[]string{"Drama"},
-		}); err != nil {
-			t.Fatalf("failed to seed the genres: %v", err)
-		}
-
-		fixture.update(t, fixture.itemID, api.BaseItemDto{Genres: &[]string{"Drama"}, People: &[]api.BaseItemPerson{}})
-
-		if locked := fixture.item(t).LockedFields; len(locked) != 0 {
-			t.Errorf("locked fields = %v, want none", locked)
-		}
-	})
-
-	t.Run("answers 404 for an unknown item", func(t *testing.T) {
-		fixture := newFixture(t)
-
-		response := fixture.update(t, uuid.New(), api.BaseItemDto{Name: apiutil.Ptr("Nowhere")})
-		if _, ok := response.(api.UpdateItem404JSONResponse); !ok {
-			t.Fatalf("response = %T, want UpdateItem404JSONResponse", response)
-		}
-	})
+	}
 }
 
 func TestServer_GetMetadataEditorInfo(t *testing.T) {

@@ -106,55 +106,9 @@ func decodable(t *testing.T, body []byte, name string) *ffmpeg.Probe {
 }
 
 func TestHandler_serveTranscode(t *testing.T) {
-	t.Run("universal transcodes", func(t *testing.T) {
-		fixture := newFixture(t)
-		fixture.withEncoder(t)
-		id := fixture.addTone(t)
+	t.Run("universal transcodes", universalTranscodes())
 
-		recorder := httptest.NewRecorder()
-		target := "/Audio/" + id.String() + "/universal?container=mp3%7Cmp3&"
-
-		fixture.handler.ServeUniversal(recorder, fixture.get(t, http.MethodGet, target, id))
-
-		if recorder.Code != http.StatusOK {
-			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
-		}
-		if got := recorder.Header().Get("Content-Type"); got != "audio/mpeg" {
-			t.Errorf("content type = %q, want audio/mpeg", got)
-		}
-		if got := recorder.Header().Get("Accept-Ranges"); got != "none" {
-			t.Errorf("accept ranges = %q, want none", got)
-		}
-
-		probed := decodable(t, recorder.Body.Bytes(), "out.mp3")
-		if len(probed.Streams) == 0 || probed.Streams[0].CodecName != "mp3" {
-			t.Fatalf("the response is not mp3: %+v", probed.Streams)
-		}
-		if seconds := probed.Format.Duration; math.Abs(seconds-toneSeconds) > 1 {
-			t.Errorf("the response is %.2fs long, want about %ds", seconds, toneSeconds)
-		}
-	})
-
-	t.Run("transcodes the requested container", func(t *testing.T) {
-		fixture := newFixture(t)
-		fixture.withEncoder(t)
-		id := fixture.addTone(t)
-
-		recorder := httptest.NewRecorder()
-		request := fixture.get(t, http.MethodGet, "/Audio/"+id.String()+"/stream.aac?", id)
-		request.SetPathValue("container", "aac")
-
-		fixture.handler.Serve(recorder, request)
-
-		if recorder.Code != http.StatusOK {
-			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
-		}
-
-		probed := decodable(t, recorder.Body.Bytes(), "out.aac")
-		if len(probed.Streams) == 0 || probed.Streams[0].CodecName != "aac" {
-			t.Fatalf("the response is not aac: %+v", probed.Streams)
-		}
-	})
+	t.Run("transcodes the requested container", transcodesTheRequestedContainer())
 
 	t.Run("universal encodes into the transcoding container the client named", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -207,7 +161,65 @@ func TestHandler_serveTranscode(t *testing.T) {
 		}
 	})
 
-	t.Run("universal answers busy when every slot is taken", func(t *testing.T) {
+	t.Run("universal answers busy when every slot is taken", universalAnswersBusyWhenEverySlotIsTaken())
+}
+
+func transcodesTheRequestedContainer() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.withEncoder(t)
+		id := fixture.addTone(t)
+
+		recorder := httptest.NewRecorder()
+		request := fixture.get(t, http.MethodGet, "/Audio/"+id.String()+"/stream.aac?", id)
+		request.SetPathValue("container", "aac")
+
+		fixture.handler.Serve(recorder, request)
+
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+
+		probed := decodable(t, recorder.Body.Bytes(), "out.aac")
+		if len(probed.Streams) == 0 || probed.Streams[0].CodecName != "aac" {
+			t.Fatalf("the response is not aac: %+v", probed.Streams)
+		}
+	}
+}
+
+func universalTranscodes() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.withEncoder(t)
+		id := fixture.addTone(t)
+
+		recorder := httptest.NewRecorder()
+		target := "/Audio/" + id.String() + "/universal?container=mp3%7Cmp3&"
+
+		fixture.handler.ServeUniversal(recorder, fixture.get(t, http.MethodGet, target, id))
+
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d: %s", recorder.Code, http.StatusOK, recorder.Body)
+		}
+		if got := recorder.Header().Get("Content-Type"); got != "audio/mpeg" {
+			t.Errorf("content type = %q, want audio/mpeg", got)
+		}
+		if got := recorder.Header().Get("Accept-Ranges"); got != "none" {
+			t.Errorf("accept ranges = %q, want none", got)
+		}
+
+		probed := decodable(t, recorder.Body.Bytes(), "out.mp3")
+		if len(probed.Streams) == 0 || probed.Streams[0].CodecName != "mp3" {
+			t.Fatalf("the response is not mp3: %+v", probed.Streams)
+		}
+		if seconds := probed.Format.Duration; math.Abs(seconds-toneSeconds) > 1 {
+			t.Errorf("the response is %.2fs long, want about %ds", seconds, toneSeconds)
+		}
+	}
+}
+
+func universalAnswersBusyWhenEverySlotIsTaken() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.withEncoder(t)
 		id := fixture.addTone(t)
@@ -237,7 +249,7 @@ func TestHandler_serveTranscode(t *testing.T) {
 		if got := recorder.Header().Get("Retry-After"); got != "10" {
 			t.Errorf("retry after = %q, want 10", got)
 		}
-	})
+	}
 }
 
 type dying struct {
@@ -359,23 +371,7 @@ func TestHandler_relay(t *testing.T) {
 		}
 	})
 
-	t.Run("reports nothing when the stall timer kills the encode", func(t *testing.T) {
-		fixture := newFixture(t)
-		id := fixture.add(t, uuid.NewString()+".flac", "flac")
-
-		fixture.transcoder.enabled = true
-		fixture.transcoder.stall = 50 * time.Millisecond
-		fixture.transcoder.open = func(ctx context.Context, _ transcode.Spec) (io.ReadCloser, error) {
-			return &killed{ctx: ctx}, nil
-		}
-
-		if _, err := fixture.streamed(t, id); err == nil {
-			t.Fatal("a killed encode ended the response cleanly")
-		}
-		if found := fixture.filed(t, id); len(found) != 0 {
-			t.Errorf("got %d reports, want none", len(found))
-		}
-	})
+	t.Run("reports nothing when the stall timer kills the encode", reportsNothingWhenTheStallTimerKillsTheEncode())
 
 	t.Run("reports nothing when the client goes away", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -417,7 +413,31 @@ func TestHandler_relay(t *testing.T) {
 		}
 	})
 
-	t.Run("ends the response cleanly when ffmpeg finishes", func(t *testing.T) {
+	t.Run("ends the response cleanly when ffmpeg finishes", endsTheResponseCleanlyWhenFfmpegFinishes())
+}
+
+func reportsNothingWhenTheStallTimerKillsTheEncode() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.add(t, uuid.NewString()+".flac", "flac")
+
+		fixture.transcoder.enabled = true
+		fixture.transcoder.stall = 50 * time.Millisecond
+		fixture.transcoder.open = func(ctx context.Context, _ transcode.Spec) (io.ReadCloser, error) {
+			return &killed{ctx: ctx}, nil
+		}
+
+		if _, err := fixture.streamed(t, id); err == nil {
+			t.Fatal("a killed encode ended the response cleanly")
+		}
+		if found := fixture.filed(t, id); len(found) != 0 {
+			t.Errorf("got %d reports, want none", len(found))
+		}
+	}
+}
+
+func endsTheResponseCleanlyWhenFfmpegFinishes() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.add(t, uuid.NewString()+".flac", "flac")
 
@@ -433,50 +453,11 @@ func TestHandler_relay(t *testing.T) {
 		if found := fixture.filed(t, id); len(found) != 0 {
 			t.Errorf("got %d reports, want none", len(found))
 		}
-	})
+	}
 }
 
 func TestHandler_ReportsWhatWillNotPlay(t *testing.T) {
-	t.Run("a source ffmpeg cannot read is reported once", func(t *testing.T) {
-		fixture := newFixture(t)
-		id := fixture.add(t, uuid.NewString()+".flac", "flac")
-		fixture.transcoder.enabled = true
-		fixture.transcoder.open = func(context.Context, transcode.Spec) (io.ReadCloser, error) {
-			return nil, errors.New("ffmpeg exited: exit status 1")
-		}
-
-		for range 2 {
-			request := fixture.get(t, http.MethodGet, "/Audio/"+id.String()+"/stream.mp3?", id)
-			request.SetPathValue("container", "mp3")
-			recorder := httptest.NewRecorder()
-			fixture.handler.Serve(recorder, request)
-
-			if recorder.Code != http.StatusUnsupportedMediaType {
-				t.Fatalf("status = %d, want %d", recorder.Code, http.StatusUnsupportedMediaType)
-			}
-		}
-
-		found := fixture.filed(t, id)
-		if len(found) != 1 {
-			t.Fatalf("got %d reports, want one", len(found))
-		}
-		if found[0].Origin != reports.OriginPlayback || found[0].Kind != reports.KindUnplayable || found[0].ItemSourceID == nil {
-			t.Errorf("report = %+v", found[0])
-		}
-
-		attempt := found[0].Attempt
-		if attempt == nil {
-			t.Fatal("the report records no attempt")
-		}
-		if attempt.UserID == nil || attempt.UserName == "" || attempt.Client != "Test" || attempt.ClientVersion != "1" || attempt.DeviceName != "Test" || attempt.Build == "" {
-			t.Errorf("attempt = %+v, want the account, the device and the build that asked", attempt)
-		}
-		want := items.Playback{VideoDirect: true, Container: "mp3"}
-		if served := attempt.Playback; served == nil || served.Direct != want.Direct || served.VideoDirect != want.VideoDirect ||
-			served.AudioDirect != want.AudioDirect || served.Container != want.Container {
-			t.Errorf("served = %+v, want %+v", served, want)
-		}
-	})
+	t.Run("a source ffmpeg cannot read is reported once", aSourceFfmpegCannotReadIsReportedOnce())
 
 	t.Run("a file served whole that cannot be opened records a direct play", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -535,4 +516,47 @@ func TestHandler_ReportsWhatWillNotPlay(t *testing.T) {
 			t.Errorf("got %d reports, want one", len(found))
 		}
 	})
+}
+
+func aSourceFfmpegCannotReadIsReportedOnce() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		id := fixture.add(t, uuid.NewString()+".flac", "flac")
+		fixture.transcoder.enabled = true
+		fixture.transcoder.open = func(context.Context, transcode.Spec) (io.ReadCloser, error) {
+			return nil, errors.New("ffmpeg exited: exit status 1")
+		}
+
+		for range 2 {
+			request := fixture.get(t, http.MethodGet, "/Audio/"+id.String()+"/stream.mp3?", id)
+			request.SetPathValue("container", "mp3")
+			recorder := httptest.NewRecorder()
+			fixture.handler.Serve(recorder, request)
+
+			if recorder.Code != http.StatusUnsupportedMediaType {
+				t.Fatalf("status = %d, want %d", recorder.Code, http.StatusUnsupportedMediaType)
+			}
+		}
+
+		found := fixture.filed(t, id)
+		if len(found) != 1 {
+			t.Fatalf("got %d reports, want one", len(found))
+		}
+		if found[0].Origin != reports.OriginPlayback || found[0].Kind != reports.KindUnplayable || found[0].ItemSourceID == nil {
+			t.Errorf("report = %+v", found[0])
+		}
+
+		attempt := found[0].Attempt
+		if attempt == nil {
+			t.Fatal("the report records no attempt")
+		}
+		if attempt.UserID == nil || attempt.UserName == "" || attempt.Client != "Test" || attempt.ClientVersion != "1" || attempt.DeviceName != "Test" || attempt.Build == "" {
+			t.Errorf("attempt = %+v, want the account, the device and the build that asked", attempt)
+		}
+		want := items.Playback{VideoDirect: true, Container: "mp3"}
+		if served := attempt.Playback; served == nil || served.Direct != want.Direct || served.VideoDirect != want.VideoDirect ||
+			served.AudioDirect != want.AudioDirect || served.Container != want.Container {
+			t.Errorf("served = %+v, want %+v", served, want)
+		}
+	}
 }
