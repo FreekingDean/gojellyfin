@@ -5,12 +5,13 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/storetest"
+
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/displaypreferences"
-	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -32,22 +33,8 @@ type fixture struct {
 func connect(t *testing.T) *store.Client {
 	t.Helper()
 
-	config, err := env.Load()
-	if err != nil {
-		t.Fatalf("failed to read the environment: %v", err)
-	}
-
-	connection, err := store.NewStore(config)
-	if err != nil {
-		t.Fatalf("failed to open the database: %v", err)
-	}
-	if err := connection.Start(); err != nil {
-		t.Fatalf("failed to reach the database, set DATABASE_URL: %v", err)
-	}
+	connection := storetest.Open(t)
 	t.Cleanup(func() {
-		if err := connection.Stop(); err != nil {
-			t.Errorf("failed to close the database: %v", err)
-		}
 	})
 
 	return connection.Client()

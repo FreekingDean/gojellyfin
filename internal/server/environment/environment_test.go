@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/storetest"
+
 	"github.com/google/uuid"
 
 	"github.com/FreekingDean/gojellyfin/internal/activity"
@@ -34,18 +36,7 @@ type fixture struct {
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
 
-	config, err := env.Load()
-	if err != nil {
-		t.Fatalf("failed to read the environment: %v", err)
-	}
-
-	connection, err := store.NewStore(config)
-	if err != nil {
-		t.Fatalf("failed to open the database: %v", err)
-	}
-	if err := connection.Start(); err != nil {
-		t.Fatalf("failed to reach the database: %v", err)
-	}
+	connection := storetest.Open(t)
 
 	client := connection.Client()
 	prefix := t.Name() + "-" + uuid.NewString() + "-"
@@ -72,9 +63,6 @@ func newFixture(t *testing.T) *fixture {
 		}
 		if _, err := client.User.Delete().Where(usermodel.UsernameHasPrefix(prefix)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the users: %v", err)
-		}
-		if err := connection.Stop(); err != nil {
-			t.Errorf("failed to close the database: %v", err)
 		}
 	})
 

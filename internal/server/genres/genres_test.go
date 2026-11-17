@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/storetest"
+
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
-	"github.com/FreekingDean/gojellyfin/internal/store"
 	genremodel "github.com/FreekingDean/gojellyfin/internal/store/genre"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 	sourcemodel "github.com/FreekingDean/gojellyfin/internal/store/itemsource"
@@ -21,18 +21,7 @@ import (
 func TestServer_GetGenres(t *testing.T) {
 	ctx := context.Background()
 
-	config, err := env.Load()
-	if err != nil {
-		t.Fatalf("failed to read the environment: %v", err)
-	}
-
-	connection, err := store.NewStore(config)
-	if err != nil {
-		t.Fatalf("failed to open the database: %v", err)
-	}
-	if err := connection.Start(); err != nil {
-		t.Fatalf("failed to reach the database, set DATABASE_URL: %v", err)
-	}
+	connection := storetest.Open(t)
 
 	client := connection.Client()
 	name := t.Name() + "-" + uuid.NewString()
@@ -54,9 +43,6 @@ func TestServer_GetGenres(t *testing.T) {
 		}
 		if _, err := client.Genre.Delete().Where(genremodel.Name(name)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the genre: %v", err)
-		}
-		if err := connection.Stop(); err != nil {
-			t.Errorf("failed to close the database: %v", err)
 		}
 	})
 
