@@ -17,7 +17,39 @@ func TestProbeFile(t *testing.T) {
 		t.Skip("ffprobe is not on PATH")
 	}
 
-	t.Run("reads what ffprobe reports about a real file", func(t *testing.T) {
+	t.Run("reads what ffprobe reports about a real file", readsWhatFfprobeReportsAboutARealFile(ffmpeg))
+
+	t.Run("gives up on a file that never yields a byte", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "wedged.mkv")
+		if err := syscall.Mkfifo(path, 0o600); err != nil {
+			t.Fatalf("failed to create the pipe: %v", err)
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		failed := make(chan error, 1)
+		go func() {
+			_, err := ffmpeg.ProbeFile(ctx, path)
+			failed <- err
+		}()
+
+		select {
+		case err := <-failed:
+			if err == nil {
+				t.Fatal("a file that never yields a byte probed clean")
+			}
+			if !strings.Contains(err.Error(), path) {
+				t.Errorf("error = %q, want the file it gave up on named", err)
+			}
+		case <-time.After(probeTimeout):
+			t.Fatal("ffprobe outlived the bound it was given")
+		}
+	})
+}
+
+func readsWhatFfprobeReportsAboutARealFile(ffmpeg *FFMpeg) func(*testing.T) {
+	return func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), "clip.mkv")
 		build := exec.Command("ffmpeg", "-nostdin", "-loglevel", "error",
 			"-f", "lavfi", "-i", "testsrc=size=320x240:rate=30:duration=1",
@@ -74,33 +106,5 @@ func TestProbeFile(t *testing.T) {
 				}
 			}
 		}
-	})
-
-	t.Run("gives up on a file that never yields a byte", func(t *testing.T) {
-		path := filepath.Join(t.TempDir(), "wedged.mkv")
-		if err := syscall.Mkfifo(path, 0o600); err != nil {
-			t.Fatalf("failed to create the pipe: %v", err)
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
-
-		failed := make(chan error, 1)
-		go func() {
-			_, err := ffmpeg.ProbeFile(ctx, path)
-			failed <- err
-		}()
-
-		select {
-		case err := <-failed:
-			if err == nil {
-				t.Fatal("a file that never yields a byte probed clean")
-			}
-			if !strings.Contains(err.Error(), path) {
-				t.Errorf("error = %q, want the file it gave up on named", err)
-			}
-		case <-time.After(probeTimeout):
-			t.Fatal("ffprobe outlived the bound it was given")
-		}
-	})
+	}
 }

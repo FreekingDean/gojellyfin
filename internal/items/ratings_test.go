@@ -43,16 +43,48 @@ func TestQueryItems_ParentalRating(t *testing.T) {
 
 	fixture.add(t, seed{kind: itemmodel.KindMusicArtist, name: "Band"})
 
+	for _, test := range queryItemsParentalRatingCases(fixture.libraryID) {
+		t.Run(test.name, testQueryItems_ParentalRatingCase(fixture, ctx, test))
+	}
+
+	thirteen := 13
+	if _, err := fixture.service.ItemByID(ctx, Viewer{All: true, MaxRating: &thirteen}, adult); err == nil {
+		t.Error("ItemByID answered a title rated above the limit")
+	}
+}
+
+func testQueryItems_ParentalRatingCase(fixture *fixture, ctx context.Context, test queryItemsParentalRatingCase) func(*testing.T) {
+	return func(t *testing.T) {
+		records, _, err := fixture.service.QueryItems(ctx, ItemQuery{Viewer: test.viewer, LibraryID: &fixture.libraryID})
+		if err != nil {
+			t.Fatalf("failed to query items: %v", err)
+		}
+
+		found := make([]string, 0, len(records))
+		for _, record := range records {
+			found = append(found, record.Name)
+		}
+		slices.Sort(found)
+		if !slices.Equal(found, test.want) {
+			t.Errorf("items = %v, want %v", found, test.want)
+		}
+	}
+}
+
+type queryItemsParentalRatingCase struct {
+	name   string
+	viewer Viewer
+	want   []string
+}
+
+func queryItemsParentalRatingCases(libraryID uuid.UUID) []queryItemsParentalRatingCase {
 	thirteen := 13
 	everything := []string{
 		"Adult", "Band", "Cartoon", "Cartoon Season", "Cartoon Special", "Family",
 		"Late Show", "Late Show Episode", "Late Show Season", "Teen", "Unrated",
 	}
-	for _, test := range []struct {
-		name   string
-		viewer Viewer
-		want   []string
-	}{
+
+	return []queryItemsParentalRatingCase{
 		{
 			name:   "no limit sees everything",
 			viewer: Everyone,
@@ -78,28 +110,8 @@ func TestQueryItems_ParentalRating(t *testing.T) {
 		},
 		{
 			name:   "a limit applies inside the libraries a user may see",
-			viewer: Viewer{Libraries: []uuid.UUID{fixture.libraryID}, MaxRating: &thirteen},
+			viewer: Viewer{Libraries: []uuid.UUID{libraryID}, MaxRating: &thirteen},
 			want:   []string{"Band", "Cartoon", "Cartoon Season", "Family", "Teen", "Unrated"},
 		},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			records, _, err := fixture.service.QueryItems(ctx, ItemQuery{Viewer: test.viewer, LibraryID: &fixture.libraryID})
-			if err != nil {
-				t.Fatalf("failed to query items: %v", err)
-			}
-
-			found := make([]string, 0, len(records))
-			for _, record := range records {
-				found = append(found, record.Name)
-			}
-			slices.Sort(found)
-			if !slices.Equal(found, test.want) {
-				t.Errorf("items = %v, want %v", found, test.want)
-			}
-		})
-	}
-
-	if _, err := fixture.service.ItemByID(ctx, Viewer{All: true, MaxRating: &thirteen}, adult); err == nil {
-		t.Error("ItemByID answered a title rated above the limit")
 	}
 }

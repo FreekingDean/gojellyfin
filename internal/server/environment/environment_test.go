@@ -122,14 +122,7 @@ func TestServer_GetDirectoryContents(t *testing.T) {
 		t.Fatalf("failed to write the media file: %v", err)
 	}
 
-	for _, tc := range []struct {
-		name      string
-		path      string
-		files     bool
-		dirs      bool
-		wantNames []string
-		wantPaths []string
-	}{
+	for _, tc := range []serverGetDirectoryContentsCase{
 		{
 			name: "directories only", path: media, dirs: true,
 			wantNames: []string{"movies", "music", "shows"},
@@ -148,31 +141,7 @@ func TestServer_GetDirectoryContents(t *testing.T) {
 		},
 		{name: "neither", path: media},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			response, err := fixture.server.GetDirectoryContents(ctx, api.GetDirectoryContentsRequestObject{
-				Params: api.GetDirectoryContentsParams{
-					Path:               tc.path,
-					IncludeFiles:       apiutil.Ptr(tc.files),
-					IncludeDirectories: apiutil.Ptr(tc.dirs),
-				},
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			contents := response.(api.GetDirectoryContents200JSONResponse)
-			if len(contents) != len(tc.wantNames) {
-				t.Fatalf("got %d entries, want %d", len(contents), len(tc.wantNames))
-			}
-			for i, want := range tc.wantNames {
-				if got := apiutil.Deref(contents[i].Name); got != want {
-					t.Errorf("entry %d: got name %q, want %q", i, got, want)
-				}
-				if got := apiutil.Deref(contents[i].Path); got != tc.wantPaths[i] {
-					t.Errorf("entry %d: got path %q, want %q", i, got, tc.wantPaths[i])
-				}
-			}
-		})
+		t.Run(tc.name, testServer_GetDirectoryContentsCase(fixture, ctx, tc))
 	}
 	t.Run("a missing path is not found", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -186,6 +155,43 @@ func TestServer_GetDirectoryContents(t *testing.T) {
 		}
 	})
 
+}
+
+func testServer_GetDirectoryContentsCase(fixture *fixture, ctx context.Context, tc serverGetDirectoryContentsCase) func(*testing.T) {
+	return func(t *testing.T) {
+		response, err := fixture.server.GetDirectoryContents(ctx, api.GetDirectoryContentsRequestObject{
+			Params: api.GetDirectoryContentsParams{
+				Path:               tc.path,
+				IncludeFiles:       apiutil.Ptr(tc.files),
+				IncludeDirectories: apiutil.Ptr(tc.dirs),
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		contents := response.(api.GetDirectoryContents200JSONResponse)
+		if len(contents) != len(tc.wantNames) {
+			t.Fatalf("got %d entries, want %d", len(contents), len(tc.wantNames))
+		}
+		for i, want := range tc.wantNames {
+			if got := apiutil.Deref(contents[i].Name); got != want {
+				t.Errorf("entry %d: got name %q, want %q", i, got, want)
+			}
+			if got := apiutil.Deref(contents[i].Path); got != tc.wantPaths[i] {
+				t.Errorf("entry %d: got path %q, want %q", i, got, tc.wantPaths[i])
+			}
+		}
+	}
+}
+
+type serverGetDirectoryContentsCase struct {
+	name      string
+	path      string
+	files     bool
+	dirs      bool
+	wantNames []string
+	wantPaths []string
 }
 
 func TestServer_GetDrives(t *testing.T) {

@@ -24,14 +24,7 @@ func TestRetrying_RoundTrip(t *testing.T) {
 		}))
 		defer server.Close()
 
-		client, err := newClient(server.URL+"/3", "test-key")
-		if err != nil {
-			t.Fatalf("failed to build the client: %v", err)
-		}
-		client.api.SetClientConfig(http.Client{
-			Timeout:   requestTimeout,
-			Transport: retrying{base: http.DefaultTransport, attempts: retryAttempts, delay: time.Millisecond},
-		})
+		client := retryingClient(t, server.URL)
 
 		found, matched, err := client.Episode(context.Background(), 1396, 1, 1)
 		if err != nil {
@@ -57,14 +50,7 @@ func TestRetrying_RoundTrip(t *testing.T) {
 		}))
 		defer server.Close()
 
-		client, err := newClient(server.URL+"/3", "test-key")
-		if err != nil {
-			t.Fatalf("failed to build the client: %v", err)
-		}
-		client.api.SetClientConfig(http.Client{
-			Timeout:   requestTimeout,
-			Transport: retrying{base: http.DefaultTransport, attempts: retryAttempts, delay: time.Millisecond},
-		})
+		client := retryingClient(t, server.URL)
 
 		if _, _, err := client.Episode(context.Background(), 1396, 1, 1); err == nil {
 			t.Fatal("a permanently refused request answered without an error")
@@ -73,6 +59,21 @@ func TestRetrying_RoundTrip(t *testing.T) {
 			t.Errorf("attempts = %d, want %d", attempts, retryAttempts)
 		}
 	})
+}
+
+func retryingClient(t *testing.T, url string) *Client {
+	t.Helper()
+
+	client, err := newClient(url+"/3", "test-key")
+	if err != nil {
+		t.Fatalf("failed to build the client: %v", err)
+	}
+	client.api.SetClientConfig(http.Client{
+		Timeout:   requestTimeout,
+		Transport: retrying{base: http.DefaultTransport, attempts: retryAttempts, delay: time.Millisecond},
+	})
+
+	return client
 }
 
 func TestNewClient_Credential(t *testing.T) {

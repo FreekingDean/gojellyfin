@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/storetest"
 
 	"github.com/google/uuid"
@@ -21,8 +22,52 @@ import (
 func TestServer_GetItemSegments(t *testing.T) {
 	ctx := context.Background()
 
-	connection := storetest.Open(t)
-	client := connection.Client()
+	client, catalogue, episode, file := segmentedEpisode(t, ctx)
+	found := segments.New(client, ffmpeg.New())
+
+	hidden, err := New(catalogue, found, access{}).GetItemSegments(ctx, api.GetItemSegmentsRequestObject{ItemId: episode})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := hidden.(api.GetItemSegments404JSONResponse); !ok {
+		t.Errorf("response = %T, want a 404 for a user who cannot see the library", hidden)
+	}
+
+	for _, id := range []uuid.UUID{episode, file} {
+		response, err := New(catalogue, found, access{All: true}).GetItemSegments(ctx, api.GetItemSegmentsRequestObject{ItemId: id})
+		if err != nil {
+			t.Fatal(err)
+		}
+		listed, ok := response.(api.GetItemSegments200JSONResponse)
+		if !ok {
+			t.Fatalf("response = %T, want the segments", response)
+		}
+		if len(*listed.Items) != 2 || *listed.TotalRecordCount != 2 {
+			t.Fatalf("segments = %d, want the intro and the outro", len(*listed.Items))
+		}
+		intro := (*listed.Items)[0]
+		if *intro.Type != api.MediaSegmentTypeIntro || *intro.StartTicks != 11 || *intro.EndTicks != 21 || *intro.ItemId != episode {
+			t.Errorf("intro = %v %d-%d of %v, want the chapter's 11-21 of the episode", *intro.Type, *intro.StartTicks, *intro.EndTicks, *intro.ItemId)
+		}
+	}
+
+	only := []api.MediaSegmentType{api.MediaSegmentTypeOutro}
+	response, err := New(catalogue, found, access{All: true}).GetItemSegments(ctx, api.GetItemSegmentsRequestObject{
+		ItemId: episode,
+		Params: api.GetItemSegmentsParams{IncludeSegmentTypes: &only},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if listed := response.(api.GetItemSegments200JSONResponse); len(*listed.Items) != 1 || *(*listed.Items)[0].Type != api.MediaSegmentTypeOutro {
+		t.Errorf("segments = %v, want only the outro", *listed.Items)
+	}
+}
+
+func segmentedEpisode(t *testing.T, ctx context.Context) (*store.Client, *items.Service, uuid.UUID, uuid.UUID) {
+	t.Helper()
+
+	client := storetest.Client(t)
 
 	name := t.Name() + "-" + uuid.NewString()
 	library, err := client.Library.Create().SetName(name).Save(ctx)
@@ -44,18 +89,7 @@ func TestServer_GetItemSegments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to save the episode: %v", err)
 	}
-	t.Cleanup(func() {
-		ctx := context.Background()
-		if err := client.Item.DeleteOneID(episode.ID).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the episode: %v", err)
-		}
-		if err := client.Source.DeleteOne(downloader).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the source: %v", err)
-		}
-		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the library: %v", err)
-		}
-	})
+	t.Cleanup(serverGetItemSegmentsCleanup(t, client, episode.ID, downloader, library))
 	if err := catalogue.SaveMembership(ctx, library.ID, downloader.ID, []uuid.UUID{episode.ID}); err != nil {
 		t.Fatalf("failed to place the episode in the library: %v", err)
 	}
@@ -64,11 +98,7 @@ func TestServer_GetItemSegments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create the file: %v", err)
 	}
-	for _, segment := range []struct {
-		kind       segmentmodel.Kind
-		origin     segmentmodel.Origin
-		start, end int64
-	}{
+	for _, segment := range []serverGetItemSegmentsCase{
 		{segmentmodel.KindIntro, segmentmodel.OriginFingerprint, 10, 20},
 		{segmentmodel.KindIntro, segmentmodel.OriginChapter, 11, 21},
 		{segmentmodel.KindOutro, segmentmodel.OriginChapter, 90, 100},
@@ -80,45 +110,30 @@ func TestServer_GetItemSegments(t *testing.T) {
 		}
 	}
 
-	found := segments.New(client, ffmpeg.New())
+	return client, catalogue, episode.ID, file.ID
+}
 
-	hidden, err := New(catalogue, found, access{}).GetItemSegments(ctx, api.GetItemSegmentsRequestObject{ItemId: episode.ID})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := hidden.(api.GetItemSegments404JSONResponse); !ok {
-		t.Errorf("response = %T, want a 404 for a user who cannot see the library", hidden)
-	}
+func serverGetItemSegmentsCleanup(t *testing.T, client *store.Client, episode uuid.UUID, downloader *store.Source, library *store.Library) func() {
+	t.Helper()
 
-	for _, id := range []uuid.UUID{episode.ID, file.ID} {
-		response, err := New(catalogue, found, access{All: true}).GetItemSegments(ctx, api.GetItemSegmentsRequestObject{ItemId: id})
-		if err != nil {
-			t.Fatal(err)
+	return func() {
+		ctx := context.Background()
+		if err := client.Item.DeleteOneID(episode).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the episode: %v", err)
 		}
-		listed, ok := response.(api.GetItemSegments200JSONResponse)
-		if !ok {
-			t.Fatalf("response = %T, want the segments", response)
+		if err := client.Source.DeleteOne(downloader).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
 		}
-		if len(*listed.Items) != 2 || *listed.TotalRecordCount != 2 {
-			t.Fatalf("segments = %d, want the intro and the outro", len(*listed.Items))
-		}
-		intro := (*listed.Items)[0]
-		if *intro.Type != api.MediaSegmentTypeIntro || *intro.StartTicks != 11 || *intro.EndTicks != 21 || *intro.ItemId != episode.ID {
-			t.Errorf("intro = %v %d-%d of %v, want the chapter's 11-21 of the episode", *intro.Type, *intro.StartTicks, *intro.EndTicks, *intro.ItemId)
+		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the library: %v", err)
 		}
 	}
+}
 
-	only := []api.MediaSegmentType{api.MediaSegmentTypeOutro}
-	response, err := New(catalogue, found, access{All: true}).GetItemSegments(ctx, api.GetItemSegmentsRequestObject{
-		ItemId: episode.ID,
-		Params: api.GetItemSegmentsParams{IncludeSegmentTypes: &only},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if listed := response.(api.GetItemSegments200JSONResponse); len(*listed.Items) != 1 || *(*listed.Items)[0].Type != api.MediaSegmentTypeOutro {
-		t.Errorf("segments = %v, want only the outro", *listed.Items)
-	}
+type serverGetItemSegmentsCase struct {
+	kind       segmentmodel.Kind
+	origin     segmentmodel.Origin
+	start, end int64
 }
 
 type access users.Access

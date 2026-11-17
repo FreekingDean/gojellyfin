@@ -66,7 +66,26 @@ func TestQueue(t *testing.T) {
 		}
 	})
 
-	t.Run("moving an item follows the playing one", func(t *testing.T) {
+	t.Run("moving an item follows the playing one", movingAnItemFollowsThePlayingOne())
+
+	t.Run("shuffling puts the playing item first and sorting puts it back", shufflingPutsThePlayingItemFirstAndSortingPutsItBack())
+
+	t.Run("queue next lands right after the playing item", func(t *testing.T) {
+		queue, ids := playlistOf(t, 3, 0)
+		next := uuid.New()
+
+		queue.queueNext([]uuid.UUID{next}, time.Now())
+
+		if got := itemsOf(queue.Sorted); !slices.Equal(got, []uuid.UUID{ids[0], next, ids[1], ids[2]}) {
+			t.Fatalf("order = %v", got)
+		}
+	})
+
+	t.Run("next stops at the end unless the queue repeats", nextStopsAtTheEndUnlessTheQueueRepeats())
+}
+
+func movingAnItemFollowsThePlayingOne() func(*testing.T) {
+	return func(t *testing.T) {
 		queue, ids := playlistOf(t, 3, 0)
 
 		if !queue.move(queue.Sorted[2].PlaylistItemID, 0, time.Now()) {
@@ -78,9 +97,27 @@ func TestQueue(t *testing.T) {
 		if queue.PlayingItemID() != ids[0] || queue.PlayingIndex != 1 {
 			t.Fatalf("playing %v at %d, want %v at 1", queue.PlayingItemID(), queue.PlayingIndex, ids[0])
 		}
-	})
+	}
+}
 
-	t.Run("shuffling puts the playing item first and sorting puts it back", func(t *testing.T) {
+func nextStopsAtTheEndUnlessTheQueueRepeats() func(*testing.T) {
+	return func(t *testing.T) {
+		queue, _ := playlistOf(t, 2, 1)
+
+		if queue.next(time.Now()) {
+			t.Fatal("next moved past the end")
+		}
+
+		queue.setRepeatMode(RepeatAll, time.Now())
+
+		if !queue.next(time.Now()) || queue.PlayingIndex != 0 {
+			t.Fatalf("next with repeat all = index %d, want 0", queue.PlayingIndex)
+		}
+	}
+}
+
+func shufflingPutsThePlayingItemFirstAndSortingPutsItBack() func(*testing.T) {
+	return func(t *testing.T) {
 		queue, ids := playlistOf(t, 6, 3)
 
 		queue.setShuffleMode(Shuffle, time.Now())
@@ -99,30 +136,5 @@ func TestQueue(t *testing.T) {
 		if queue.PlayingIndex != 3 || queue.Shuffled != nil {
 			t.Fatalf("sorted playing index = %d, shuffled = %v", queue.PlayingIndex, queue.Shuffled)
 		}
-	})
-
-	t.Run("queue next lands right after the playing item", func(t *testing.T) {
-		queue, ids := playlistOf(t, 3, 0)
-		next := uuid.New()
-
-		queue.queueNext([]uuid.UUID{next}, time.Now())
-
-		if got := itemsOf(queue.Sorted); !slices.Equal(got, []uuid.UUID{ids[0], next, ids[1], ids[2]}) {
-			t.Fatalf("order = %v", got)
-		}
-	})
-
-	t.Run("next stops at the end unless the queue repeats", func(t *testing.T) {
-		queue, _ := playlistOf(t, 2, 1)
-
-		if queue.next(time.Now()) {
-			t.Fatal("next moved past the end")
-		}
-
-		queue.setRepeatMode(RepeatAll, time.Now())
-
-		if !queue.next(time.Now()) || queue.PlayingIndex != 0 {
-			t.Fatalf("next with repeat all = index %d, want 0", queue.PlayingIndex)
-		}
-	})
+	}
 }

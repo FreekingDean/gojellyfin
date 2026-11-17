@@ -40,7 +40,18 @@ func TestEncodes(t *testing.T) {
 		}
 	})
 
-	t.Run("stopping a session ends its picture and nobody else's", func(t *testing.T) {
+	t.Run("stopping a session ends its picture and nobody else's", stoppingASessionEndsItsPictureAndNobodyElseS())
+
+	t.Run("a finished picture is forgotten", func(t *testing.T) {
+		var running encodes
+
+		running.begin("token", func() { t.Error("stopped a picture that had finished") })()
+		running.begin("token", func() {})()
+	})
+}
+
+func stoppingASessionEndsItsPictureAndNobodyElseS() func(*testing.T) {
+	return func(t *testing.T) {
 		var running encodes
 		stopped := make(chan struct{})
 
@@ -60,12 +71,5 @@ func TestEncodes(t *testing.T) {
 		default:
 			t.Fatal("the picture was not stopped")
 		}
-	})
-
-	t.Run("a finished picture is forgotten", func(t *testing.T) {
-		var running encodes
-
-		running.begin("token", func() { t.Error("stopped a picture that had finished") })()
-		running.begin("token", func() {})()
-	})
+	}
 }

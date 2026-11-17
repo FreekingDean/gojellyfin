@@ -54,7 +54,101 @@ func (f *fixture) setPolicy(t *testing.T, administrator, disabled bool) {
 }
 
 func TestService_ByToken_APIKey(t *testing.T) {
-	t.Run("signs in as the administrator who made it, on a device named for the app", func(t *testing.T) {
+	t.Run("signs in as the administrator who made it, on a device named for the app", signsInAsTheAdministratorWhoMadeItOnADeviceNamedForTheApp())
+
+	t.Run("refuses a key whose maker is not an administrator", func(t *testing.T) {
+		fixture := newFixture(t)
+		token, _ := fixture.key(t, false)
+
+		if _, err := fixture.service.ByToken(context.Background(), token); !store.IsNotFound(err) {
+			t.Errorf("err = %v, want not found", err)
+		}
+	})
+
+	t.Run("stops working when its maker is demoted or disabled", stopsWorkingWhenItsMakerIsDemotedOrDisabled())
+
+	t.Run("stops working once revoked", func(t *testing.T) {
+		fixture := newFixture(t)
+		token, keyID := fixture.key(t, true)
+
+		if _, err := fixture.service.ByToken(context.Background(), token); err != nil {
+			t.Fatalf("failed to authenticate with the key: %v", err)
+		}
+
+		if err := fixture.client.ApiKey.UpdateOneID(keyID).SetRevokedAt(time.Now().Add(-time.Minute)).Exec(context.Background()); err != nil {
+			t.Fatalf("failed to revoke the key: %v", err)
+		}
+		if _, err := fixture.service.ByToken(context.Background(), token); !store.IsNotFound(err) {
+			t.Errorf("err = %v, want not found for a revoked key", err)
+		}
+	})
+
+	t.Run("stops working once deleted", stopsWorkingOnceDeleted())
+
+	t.Run("survives its maker changing their password", func(t *testing.T) {
+		fixture := newFixture(t)
+		token, _ := fixture.key(t, true)
+
+		if _, err := fixture.service.ByToken(context.Background(), token); err != nil {
+			t.Fatalf("failed to authenticate with the key: %v", err)
+		}
+		if err := fixture.service.RevokeForUser(context.Background(), fixture.user.ID); err != nil {
+			t.Fatalf("failed to revoke the user's sessions: %v", err)
+		}
+		if _, err := fixture.service.ByToken(context.Background(), token); err != nil {
+			t.Errorf("err = %v, want the key to keep working", err)
+		}
+	})
+
+	t.Run("an unknown token is still not found", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		if _, err := fixture.service.ByToken(context.Background(), uuid.NewString()); !store.IsNotFound(err) {
+			t.Errorf("err = %v, want not found", err)
+		}
+	})
+}
+
+func stopsWorkingOnceDeleted() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		token, keyID := fixture.key(t, true)
+
+		if _, err := fixture.service.ByToken(context.Background(), token); err != nil {
+			t.Fatalf("failed to authenticate with the key: %v", err)
+		}
+
+		if err := fixture.client.ApiKey.DeleteOneID(keyID).Exec(context.Background()); err != nil {
+			t.Fatalf("failed to delete the key: %v", err)
+		}
+		if _, err := fixture.service.ByToken(context.Background(), token); !store.IsNotFound(err) {
+			t.Errorf("err = %v, want not found for a deleted key", err)
+		}
+	}
+}
+
+func stopsWorkingWhenItsMakerIsDemotedOrDisabled() func(*testing.T) {
+	return func(t *testing.T) {
+		for name, policy := range map[string][2]bool{"demoted": {false, false}, "disabled": {true, true}} {
+			t.Run(name, func(t *testing.T) {
+				fixture := newFixture(t)
+				token, _ := fixture.key(t, true)
+
+				if _, err := fixture.service.ByToken(context.Background(), token); err != nil {
+					t.Fatalf("failed to authenticate with the key: %v", err)
+				}
+
+				fixture.setPolicy(t, policy[0], policy[1])
+				if _, err := fixture.service.ByToken(context.Background(), token); !store.IsNotFound(err) {
+					t.Errorf("err = %v, want not found once the maker is %s", err, name)
+				}
+			})
+		}
+	}
+}
+
+func signsInAsTheAdministratorWhoMadeItOnADeviceNamedForTheApp() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		token, keyID := fixture.key(t, true)
 
@@ -79,87 +173,5 @@ func TestService_ByToken_APIKey(t *testing.T) {
 		if again.ID != session.ID {
 			t.Errorf("second session = %v, want the first one, %v, reused", again.ID, session.ID)
 		}
-	})
-
-	t.Run("refuses a key whose maker is not an administrator", func(t *testing.T) {
-		fixture := newFixture(t)
-		token, _ := fixture.key(t, false)
-
-		if _, err := fixture.service.ByToken(context.Background(), token); !store.IsNotFound(err) {
-			t.Errorf("err = %v, want not found", err)
-		}
-	})
-
-	t.Run("stops working when its maker is demoted or disabled", func(t *testing.T) {
-		for name, policy := range map[string][2]bool{"demoted": {false, false}, "disabled": {true, true}} {
-			t.Run(name, func(t *testing.T) {
-				fixture := newFixture(t)
-				token, _ := fixture.key(t, true)
-
-				if _, err := fixture.service.ByToken(context.Background(), token); err != nil {
-					t.Fatalf("failed to authenticate with the key: %v", err)
-				}
-
-				fixture.setPolicy(t, policy[0], policy[1])
-				if _, err := fixture.service.ByToken(context.Background(), token); !store.IsNotFound(err) {
-					t.Errorf("err = %v, want not found once the maker is %s", err, name)
-				}
-			})
-		}
-	})
-
-	t.Run("stops working once revoked", func(t *testing.T) {
-		fixture := newFixture(t)
-		token, keyID := fixture.key(t, true)
-
-		if _, err := fixture.service.ByToken(context.Background(), token); err != nil {
-			t.Fatalf("failed to authenticate with the key: %v", err)
-		}
-
-		if err := fixture.client.ApiKey.UpdateOneID(keyID).SetRevokedAt(time.Now().Add(-time.Minute)).Exec(context.Background()); err != nil {
-			t.Fatalf("failed to revoke the key: %v", err)
-		}
-		if _, err := fixture.service.ByToken(context.Background(), token); !store.IsNotFound(err) {
-			t.Errorf("err = %v, want not found for a revoked key", err)
-		}
-	})
-
-	t.Run("stops working once deleted", func(t *testing.T) {
-		fixture := newFixture(t)
-		token, keyID := fixture.key(t, true)
-
-		if _, err := fixture.service.ByToken(context.Background(), token); err != nil {
-			t.Fatalf("failed to authenticate with the key: %v", err)
-		}
-
-		if err := fixture.client.ApiKey.DeleteOneID(keyID).Exec(context.Background()); err != nil {
-			t.Fatalf("failed to delete the key: %v", err)
-		}
-		if _, err := fixture.service.ByToken(context.Background(), token); !store.IsNotFound(err) {
-			t.Errorf("err = %v, want not found for a deleted key", err)
-		}
-	})
-
-	t.Run("survives its maker changing their password", func(t *testing.T) {
-		fixture := newFixture(t)
-		token, _ := fixture.key(t, true)
-
-		if _, err := fixture.service.ByToken(context.Background(), token); err != nil {
-			t.Fatalf("failed to authenticate with the key: %v", err)
-		}
-		if err := fixture.service.RevokeForUser(context.Background(), fixture.user.ID); err != nil {
-			t.Fatalf("failed to revoke the user's sessions: %v", err)
-		}
-		if _, err := fixture.service.ByToken(context.Background(), token); err != nil {
-			t.Errorf("err = %v, want the key to keep working", err)
-		}
-	})
-
-	t.Run("an unknown token is still not found", func(t *testing.T) {
-		fixture := newFixture(t)
-
-		if _, err := fixture.service.ByToken(context.Background(), uuid.NewString()); !store.IsNotFound(err) {
-			t.Errorf("err = %v, want not found", err)
-		}
-	})
+	}
 }

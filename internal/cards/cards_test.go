@@ -216,7 +216,54 @@ func TestService_Image(t *testing.T) {
 		}
 	})
 
-	t.Run("serves the same posters from memory without fetching them again", func(t *testing.T) {
+	t.Run("serves the same posters from memory without fetching them again", servesTheSamePostersFromMemoryWithoutFetchingThemAgain())
+
+	t.Run("rebuilds and retags once a library gains a poster", rebuildsAndRetagsOnceALibraryGainsAPoster())
+
+	t.Run("steps past a poster it cannot fetch or decode, and does not hold the result", stepsPastAPosterItCannotFetchOrDecodeAndDoesNotHoldTheResult())
+
+	t.Run("answers nothing when no poster can be fetched", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.title(t, []byte("not an image"))
+
+		if _, ok := fixture.service.Image(context.Background(), fixture.libraryID, ""); ok {
+			t.Error("a card was built out of nothing")
+		}
+	})
+
+	t.Run("fetches the posters from the urls the provider answered", fetchesThePostersFromTheUrlsTheProviderAnswered())
+
+	t.Run("retags once what the library added ages out of the week", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.title(t, painted(t, red))
+
+		now := fixture.tag(t)
+		later := newService(items.New(fixture.client), libraries.New(fixture.client), unshelved{}, everything{}, func() time.Time { return time.Now().Add(shelves.FreshWindow + time.Hour) })
+		aged, err := later.Tag(context.Background(), fixture.libraryID, uuid.Nil)
+		if err != nil {
+			t.Fatalf("failed to read the aged tag: %v", err)
+		}
+		if aged == "" || aged == now {
+			t.Errorf("tag a week on = %q, want a new tag beside %q", aged, now)
+		}
+	})
+}
+
+func fetchesThePostersFromTheUrlsTheProviderAnswered() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.title(t, painted(t, red))
+
+		front := opened(t, fixture.image(t)).At(850, height/2)
+		r, g, b, _ := front.RGBA()
+		if r>>8 < 150 || g>>8 > 80 || b>>8 > 80 {
+			t.Errorf("front = %v, want the red poster", front)
+		}
+	}
+}
+
+func servesTheSamePostersFromMemoryWithoutFetchingThemAgain() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.title(t, painted(t, red))
 
@@ -229,9 +276,11 @@ func TestService_Image(t *testing.T) {
 		if again := fixture.fetched.Load(); again != fetched {
 			t.Errorf("fetched %d posters for a card already held", again-fetched)
 		}
-	})
+	}
+}
 
-	t.Run("rebuilds and retags once a library gains a poster", func(t *testing.T) {
+func rebuildsAndRetagsOnceALibraryGainsAPoster() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.title(t, painted(t, red))
 
@@ -244,9 +293,11 @@ func TestService_Image(t *testing.T) {
 		if second := fixture.image(t); bytes.Equal(first, second) {
 			t.Error("the card was not rebuilt for the new poster")
 		}
-	})
+	}
+}
 
-	t.Run("steps past a poster it cannot fetch or decode, and does not hold the result", func(t *testing.T) {
+func stepsPastAPosterItCannotFetchOrDecodeAndDoesNotHoldTheResult() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.title(t, painted(t, red))
 		fixture.title(t, []byte("not an image"))
@@ -267,42 +318,7 @@ func TestService_Image(t *testing.T) {
 		if fixture.fetched.Load() == fetched {
 			t.Error("an incomplete card was held, so the missing poster would never be retried")
 		}
-	})
-
-	t.Run("answers nothing when no poster can be fetched", func(t *testing.T) {
-		fixture := newFixture(t)
-		fixture.title(t, []byte("not an image"))
-
-		if _, ok := fixture.service.Image(context.Background(), fixture.libraryID, ""); ok {
-			t.Error("a card was built out of nothing")
-		}
-	})
-
-	t.Run("fetches the posters from the urls the provider answered", func(t *testing.T) {
-		fixture := newFixture(t)
-		fixture.title(t, painted(t, red))
-
-		front := opened(t, fixture.image(t)).At(850, height/2)
-		r, g, b, _ := front.RGBA()
-		if r>>8 < 150 || g>>8 > 80 || b>>8 > 80 {
-			t.Errorf("front = %v, want the red poster", front)
-		}
-	})
-
-	t.Run("retags once what the library added ages out of the week", func(t *testing.T) {
-		fixture := newFixture(t)
-		fixture.title(t, painted(t, red))
-
-		now := fixture.tag(t)
-		later := newService(items.New(fixture.client), libraries.New(fixture.client), unshelved{}, everything{}, func() time.Time { return time.Now().Add(shelves.FreshWindow + time.Hour) })
-		aged, err := later.Tag(context.Background(), fixture.libraryID, uuid.Nil)
-		if err != nil {
-			t.Fatalf("failed to read the aged tag: %v", err)
-		}
-		if aged == "" || aged == now {
-			t.Errorf("tag a week on = %q, want a new tag beside %q", aged, now)
-		}
-	})
+	}
 }
 
 type unshelved struct{}

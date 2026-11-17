@@ -47,16 +47,7 @@ func TestService_EnsureFixed(t *testing.T) {
 			}
 		}
 	}
-	shows := func() bool {
-		t.Helper()
-
-		shown, err := service.ShownLibraries(ctx)
-		if err != nil {
-			t.Fatalf("ShownLibraries = %v", err)
-		}
-
-		return slices.ContainsFunc(shown, func(library *Library) bool { return library.ID == Music.ID })
-	}
+	shows := serviceEnsureFixedShows(t, service, ctx)
 	if shows() {
 		t.Error("Music is shown with no Lidarr feeding it")
 	}
@@ -76,5 +67,20 @@ func TestService_EnsureFixed(t *testing.T) {
 	}
 	if !shows() {
 		t.Error("Music is hidden while a Lidarr feeds it")
+	}
+}
+
+func serviceEnsureFixedShows(t *testing.T, service *Service, ctx context.Context) func() bool {
+	t.Helper()
+
+	return func() bool {
+		t.Helper()
+
+		shown, err := service.ShownLibraries(ctx)
+		if err != nil {
+			t.Fatalf("ShownLibraries = %v", err)
+		}
+
+		return slices.ContainsFunc(shown, func(library *Library) bool { return library.ID == Music.ID })
 	}
 }

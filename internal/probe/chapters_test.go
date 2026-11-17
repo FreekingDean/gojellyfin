@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/storetest"
 
 	"github.com/google/uuid"
@@ -54,60 +55,9 @@ func TestProber_ReadsChapterSegments(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	connection := storetest.Open(t)
-	t.Cleanup(func() {
-	})
-	client := connection.Client()
-
-	dir := t.TempDir()
-	chapters := filepath.Join(dir, "chapters.txt")
-	metadata := ";FFMETADATA1\n" +
-		"[CHAPTER]\nTIMEBASE=1/1000\nSTART=0\nEND=2000\ntitle=Chapter 1\n" +
-		"[CHAPTER]\nTIMEBASE=1/1000\nSTART=2000\nEND=5000\ntitle=Opening\n" +
-		"[CHAPTER]\nTIMEBASE=1/1000\nSTART=5000\nEND=8000\ntitle=Chapter 3\n" +
-		"[CHAPTER]\nTIMEBASE=1/1000\nSTART=8000\nEND=10000\ntitle=End Credits\n"
-	if err := os.WriteFile(chapters, []byte(metadata), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	path := filepath.Join(dir, "episode.mkv")
-	build := exec.Command("ffmpeg", "-nostdin", "-loglevel", "error",
-		"-f", "lavfi", "-i", "sine=frequency=440:duration=10",
-		"-i", chapters, "-map_metadata", "1", "-map_chapters", "1", "-c:a", "aac", path)
-	if output, err := build.CombinedOutput(); err != nil {
-		t.Skipf("this ffmpeg cannot build the fixture: %v: %s", err, output)
-	}
-
-	name := t.Name() + "-" + uuid.NewString()
-	downloader, err := client.Source.Create().
-		SetName(name).
-		SetURL("http://" + uuid.NewString() + ".invalid").
-		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(sourcemodel.KindSonarr).
-		Save(ctx)
-	if err != nil {
-		t.Fatalf("failed to create the source: %v", err)
-	}
-	episode, err := client.Item.Create().SetKind(itemmodel.KindEpisode).SetKey(name).SetName(name).SetSortName(name).Save(ctx)
-	if err != nil {
-		t.Fatalf("failed to create the episode: %v", err)
-	}
-	t.Cleanup(func() {
-		if err := client.Item.DeleteOne(episode).Exec(context.Background()); err != nil {
-			t.Errorf("failed to delete the episode: %v", err)
-		}
-		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
-			t.Errorf("failed to delete the source: %v", err)
-		}
-	})
-	file, err := client.ItemSource.Create().SetItemID(episode.ID).SetSourceID(downloader.ID).SetName(name).SetPath(path).Save(ctx)
-	if err != nil {
-		t.Fatalf("failed to create the file: %v", err)
-	}
-	t.Cleanup(func() {
-		if err := client.ItemSource.DeleteOne(file).Exec(context.Background()); err != nil {
-			t.Errorf("failed to delete the file: %v", err)
-		}
-	})
+	client := storetest.Client(t)
+	path := chapteredEpisode(t)
+	file := chapteredSource(t, ctx, client, path)
 
 	prober := New(items.New(client), ffmpeg.New(), reports.New(client, nil))
 	for range 2 {
@@ -127,13 +77,7 @@ func TestProber_ReadsChapterSegments(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []struct {
-		kind       segmentmodel.Kind
-		start, end int64
-	}{
-		{segmentmodel.KindIntro, 20_000_000, 50_000_000},
-		{segmentmodel.KindOutro, 80_000_000, 100_000_000},
-	}
+	want := proberReadsChapterSegmentsCases
 	if len(found) != len(want) {
 		t.Fatalf("segments = %d, want %d after probing twice", len(found), len(want))
 	}
@@ -145,4 +89,82 @@ func TestProber_ReadsChapterSegments(t *testing.T) {
 				want[i].kind, want[i].start, want[i].end)
 		}
 	}
+}
+
+func chapteredSource(t *testing.T, ctx context.Context, client *store.Client, path string) *store.ItemSource {
+	t.Helper()
+
+	name := t.Name() + "-" + uuid.NewString()
+	downloader, err := client.Source.Create().
+		SetName(name).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(sourcemodel.KindSonarr).
+		Save(ctx)
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
+	episode, err := client.Item.Create().SetKind(itemmodel.KindEpisode).SetKey(name).SetName(name).SetSortName(name).Save(ctx)
+	if err != nil {
+		t.Fatalf("failed to create the episode: %v", err)
+	}
+	t.Cleanup(proberReadsChapterSegmentsCleanup(t, client, episode, downloader))
+	file, err := client.ItemSource.Create().SetItemID(episode.ID).SetSourceID(downloader.ID).SetName(name).SetPath(path).Save(ctx)
+	if err != nil {
+		t.Fatalf("failed to create the file: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := client.ItemSource.DeleteOne(file).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the file: %v", err)
+		}
+	})
+
+	return file
+}
+
+func chapteredEpisode(t *testing.T) string {
+	t.Helper()
+
+	dir := t.TempDir()
+	chapters := filepath.Join(dir, "chapters.txt")
+	metadata := ";FFMETADATA1\n" +
+		"[CHAPTER]\nTIMEBASE=1/1000\nSTART=0\nEND=2000\ntitle=Chapter 1\n" +
+		"[CHAPTER]\nTIMEBASE=1/1000\nSTART=2000\nEND=5000\ntitle=Opening\n" +
+		"[CHAPTER]\nTIMEBASE=1/1000\nSTART=5000\nEND=8000\ntitle=Chapter 3\n" +
+		"[CHAPTER]\nTIMEBASE=1/1000\nSTART=8000\nEND=10000\ntitle=End Credits\n"
+	if err := os.WriteFile(chapters, []byte(metadata), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, "episode.mkv")
+	build := exec.Command("ffmpeg", "-nostdin", "-loglevel", "error",
+		"-f", "lavfi", "-i", "sine=frequency=440:duration=10",
+		"-i", chapters, "-map_metadata", "1", "-map_chapters", "1", "-c:a", "aac", path)
+	if output, err := build.CombinedOutput(); err != nil {
+		t.Skipf("this ffmpeg cannot build the fixture: %v: %s", err, output)
+	}
+
+	return path
+}
+
+func proberReadsChapterSegmentsCleanup(t *testing.T, client *store.Client, episode *store.Item, downloader *store.Source) func() {
+	t.Helper()
+
+	return func() {
+		if err := client.Item.DeleteOne(episode).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the episode: %v", err)
+		}
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	}
+}
+
+type proberReadsChapterSegmentsCase struct {
+	kind       segmentmodel.Kind
+	start, end int64
+}
+
+var proberReadsChapterSegmentsCases = []proberReadsChapterSegmentsCase{
+	{segmentmodel.KindIntro, 20_000_000, 50_000_000},
+	{segmentmodel.KindOutro, 80_000_000, 100_000_000},
 }

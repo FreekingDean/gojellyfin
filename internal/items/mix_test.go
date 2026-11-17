@@ -16,17 +16,7 @@ func TestService_Mix(t *testing.T) {
 	ctx := context.Background()
 	rock, jazz := "Rock "+uuid.NewString(), "Jazz "+uuid.NewString()
 
-	artist := func(name, genre string) (uuid.UUID, uuid.UUID) {
-		t.Helper()
-
-		id := fixture.add(t, seed{kind: itemmodel.KindMusicArtist, name: name})
-		genres := []string{genre}
-		if err := fixture.service.replaceNamed(ctx, id, Metadata{Genres: &genres}); err != nil {
-			t.Fatalf("failed to tag %s: %v", name, err)
-		}
-
-		return id, fixture.add(t, seed{kind: itemmodel.KindMusicAlbum, name: name + " Album", parentID: &id})
-	}
+	artist := serviceMixArtist(t, fixture, ctx)
 	track := func(name string, album uuid.UUID) uuid.UUID {
 		return fixture.add(t, seed{kind: itemmodel.KindAudio, name: name, parentID: &album})
 	}
@@ -79,5 +69,21 @@ func TestService_Mix(t *testing.T) {
 	}
 	if _, err := fixture.service.Mix(ctx, viewer, uuid.New(), 0); !errors.Is(err, ErrNotFound) {
 		t.Errorf("err = %v, want ErrNotFound", err)
+	}
+}
+
+func serviceMixArtist(t *testing.T, fixture *fixture, ctx context.Context) func(name, genre string) (uuid.UUID, uuid.UUID) {
+	t.Helper()
+
+	return func(name, genre string) (uuid.UUID, uuid.UUID) {
+		t.Helper()
+
+		id := fixture.add(t, seed{kind: itemmodel.KindMusicArtist, name: name})
+		genres := []string{genre}
+		if err := fixture.service.replaceNamed(ctx, id, Metadata{Genres: &genres}); err != nil {
+			t.Fatalf("failed to tag %s: %v", name, err)
+		}
+
+		return id, fixture.add(t, seed{kind: itemmodel.KindMusicAlbum, name: name + " Album", parentID: &id})
 	}
 }

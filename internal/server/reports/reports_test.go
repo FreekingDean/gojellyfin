@@ -72,11 +72,11 @@ func signedIn() (context.Context, uuid.UUID) {
 	return auth.ContextWithSession(context.Background(), &sessions.Session{UserID: &userID}), userID
 }
 
-func TestServer_GoJellyfinListReports(t *testing.T) {
+func listedReport() *reports.Report {
 	season, episode := int32(2), int32(5)
 	fileID := uuid.New()
 	title, file := int64(12), int64(34)
-	queue := &stubQueue{queue: []*reports.Report{{
+	return &reports.Report{
 		ID:           uuid.New(),
 		Kind:         reports.KindSubtitles,
 		Origin:       reports.OriginUser,
@@ -107,7 +107,11 @@ func TestServer_GoJellyfinListReports(t *testing.T) {
 				Reasons:     []string{"AudioCodecNotSupported"},
 			},
 		},
-	}}}
+	}
+}
+
+func TestServer_GoJellyfinListReports(t *testing.T) {
+	queue := &stubQueue{queue: []*reports.Report{listedReport()}}
 
 	response, err := (&Server{reports: queue}).GoJellyfinListReports(context.Background(), api.GoJellyfinListReportsRequestObject{})
 	if err != nil {

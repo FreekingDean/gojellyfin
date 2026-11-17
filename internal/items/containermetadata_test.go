@@ -108,169 +108,7 @@ func namesOf(named []Named) []string {
 }
 
 func TestService_NamedMetadata(t *testing.T) {
-	t.Run("writes the container metadata", func(t *testing.T) {
-		fixture := newMetadataFixture(t)
-		ctx := context.Background()
-		movie := fixture.item(t, "Movie")
-
-		fixture.seed(t, movie, seeded{
-			Genres:  []string{fixture.name("Comedy"), fixture.name("Drama")},
-			Studios: []string{fixture.name("Studio")},
-			Tags:    []string{"live"},
-			People: []Credit{
-				{Name: fixture.name("Director"), Kind: creditmodel.KindDirector},
-				{Name: fixture.name("Writer"), Kind: creditmodel.KindWriter, Role: "Teleplay", Order: 3},
-			},
-		})
-
-		t.Run("populates the genres", func(t *testing.T) {
-			named, total, err := fixture.service.DistinctGenres(ctx, fixture.query())
-			if err != nil {
-				t.Fatalf("failed to query genres: %v", err)
-			}
-
-			want := []string{fixture.name("Comedy"), fixture.name("Drama")}
-			if got := namesOf(named); !slices.Equal(got, want) {
-				t.Errorf("genres = %v, want %v", got, want)
-			}
-			if total != 2 {
-				t.Errorf("total = %d, want 2", total)
-			}
-		})
-
-		t.Run("populates the studios", func(t *testing.T) {
-			named, _, err := fixture.service.DistinctStudios(ctx, fixture.query())
-			if err != nil {
-				t.Fatalf("failed to query studios: %v", err)
-			}
-
-			want := []string{fixture.name("Studio")}
-			if got := namesOf(named); !slices.Equal(got, want) {
-				t.Errorf("studios = %v, want %v", got, want)
-			}
-		})
-
-		t.Run("populates the people", func(t *testing.T) {
-			named, _, err := fixture.service.DistinctPeople(ctx, fixture.query(), nil)
-			if err != nil {
-				t.Fatalf("failed to query people: %v", err)
-			}
-
-			want := []string{fixture.name("Director"), fixture.name("Writer")}
-			if got := namesOf(named); !slices.Equal(got, want) {
-				t.Errorf("people = %v, want %v", got, want)
-			}
-		})
-
-		t.Run("filters people by credit kind", func(t *testing.T) {
-			named, _, err := fixture.service.DistinctPeople(ctx, fixture.query(), []CreditKind{creditmodel.KindWriter})
-			if err != nil {
-				t.Fatalf("failed to query people: %v", err)
-			}
-
-			want := []string{fixture.name("Writer")}
-			if got := namesOf(named); !slices.Equal(got, want) {
-				t.Errorf("people = %v, want %v", got, want)
-			}
-		})
-
-		t.Run("takes a person the provider credited twice", func(t *testing.T) {
-			twice := newMetadataFixture(t)
-			movie := twice.item(t, "Twice")
-
-			twice.seed(t, movie, seeded{People: []Credit{
-				{Name: twice.name("Producer"), Kind: creditmodel.KindProducer},
-				{Name: twice.name("Producer"), Kind: creditmodel.KindProducer},
-			}})
-
-			named, _, err := twice.service.DistinctPeople(ctx, MetadataQuery{
-				Viewer: Everyone,
-				ItemID: &movie.ID,
-			}, nil)
-			if err != nil {
-				t.Fatalf("failed to query people: %v", err)
-			}
-
-			want := []string{twice.name("Producer")}
-			if got := namesOf(named); !slices.Equal(got, want) {
-				t.Errorf("people = %v, want %v", got, want)
-			}
-		})
-
-		t.Run("keeps the role and the billing order", func(t *testing.T) {
-			credit, err := fixture.service.store.Credit.Query().
-				Where(creditmodel.HasPersonWith(personmodel.Name(fixture.name("Writer")))).
-				Only(ctx)
-			if err != nil {
-				t.Fatalf("failed to read the credit: %v", err)
-			}
-
-			if credit.Role != "Teleplay" || deref(credit.SortOrder) != 3 {
-				t.Errorf("credit = %q/%d, want Teleplay/3", credit.Role, deref(credit.SortOrder))
-			}
-		})
-
-		t.Run("populates the tags", func(t *testing.T) {
-			tags, err := fixture.service.DistinctTags(ctx, fixture.query())
-			if err != nil {
-				t.Fatalf("failed to query tags: %v", err)
-			}
-
-			if want := []string{"live"}; !slices.Equal(tags, want) {
-				t.Errorf("tags = %v, want %v", tags, want)
-			}
-		})
-
-		t.Run("writing the same metadata again changes nothing", func(t *testing.T) {
-			fixture.seed(t, movie, seeded{
-				Genres:  []string{fixture.name("Comedy"), fixture.name("Drama")},
-				Studios: []string{fixture.name("Studio")},
-			})
-
-			named, total, err := fixture.service.DistinctGenres(ctx, fixture.query())
-			if err != nil {
-				t.Fatalf("failed to query genres: %v", err)
-			}
-			if total != 2 {
-				t.Errorf("total = %d, want 2", total)
-			}
-
-			want := []string{fixture.name("Comedy"), fixture.name("Drama")}
-			if got := namesOf(named); !slices.Equal(got, want) {
-				t.Errorf("genres = %v, want %v", got, want)
-			}
-
-			rows, err := fixture.service.store.Genre.Query().Where(genremodel.NameHasPrefix(fixture.prefix)).Count(ctx)
-			if err != nil {
-				t.Fatalf("failed to count genre rows: %v", err)
-			}
-			if rows != 2 {
-				t.Errorf("genre rows = %d, want 2", rows)
-			}
-
-		})
-
-		t.Run("a shorter list replaces the one it names and leaves the rest", func(t *testing.T) {
-			fixture.seed(t, movie, seeded{Genres: []string{fixture.name("Comedy")}})
-
-			named, _, err := fixture.service.DistinctGenres(ctx, fixture.query())
-			if err != nil {
-				t.Fatalf("failed to query genres: %v", err)
-			}
-			if want := []string{fixture.name("Comedy")}; !slices.Equal(namesOf(named), want) {
-				t.Errorf("genres = %v, want %v", namesOf(named), want)
-			}
-
-			studios, _, err := fixture.service.DistinctStudios(ctx, fixture.query())
-			if err != nil {
-				t.Fatalf("failed to query studios: %v", err)
-			}
-			if want := []string{fixture.name("Studio")}; !slices.Equal(namesOf(studios), want) {
-				t.Errorf("studios = %v, want them untouched by a write that named none", namesOf(studios))
-			}
-		})
-	})
-
+	t.Run("writes the container metadata", writesTheContainerMetadata())
 	t.Run("two items may share a genre", func(t *testing.T) {
 		fixture := newMetadataFixture(t)
 		ctx := context.Background()
@@ -297,7 +135,11 @@ func TestService_NamedMetadata(t *testing.T) {
 		}
 	})
 
-	t.Run("replaces the streams", func(t *testing.T) {
+	t.Run("replaces the streams", replacesTheStreams())
+}
+
+func replacesTheStreams() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
@@ -343,7 +185,200 @@ func TestService_NamedMetadata(t *testing.T) {
 		if codec := streams[0].Codec; codec != "hevc" {
 			t.Errorf("codec = %q, want %q", codec, "hevc")
 		}
-	})
+	}
+}
+
+func writesTheContainerMetadata() func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newMetadataFixture(t)
+		ctx := context.Background()
+		movie := fixture.item(t, "Movie")
+
+		fixture.seed(t, movie, seeded{
+			Genres:  []string{fixture.name("Comedy"), fixture.name("Drama")},
+			Studios: []string{fixture.name("Studio")},
+			Tags:    []string{"live"},
+			People: []Credit{
+				{Name: fixture.name("Director"), Kind: creditmodel.KindDirector},
+				{Name: fixture.name("Writer"), Kind: creditmodel.KindWriter, Role: "Teleplay", Order: 3},
+			},
+		})
+
+		t.Run("populates the genres", populatesTheGenres(fixture, ctx))
+
+		t.Run("populates the studios", func(t *testing.T) {
+			named, _, err := fixture.service.DistinctStudios(ctx, fixture.query())
+			if err != nil {
+				t.Fatalf("failed to query studios: %v", err)
+			}
+
+			want := []string{fixture.name("Studio")}
+			if got := namesOf(named); !slices.Equal(got, want) {
+				t.Errorf("studios = %v, want %v", got, want)
+			}
+		})
+
+		t.Run("populates the people", populatesThePeople(fixture, ctx))
+
+		t.Run("filters people by credit kind", filtersPeopleByCreditKind(fixture, ctx))
+
+		t.Run("takes a person the provider credited twice", takesAPersonTheProviderCreditedTwice(ctx))
+
+		t.Run("keeps the role and the billing order", keepsTheRoleAndTheBillingOrder(fixture, ctx))
+
+		t.Run("populates the tags", func(t *testing.T) {
+			tags, err := fixture.service.DistinctTags(ctx, fixture.query())
+			if err != nil {
+				t.Fatalf("failed to query tags: %v", err)
+			}
+
+			if want := []string{"live"}; !slices.Equal(tags, want) {
+				t.Errorf("tags = %v, want %v", tags, want)
+			}
+		})
+
+		t.Run("writing the same metadata again changes nothing", writingTheSameMetadataAgainChangesNothing(fixture, movie, ctx))
+
+		t.Run("a shorter list replaces the one it names and leaves the rest", aShorterListReplacesTheOneItNamesAndLeavesTheRest(fixture, movie, ctx))
+	}
+}
+
+func populatesThePeople(fixture *metadataFixture, ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		named, _, err := fixture.service.DistinctPeople(ctx, fixture.query(), nil)
+		if err != nil {
+			t.Fatalf("failed to query people: %v", err)
+		}
+
+		want := []string{fixture.name("Director"), fixture.name("Writer")}
+		if got := namesOf(named); !slices.Equal(got, want) {
+			t.Errorf("people = %v, want %v", got, want)
+		}
+	}
+}
+
+func filtersPeopleByCreditKind(fixture *metadataFixture, ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		named, _, err := fixture.service.DistinctPeople(ctx, fixture.query(), []CreditKind{creditmodel.KindWriter})
+		if err != nil {
+			t.Fatalf("failed to query people: %v", err)
+		}
+
+		want := []string{fixture.name("Writer")}
+		if got := namesOf(named); !slices.Equal(got, want) {
+			t.Errorf("people = %v, want %v", got, want)
+		}
+	}
+}
+
+func keepsTheRoleAndTheBillingOrder(fixture *metadataFixture, ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		credit, err := fixture.service.store.Credit.Query().
+			Where(creditmodel.HasPersonWith(personmodel.Name(fixture.name("Writer")))).
+			Only(ctx)
+		if err != nil {
+			t.Fatalf("failed to read the credit: %v", err)
+		}
+
+		if credit.Role != "Teleplay" || deref(credit.SortOrder) != 3 {
+			t.Errorf("credit = %q/%d, want Teleplay/3", credit.Role, deref(credit.SortOrder))
+		}
+	}
+}
+
+func populatesTheGenres(fixture *metadataFixture, ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		named, total, err := fixture.service.DistinctGenres(ctx, fixture.query())
+		if err != nil {
+			t.Fatalf("failed to query genres: %v", err)
+		}
+
+		want := []string{fixture.name("Comedy"), fixture.name("Drama")}
+		if got := namesOf(named); !slices.Equal(got, want) {
+			t.Errorf("genres = %v, want %v", got, want)
+		}
+		if total != 2 {
+			t.Errorf("total = %d, want 2", total)
+		}
+	}
+}
+
+func aShorterListReplacesTheOneItNamesAndLeavesTheRest(fixture *metadataFixture, movie *Item, ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture.seed(t, movie, seeded{Genres: []string{fixture.name("Comedy")}})
+
+		named, _, err := fixture.service.DistinctGenres(ctx, fixture.query())
+		if err != nil {
+			t.Fatalf("failed to query genres: %v", err)
+		}
+		if want := []string{fixture.name("Comedy")}; !slices.Equal(namesOf(named), want) {
+			t.Errorf("genres = %v, want %v", namesOf(named), want)
+		}
+
+		studios, _, err := fixture.service.DistinctStudios(ctx, fixture.query())
+		if err != nil {
+			t.Fatalf("failed to query studios: %v", err)
+		}
+		if want := []string{fixture.name("Studio")}; !slices.Equal(namesOf(studios), want) {
+			t.Errorf("studios = %v, want them untouched by a write that named none", namesOf(studios))
+		}
+	}
+}
+
+func takesAPersonTheProviderCreditedTwice(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		twice := newMetadataFixture(t)
+		movie := twice.item(t, "Twice")
+
+		twice.seed(t, movie, seeded{People: []Credit{
+			{Name: twice.name("Producer"), Kind: creditmodel.KindProducer},
+			{Name: twice.name("Producer"), Kind: creditmodel.KindProducer},
+		}})
+
+		named, _, err := twice.service.DistinctPeople(ctx, MetadataQuery{
+			Viewer: Everyone,
+			ItemID: &movie.ID,
+		}, nil)
+		if err != nil {
+			t.Fatalf("failed to query people: %v", err)
+		}
+
+		want := []string{twice.name("Producer")}
+		if got := namesOf(named); !slices.Equal(got, want) {
+			t.Errorf("people = %v, want %v", got, want)
+		}
+	}
+}
+
+func writingTheSameMetadataAgainChangesNothing(fixture *metadataFixture, movie *Item, ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture.seed(t, movie, seeded{
+			Genres:  []string{fixture.name("Comedy"), fixture.name("Drama")},
+			Studios: []string{fixture.name("Studio")},
+		})
+
+		named, total, err := fixture.service.DistinctGenres(ctx, fixture.query())
+		if err != nil {
+			t.Fatalf("failed to query genres: %v", err)
+		}
+		if total != 2 {
+			t.Errorf("total = %d, want 2", total)
+		}
+
+		want := []string{fixture.name("Comedy"), fixture.name("Drama")}
+		if got := namesOf(named); !slices.Equal(got, want) {
+			t.Errorf("genres = %v, want %v", got, want)
+		}
+
+		rows, err := fixture.service.store.Genre.Query().Where(genremodel.NameHasPrefix(fixture.prefix)).Count(ctx)
+		if err != nil {
+			t.Fatalf("failed to count genre rows: %v", err)
+		}
+		if rows != 2 {
+			t.Errorf("genre rows = %d, want 2", rows)
+		}
+
+	}
 }
 
 func TestService_DistinctGenres(t *testing.T) {

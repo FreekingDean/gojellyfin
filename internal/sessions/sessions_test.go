@@ -205,21 +205,7 @@ func TestService_Playing(t *testing.T) {
 		t.Fatalf("failed to create the session: %v", err)
 	}
 
-	listed := func() *Session {
-		t.Helper()
-		all, err := fixture.service.List(ctx)
-		if err != nil {
-			t.Fatalf("failed to list the sessions: %v", err)
-		}
-		for _, candidate := range all {
-			if candidate.ID == session.ID {
-				return candidate
-			}
-		}
-		t.Fatalf("session %s was not listed", session.ID)
-
-		return nil
-	}
+	listed := servicePlayingListed(t, fixture, ctx, session)
 
 	playback := Playback{ItemID: episode.ID, PositionTicks: 42, PlayMethod: "Transcode", IsPaused: true}
 	if err := fixture.service.Playing(ctx, session.ID, "203.0.113.7:51234", playback); err != nil {
@@ -248,6 +234,26 @@ func TestService_Playing(t *testing.T) {
 	}
 	if stopped := listed(); NowPlaying(stopped, time.Now()) || stopped.NowPlayingItemID != nil {
 		t.Errorf("the session still says it is playing after a stop")
+	}
+}
+
+func servicePlayingListed(t *testing.T, fixture *fixture, ctx context.Context, session *Session) func() *Session {
+	t.Helper()
+
+	return func() *Session {
+		t.Helper()
+		all, err := fixture.service.List(ctx)
+		if err != nil {
+			t.Fatalf("failed to list the sessions: %v", err)
+		}
+		for _, candidate := range all {
+			if candidate.ID == session.ID {
+				return candidate
+			}
+		}
+		t.Fatalf("session %s was not listed", session.ID)
+
+		return nil
 	}
 }
 

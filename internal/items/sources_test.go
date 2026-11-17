@@ -115,7 +115,31 @@ func TestService_SourcesNeedingProbe(t *testing.T) {
 		}
 	})
 
-	t.Run("selects a file that changed since its probe", func(t *testing.T) {
+	t.Run("selects a file that changed since its probe", selectsAFileThatChangedSinceItsProbe())
+
+	t.Run("leaves a file whose probe is newer than it is", func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+
+		settled := fixture.scannedFrom(t, fixture.downloader(t), "movie:the-matrix:1999", "/media/hd/The Matrix.mkv")
+
+		sources, err := fixture.service.MediaSources(ctx, settled.ID)
+		if err != nil {
+			t.Fatalf("failed to read the sources back: %v", err)
+		}
+
+		outstanding, err := fixture.service.SourcesNeedingProbe(ctx)
+		if err != nil {
+			t.Fatalf("failed to select the sources needing a probe: %v", err)
+		}
+		if slices.Contains(outstanding, sources[0].ID) {
+			t.Fatalf("outstanding = %v, want the probed file left alone", outstanding)
+		}
+	})
+}
+
+func selectsAFileThatChangedSinceItsProbe() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		ctx := context.Background()
 
@@ -138,25 +162,5 @@ func TestService_SourcesNeedingProbe(t *testing.T) {
 		if !slices.Contains(outstanding, changed.ID) {
 			t.Fatalf("outstanding = %v, want the file that changed since its probe", outstanding)
 		}
-	})
-
-	t.Run("leaves a file whose probe is newer than it is", func(t *testing.T) {
-		fixture := newFixture(t)
-		ctx := context.Background()
-
-		settled := fixture.scannedFrom(t, fixture.downloader(t), "movie:the-matrix:1999", "/media/hd/The Matrix.mkv")
-
-		sources, err := fixture.service.MediaSources(ctx, settled.ID)
-		if err != nil {
-			t.Fatalf("failed to read the sources back: %v", err)
-		}
-
-		outstanding, err := fixture.service.SourcesNeedingProbe(ctx)
-		if err != nil {
-			t.Fatalf("failed to select the sources needing a probe: %v", err)
-		}
-		if slices.Contains(outstanding, sources[0].ID) {
-			t.Fatalf("outstanding = %v, want the probed file left alone", outstanding)
-		}
-	})
+	}
 }

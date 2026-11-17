@@ -43,20 +43,15 @@ func TestServer_PlaybackInfoForAChannel(t *testing.T) {
 	chrome := profileFrom(t, chromeProfile)
 	epoch := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	tune := func(t *testing.T, fixture *fixture, slots []channels.Slot) uuid.UUID {
-		t.Helper()
+	tune := serverPlaybackInfoForAChannelTune(epoch)
 
-		channel := &channels.Channel{ID: uuid.New(), Number: 3, Name: "Fixture Channel"}
-		fixture.server.channels = onAir{
-			channel:  channel,
-			schedule: channels.NewSchedule(channelmodel.OrderSequential, 1, epoch, slots),
-			now:      epoch.Add(90 * time.Minute),
-		}
+	t.Run("a channel is one endless encoded HLS stream", aChannelIsOneEndlessEncodedHLSStream(tune, chrome))
+	t.Run("a channel with nothing to air is no compatible stream", aChannelWithNothingToAirIsNoCompatibleStream(tune, chrome))
+	t.Run("a title is still answered as itself", aTitleIsStillAnsweredAsItself(tune, chrome))
+}
 
-		return channel.ID
-	}
-
-	t.Run("a channel is one endless encoded HLS stream", func(t *testing.T) {
+func aChannelIsOneEndlessEncodedHLSStream(tune tuner, chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		film := fixture.addRipped(t, itemmodel.KindMovie, "mkv", "hevc", "eac3")
 		sources, err := fixture.server.items.MediaSources(context.Background(), film)
@@ -91,9 +86,11 @@ func TestServer_PlaybackInfoForAChannel(t *testing.T) {
 		if codecs[streammodel.KindVideo] != "h264" || codecs[streammodel.KindAudio] != "aac" {
 			t.Errorf("streams = %v, want what the encode makes", codecs)
 		}
-	})
+	}
+}
 
-	t.Run("a channel with nothing to air is no compatible stream", func(t *testing.T) {
+func aChannelWithNothingToAirIsNoCompatibleStream(tune tuner, chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := tune(t, fixture, nil)
 
@@ -101,9 +98,11 @@ func TestServer_PlaybackInfoForAChannel(t *testing.T) {
 		if apiutil.Deref(response.ErrorCode) != api.NoCompatibleStream || len(apiutil.Deref(response.MediaSources)) != 0 {
 			t.Errorf("response = %+v, want no compatible stream", response)
 		}
-	})
+	}
+}
 
-	t.Run("a title is still answered as itself", func(t *testing.T) {
+func aTitleIsStillAnsweredAsItself(tune tuner, chrome api.DeviceProfile) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		film := fixture.addRip(t, itemmodel.KindMovie, "mkv", "ac3")
 		tune(t, fixture, nil)
@@ -112,5 +111,22 @@ func TestServer_PlaybackInfoForAChannel(t *testing.T) {
 		if apiutil.Deref(source.IsInfiniteStream) || !strings.HasPrefix(apiutil.Deref(source.TranscodingUrl), "/Videos/"+film.String()) {
 			t.Errorf("the title was answered as %+v", source)
 		}
-	})
+	}
+}
+
+type tuner func(t *testing.T, fixture *fixture, slots []channels.Slot) uuid.UUID
+
+func serverPlaybackInfoForAChannelTune(epoch time.Time) tuner {
+	return func(t *testing.T, fixture *fixture, slots []channels.Slot) uuid.UUID {
+		t.Helper()
+
+		channel := &channels.Channel{ID: uuid.New(), Number: 3, Name: "Fixture Channel"}
+		fixture.server.channels = onAir{
+			channel:  channel,
+			schedule: channels.NewSchedule(channelmodel.OrderSequential, 1, epoch, slots),
+			now:      epoch.Add(90 * time.Minute),
+		}
+
+		return channel.ID
+	}
 }

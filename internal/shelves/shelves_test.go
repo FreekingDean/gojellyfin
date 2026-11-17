@@ -161,13 +161,7 @@ func TestService_Shelves(t *testing.T) {
 
 	viewer := items.Viewer{Libraries: []uuid.UUID{fixture.libraryID}}
 
-	tests := []struct {
-		slug     string
-		now      time.Time
-		wantName string
-		want     []string
-		absent   bool
-	}{
+	tests := []serviceShelvesCase{
 		{slug: "new-releases", now: october, wantName: "New Releases", want: []string{"Dud", "Quick", "Gem", "Seen", "Older"}},
 		{slug: "hidden-gems", now: october, wantName: "Hidden Gems", want: []string{"Future", "Gem"}},
 		{slug: "short-on-time", now: october, wantName: "Short on Time", want: []string{"Future", "Quick", "Dud"}},
@@ -208,6 +202,14 @@ func TestService_Shelves(t *testing.T) {
 			}
 		})
 	}
+}
+
+type serviceShelvesCase struct {
+	slug     string
+	now      time.Time
+	wantName string
+	want     []string
+	absent   bool
 }
 
 func TestService_GenreSpotlight(t *testing.T) {
@@ -354,13 +356,7 @@ func TestService_TrendingShelves(t *testing.T) {
 
 	everything := trendingStub{keys: []string{key("Missing"), key("First"), key("Orphan"), key("Second")}}
 
-	tests := []struct {
-		name      string
-		discovery Discovery
-		viewer    items.Viewer
-		want      []string
-		absent    bool
-	}{
+	tests := []serviceTrendingShelvesCase{
 		{name: "only what the library holds with a file, in the provider's order", discovery: everything, viewer: items.Everyone, want: []string{"First", "Second"}},
 		{name: "what the viewer cannot see is left out", discovery: everything, viewer: items.Viewer{Libraries: []uuid.UUID{uuid.New()}}, absent: true},
 		{name: "nothing held leaves the shelf out", discovery: trendingStub{keys: []string{key("Missing"), key("Orphan")}}, viewer: items.Everyone, absent: true},
@@ -410,6 +406,14 @@ func TestService_TrendingShelves(t *testing.T) {
 	}
 }
 
+type serviceTrendingShelvesCase struct {
+	name      string
+	discovery Discovery
+	viewer    items.Viewer
+	want      []string
+	absent    bool
+}
+
 func TestService_Titles(t *testing.T) {
 	service := newService(nil, available(true), stored("recently-aired", "genre-spotlight", "because-you-watched", "hidden-gems"), time.Now)
 
@@ -445,25 +449,7 @@ func TestService_Card(t *testing.T) {
 
 	viewer := items.Viewer{Libraries: []uuid.UUID{fixture.libraryID}}
 
-	tests := []struct {
-		name     string
-		enabled  []string
-		slug     string
-		user     uuid.UUID
-		want     []string
-		title    string
-		fresh    int
-		found    bool
-		personal bool
-	}{
-		{name: "a shelf everyone sees alike answers its name, what aired this week and its titles' posters newest first", enabled: []string{"new-releases"}, slug: "new-releases", want: []string{"newer", "older"}, title: "New Releases", fresh: 1, found: true},
-		{name: "a shelf everyone sees alike is the same card whoever asks", enabled: []string{"new-releases"}, slug: "new-releases", user: uuid.New(), want: []string{"newer", "older"}, title: "New Releases", fresh: 1, found: true},
-		{name: "a shelf that differs per user has none without a user", enabled: []string{"hidden-gems"}, slug: "hidden-gems"},
-		{name: "a shelf that differs per user is that user's card", enabled: []string{"hidden-gems"}, slug: "hidden-gems", user: uuid.New(), want: []string{"newer", "older"}, title: "Hidden Gems", fresh: 1, found: true, personal: true},
-		{name: "a shelf that is off has none", enabled: []string{"recently-aired"}, slug: "new-releases"},
-	}
-
-	for _, test := range tests {
+	for _, test := range serviceCardCases {
 		t.Run(test.name, func(t *testing.T) {
 			service := newService(fixture.catalogue, available(true), stored(test.enabled...), func() time.Time { return november })
 
@@ -490,4 +476,24 @@ func TestService_Card(t *testing.T) {
 			}
 		})
 	}
+}
+
+type serviceCardCase struct {
+	name     string
+	enabled  []string
+	slug     string
+	user     uuid.UUID
+	want     []string
+	title    string
+	fresh    int
+	found    bool
+	personal bool
+}
+
+var serviceCardCases = []serviceCardCase{
+	{name: "a shelf everyone sees alike answers its name, what aired this week and its titles' posters newest first", enabled: []string{"new-releases"}, slug: "new-releases", want: []string{"newer", "older"}, title: "New Releases", fresh: 1, found: true},
+	{name: "a shelf everyone sees alike is the same card whoever asks", enabled: []string{"new-releases"}, slug: "new-releases", user: uuid.New(), want: []string{"newer", "older"}, title: "New Releases", fresh: 1, found: true},
+	{name: "a shelf that differs per user has none without a user", enabled: []string{"hidden-gems"}, slug: "hidden-gems"},
+	{name: "a shelf that differs per user is that user's card", enabled: []string{"hidden-gems"}, slug: "hidden-gems", user: uuid.New(), want: []string{"newer", "older"}, title: "Hidden Gems", fresh: 1, found: true, personal: true},
+	{name: "a shelf that is off has none", enabled: []string{"recently-aired"}, slug: "new-releases"},
 }

@@ -45,33 +45,14 @@ func credit(t *testing.T, client *store.Client, itemID uuid.UUID, name string, k
 func TestServer_GetPersons(t *testing.T) {
 	ctx := context.Background()
 
-	connection := storetest.Open(t)
-
-	client := connection.Client()
+	client := storetest.Client(t)
 	prefix := t.Name() + "-" + uuid.NewString() + " "
 	library, err := client.Library.Create().SetName(prefix).Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the library: %v", err)
 	}
 
-	t.Cleanup(func() {
-		owned := itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))
-		if _, err := client.Credit.Delete().Where(creditmodel.HasItemWith(owned)).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the credits: %v", err)
-		}
-		if _, err := client.ItemSource.Delete().Where(sourcemodel.HasItemWith(owned)).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the media sources: %v", err)
-		}
-		if _, err := client.Item.Delete().Where(owned).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the items: %v", err)
-		}
-		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the library: %v", err)
-		}
-		if _, err := client.Person.Delete().Where(personmodel.NameHasPrefix(prefix)).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the people: %v", err)
-		}
-	})
+	t.Cleanup(serverGetPersonsCleanup(t, library, client, ctx, prefix))
 
 	service := items.New(client)
 	movie, err := service.SaveScanned(ctx, items.Item{
@@ -91,44 +72,7 @@ func TestServer_GetPersons(t *testing.T) {
 
 	server := New(service, everyone{})
 
-	writerOnly := []string{string(creditmodel.KindWriter)}
-	unknownKind := []string{"NotAKind"}
-	term := "director"
-	otherItem := uuid.New()
-
-	tests := []struct {
-		name   string
-		params api.GetPersonsParams
-		want   []string
-	}{
-		{
-			name:   "returns the credited people",
-			params: api.GetPersonsParams{AppearsInItemId: &movie.ID},
-			want:   []string{director, writer},
-		},
-		{
-			name:   "filters by person type",
-			params: api.GetPersonsParams{AppearsInItemId: &movie.ID, PersonTypes: &writerOnly},
-			want:   []string{writer},
-		},
-		{
-			name:   "ignores unknown person types",
-			params: api.GetPersonsParams{AppearsInItemId: &movie.ID, PersonTypes: &unknownKind},
-			want:   []string{director, writer},
-		},
-		{
-			name:   "filters by search term",
-			params: api.GetPersonsParams{AppearsInItemId: &movie.ID, SearchTerm: &term},
-			want:   []string{director},
-		},
-		{
-			name:   "ignores other items",
-			params: api.GetPersonsParams{AppearsInItemId: &otherItem},
-			want:   nil,
-		},
-	}
-
-	for _, test := range tests {
+	for _, test := range serverGetPersonsCases(movie.ID, director, writer) {
 		t.Run(test.name, func(t *testing.T) {
 			result := getPersons(t, server, test.params)
 
@@ -148,6 +92,35 @@ func TestServer_GetPersons(t *testing.T) {
 			}
 		})
 	}
+}
+
+func serverGetPersonsCleanup(t *testing.T, library *store.Library, client *store.Client, ctx context.Context, prefix string) func() {
+	t.Helper()
+
+	return func() {
+		owned := itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))
+		if _, err := client.Credit.Delete().Where(creditmodel.HasItemWith(owned)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the credits: %v", err)
+		}
+		if _, err := client.ItemSource.Delete().Where(sourcemodel.HasItemWith(owned)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the media sources: %v", err)
+		}
+		if _, err := client.Item.Delete().Where(owned).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the items: %v", err)
+		}
+		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the library: %v", err)
+		}
+		if _, err := client.Person.Delete().Where(personmodel.NameHasPrefix(prefix)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the people: %v", err)
+		}
+	}
+}
+
+type serverGetPersonsCase struct {
+	name   string
+	params api.GetPersonsParams
+	want   []string
 }
 
 func getPersons(t *testing.T, server *Server, params api.GetPersonsParams) api.GetPersons200JSONResponse {
@@ -181,4 +154,39 @@ type everyone struct{}
 
 func (everyone) Access(context.Context, uuid.UUID) (users.Access, error) {
 	return users.Access{All: true}, nil
+}
+
+func serverGetPersonsCases(movie uuid.UUID, director, writer string) []serverGetPersonsCase {
+	writerOnly := []string{string(creditmodel.KindWriter)}
+	unknownKind := []string{"NotAKind"}
+	term := "director"
+	otherItem := uuid.New()
+
+	return []serverGetPersonsCase{
+		{
+			name:   "returns the credited people",
+			params: api.GetPersonsParams{AppearsInItemId: &movie},
+			want:   []string{director, writer},
+		},
+		{
+			name:   "filters by person type",
+			params: api.GetPersonsParams{AppearsInItemId: &movie, PersonTypes: &writerOnly},
+			want:   []string{writer},
+		},
+		{
+			name:   "ignores unknown person types",
+			params: api.GetPersonsParams{AppearsInItemId: &movie, PersonTypes: &unknownKind},
+			want:   []string{director, writer},
+		},
+		{
+			name:   "filters by search term",
+			params: api.GetPersonsParams{AppearsInItemId: &movie, SearchTerm: &term},
+			want:   []string{director},
+		},
+		{
+			name:   "ignores other items",
+			params: api.GetPersonsParams{AppearsInItemId: &otherItem},
+			want:   nil,
+		},
+	}
 }

@@ -31,6 +31,37 @@ func TestProgress_Percent(t *testing.T) {
 	}
 }
 
+func progressEnvironment(suite *testsuite.WorkflowTestSuite, worker *Worker, job Job) *testsuite.TestWorkflowEnvironment {
+	env := suite.NewTestWorkflowEnvironment()
+	env.RegisterWorkflowWithOptions(worker.run, workflow.RegisterOptions{Name: runWorkflow})
+	env.RegisterActivityWithOptions(job.Run, activity.RegisterOptions{Name: job.Name})
+	env.RegisterActivityWithOptions(job.Outstanding, activity.RegisterOptions{Name: countName(job.Name)})
+
+	return env
+}
+
+func progressLook(t *testing.T, env *testsuite.TestWorkflowEnvironment, seen *[]float64) func() {
+	t.Helper()
+
+	return func() {
+		answered, err := env.QueryWorkflow(progressQuery)
+		if err != nil {
+			t.Errorf("query failed: %v", err)
+
+			return
+		}
+		var progress Progress
+		if err := answered.Get(&progress); err != nil {
+			t.Errorf("progress did not decode: %v", err)
+
+			return
+		}
+		if percent := progress.Percent(); percent != nil {
+			*seen = append(*seen, *percent)
+		}
+	}
+}
+
 func TestWorker_Run(t *testing.T) {
 	var remaining atomic.Int64
 	remaining.Store(100)
@@ -47,29 +78,10 @@ func TestWorker_Run(t *testing.T) {
 	worker := &Worker{service: NewService(&Client{}, registry)}
 
 	var suite testsuite.WorkflowTestSuite
-	env := suite.NewTestWorkflowEnvironment()
-	env.RegisterWorkflowWithOptions(worker.run, workflow.RegisterOptions{Name: runWorkflow})
-	env.RegisterActivityWithOptions(job.Run, activity.RegisterOptions{Name: job.Name})
-	env.RegisterActivityWithOptions(job.Outstanding, activity.RegisterOptions{Name: countName(job.Name)})
+	env := progressEnvironment(&suite, worker, job)
 
 	seen := []float64{}
-	look := func() {
-		answered, err := env.QueryWorkflow(progressQuery)
-		if err != nil {
-			t.Errorf("query failed: %v", err)
-
-			return
-		}
-		var progress Progress
-		if err := answered.Get(&progress); err != nil {
-			t.Errorf("progress did not decode: %v", err)
-
-			return
-		}
-		if percent := progress.Percent(); percent != nil {
-			seen = append(seen, *percent)
-		}
-	}
+	look := progressLook(t, env, &seen)
 
 	env.RegisterDelayedCallback(func() { remaining.Store(60) }, 30*time.Second)
 	env.RegisterDelayedCallback(look, 90*time.Second)
@@ -90,10 +102,7 @@ func TestWorker_Run(t *testing.T) {
 	t.Run("gives up when nothing moves", func(t *testing.T) {
 		remaining.Store(100)
 
-		stuck := suite.NewTestWorkflowEnvironment()
-		stuck.RegisterWorkflowWithOptions(worker.run, workflow.RegisterOptions{Name: runWorkflow})
-		stuck.RegisterActivityWithOptions(job.Run, activity.RegisterOptions{Name: job.Name})
-		stuck.RegisterActivityWithOptions(job.Outstanding, activity.RegisterOptions{Name: countName(job.Name)})
+		stuck := progressEnvironment(&suite, worker, job)
 
 		stuck.ExecuteWorkflow(runWorkflow, job.Name, Params{})
 

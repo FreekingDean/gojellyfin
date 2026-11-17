@@ -111,7 +111,21 @@ func TestServer_GetPostedPlaybackInfo_StartsTheStandInAtItsStart(t *testing.T) {
 		}
 	})
 
-	t.Run("a stand-in with no keyframes yet is encoded so it can start part way", func(t *testing.T) {
+	t.Run("a stand-in with no keyframes yet is encoded so it can start part way", aStandInWithNoKeyframesYetIsEncodedSoItCanStartPartWay(plan))
+
+	t.Run("no start leaves an untouched stand-in to direct play", func(t *testing.T) {
+		source := plan(t, "mp4", "aac", 0, true)
+		if !apiutil.Deref(source.SupportsDirectPlay) {
+			t.Error("direct play refused, want the file played whole when nothing is cut")
+		}
+		if url := apiutil.Deref(source.TranscodingUrl); strings.Contains(url, "fromTicks") {
+			t.Errorf("transcoding url = %q, want nothing cut", url)
+		}
+	})
+}
+
+func aStandInWithNoKeyframesYetIsEncodedSoItCanStartPartWay(plan func(t *testing.T, container string, codec string, start int64, indexed bool) api.MediaSourceInfo) func(*testing.T) {
+	return func(t *testing.T) {
 		source := plan(t, "mp4", "aac", 30_000_000, false)
 		if got := apiutil.Deref(source.TranscodingSubProtocol); got != api.MediaStreamProtocolHls {
 			t.Errorf("transcoding protocol = %q, want hls so the start can be cut", got)
@@ -123,15 +137,5 @@ func TestServer_GetPostedPlaybackInfo_StartsTheStandInAtItsStart(t *testing.T) {
 		if !strings.Contains(url, "fromTicks=30000000") {
 			t.Errorf("transcoding url = %q, want the playlist cut from the start", url)
 		}
-	})
-
-	t.Run("no start leaves an untouched stand-in to direct play", func(t *testing.T) {
-		source := plan(t, "mp4", "aac", 0, true)
-		if !apiutil.Deref(source.SupportsDirectPlay) {
-			t.Error("direct play refused, want the file played whole when nothing is cut")
-		}
-		if url := apiutil.Deref(source.TranscodingUrl); strings.Contains(url, "fromTicks") {
-			t.Errorf("transcoding url = %q, want nothing cut", url)
-		}
-	})
+	}
 }

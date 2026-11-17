@@ -43,24 +43,7 @@ func TestVerify_Jellyfin(t *testing.T) {
 		}
 	})
 
-	t.Run("errors on a malformed hash", func(t *testing.T) {
-		malformed := []string{
-			"$PBKDF2-SHA512$iterations=210000$0102$",
-			"$PBKDF2-SHA512$iterations=210000$0102030405060708090A0B0C0D0E0F10$AABB",
-			"$PBKDF2-SHA512$0102030405060708090A0B0C0D0E0F10$AABB",
-			"$PBKDF2-SHA512$iterations=0$0102030405060708090A0B0C0D0E0F10$AABB",
-			"$PBKDF2-SHA256$iterations=210000$0102030405060708090A0B0C0D0E0F10$AABB",
-			"$PBKDF2-SHA512$iterations=210000$ZZ$AABB",
-			"$PBKDF2-SHA512$iterations=2147483647$0102030405060708090A0B0C0D0E0F10$" +
-				"8A5A90C00EB2155E81D3C6B82ABEE6B9875A0E7CE286688E796A32F9675D1724" +
-				"5E71EE6B008F47256E6EC66BBD8040417DF06E50007501FEDF44A2588B949C1F",
-		}
-		for _, encoded := range malformed {
-			if _, err := Verify("hunter2", encoded); err == nil {
-				t.Errorf("want error for %q", encoded)
-			}
-		}
-	})
+	t.Run("errors on a malformed hash", errorsOnAMalformedHash())
 
 	t.Run("leaves a bcrypt hash to bcrypt", func(t *testing.T) {
 		encoded, err := Hash("hunter2")
@@ -79,4 +62,25 @@ func TestVerify_Jellyfin(t *testing.T) {
 			t.Error("want match for the correct password")
 		}
 	})
+}
+
+func errorsOnAMalformedHash() func(*testing.T) {
+	return func(t *testing.T) {
+		malformed := []string{
+			"$PBKDF2-SHA512$iterations=210000$0102$",
+			"$PBKDF2-SHA512$iterations=210000$0102030405060708090A0B0C0D0E0F10$AABB",
+			"$PBKDF2-SHA512$0102030405060708090A0B0C0D0E0F10$AABB",
+			"$PBKDF2-SHA512$iterations=0$0102030405060708090A0B0C0D0E0F10$AABB",
+			"$PBKDF2-SHA256$iterations=210000$0102030405060708090A0B0C0D0E0F10$AABB",
+			"$PBKDF2-SHA512$iterations=210000$ZZ$AABB",
+			"$PBKDF2-SHA512$iterations=2147483647$0102030405060708090A0B0C0D0E0F10$" +
+				"8A5A90C00EB2155E81D3C6B82ABEE6B9875A0E7CE286688E796A32F9675D1724" +
+				"5E71EE6B008F47256E6EC66BBD8040417DF06E50007501FEDF44A2588B949C1F",
+		}
+		for _, encoded := range malformed {
+			if _, err := Verify("hunter2", encoded); err == nil {
+				t.Errorf("want error for %q", encoded)
+			}
+		}
+	}
 }

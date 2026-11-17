@@ -129,15 +129,7 @@ func TestServer_AuthorizeQuickConnect(t *testing.T) {
 	caller := uuid.New()
 	target := uuid.New()
 
-	tests := []struct {
-		name             string
-		target           *uuid.UUID
-		administrator    bool
-		targetError      error
-		authorizeAs      uuid.UUID
-		authorizeError   error
-		expectedResponse api.AuthorizeQuickConnectResponseObject
-	}{
+	tests := []serverAuthorizeQuickConnectCase{
 		{
 			name:             "authorizes for the caller",
 			authorizeAs:      caller,
@@ -171,28 +163,42 @@ func TestServer_AuthorizeQuickConnect(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			service := mocks.NewMockQuickConnectService(ctrl)
-			accounts := mocks.NewMockUsersService(ctrl)
-			server := &Server{quickconnect: service, users: accounts}
-
-			if tt.target != nil {
-				accounts.EXPECT().IsAdministrator(gomock.Any(), caller).Return(tt.administrator, nil)
-				if tt.administrator {
-					accounts.EXPECT().User(gomock.Any(), target).Return(&users.User{ID: target}, tt.targetError)
-				}
-			}
-			if tt.authorizeAs != uuid.Nil {
-				service.EXPECT().Authorize(gomock.Any(), "123456", tt.authorizeAs).Return(tt.authorizeError)
-			}
-
-			response, err := server.AuthorizeQuickConnect(signedIn(caller), api.AuthorizeQuickConnectRequestObject{
-				Params: api.AuthorizeQuickConnectParams{Code: "123456", UserId: tt.target},
-			})
-
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expectedResponse, response)
-		})
+		t.Run(tt.name, authorizeQuickConnect(caller, target, tt))
 	}
+}
+
+func authorizeQuickConnect(caller uuid.UUID, target uuid.UUID, tt serverAuthorizeQuickConnectCase) func(t *testing.T) {
+	return func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		service := mocks.NewMockQuickConnectService(ctrl)
+		accounts := mocks.NewMockUsersService(ctrl)
+		server := &Server{quickconnect: service, users: accounts}
+
+		if tt.target != nil {
+			accounts.EXPECT().IsAdministrator(gomock.Any(), caller).Return(tt.administrator, nil)
+			if tt.administrator {
+				accounts.EXPECT().User(gomock.Any(), target).Return(&users.User{ID: target}, tt.targetError)
+			}
+		}
+		if tt.authorizeAs != uuid.Nil {
+			service.EXPECT().Authorize(gomock.Any(), "123456", tt.authorizeAs).Return(tt.authorizeError)
+		}
+
+		response, err := server.AuthorizeQuickConnect(signedIn(caller), api.AuthorizeQuickConnectRequestObject{
+			Params: api.AuthorizeQuickConnectParams{Code: "123456", UserId: tt.target},
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, tt.expectedResponse, response)
+	}
+}
+
+type serverAuthorizeQuickConnectCase struct {
+	name             string
+	target           *uuid.UUID
+	administrator    bool
+	targetError      error
+	authorizeAs      uuid.UUID
+	authorizeError   error
+	expectedResponse api.AuthorizeQuickConnectResponseObject
 }

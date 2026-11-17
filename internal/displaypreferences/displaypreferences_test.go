@@ -29,49 +29,7 @@ func TestService(t *testing.T) {
 		}
 	})
 
-	descending := displaypreferencesmodel.SortOrderDescending
-	tests := []struct {
-		name     string
-		client   string
-		settings *Settings
-		want     func(*DisplayPreferences) bool
-		stored   int
-	}{
-		{
-			name:   "a miss serves the defaults and stores nothing",
-			client: "web",
-			want: func(got *DisplayPreferences) bool {
-				return got.SortBy == displaypreferencesmodel.DefaultSortBy && got.SortOrder == displaypreferencesmodel.DefaultSortOrder
-			},
-		},
-		{
-			name:     "an update is read back",
-			client:   "web",
-			settings: &Settings{SortBy: ptr("DateCreated"), SortOrder: &descending, CustomPrefs: &map[string]string{"homesection0": "resume"}},
-			want: func(got *DisplayPreferences) bool {
-				return got.SortBy == "DateCreated" && got.SortOrder == descending && got.CustomPrefs["homesection0"] == "resume"
-			},
-			stored: 1,
-		},
-		{
-			name:     "another client is a row of its own",
-			client:   "tv",
-			settings: &Settings{SortBy: ptr("SortName")},
-			want:     func(got *DisplayPreferences) bool { return got.SortBy == "SortName" },
-			stored:   2,
-		},
-		{
-			name:     "a second update replaces what the first set",
-			client:   "web",
-			settings: &Settings{SortBy: ptr("PremiereDate")},
-			want: func(got *DisplayPreferences) bool {
-				return got.SortBy == "PremiereDate" && got.SortOrder == displaypreferencesmodel.DefaultSortOrder
-			},
-			stored: 2,
-		},
-	}
-
-	for _, test := range tests {
+	for _, test := range serviceCases {
 		t.Run(test.name, func(t *testing.T) {
 			if test.settings != nil {
 				if err := service.Update(ctx, user.ID, "usersettings", test.client, *test.settings); err != nil {
@@ -96,6 +54,49 @@ func TestService(t *testing.T) {
 			}
 		})
 	}
+}
+
+var serviceCases = []serviceCase{
+	{
+		name:   "a miss serves the defaults and stores nothing",
+		client: "web",
+		want: func(got *DisplayPreferences) bool {
+			return got.SortBy == displaypreferencesmodel.DefaultSortBy && got.SortOrder == displaypreferencesmodel.DefaultSortOrder
+		},
+	},
+	{
+		name:     "an update is read back",
+		client:   "web",
+		settings: &Settings{SortBy: ptr("DateCreated"), SortOrder: ptr(displaypreferencesmodel.SortOrderDescending), CustomPrefs: &map[string]string{"homesection0": "resume"}},
+		want: func(got *DisplayPreferences) bool {
+			return got.SortBy == "DateCreated" && got.SortOrder == displaypreferencesmodel.SortOrderDescending && got.CustomPrefs["homesection0"] == "resume"
+		},
+		stored: 1,
+	},
+	{
+		name:     "another client is a row of its own",
+		client:   "tv",
+		settings: &Settings{SortBy: ptr("SortName")},
+		want:     func(got *DisplayPreferences) bool { return got.SortBy == "SortName" },
+		stored:   2,
+	},
+	{
+		name:     "a second update replaces what the first set",
+		client:   "web",
+		settings: &Settings{SortBy: ptr("PremiereDate")},
+		want: func(got *DisplayPreferences) bool {
+			return got.SortBy == "PremiereDate" && got.SortOrder == displaypreferencesmodel.DefaultSortOrder
+		},
+		stored: 2,
+	},
+}
+
+type serviceCase struct {
+	name     string
+	client   string
+	settings *Settings
+	want     func(*DisplayPreferences) bool
+	stored   int
 }
 
 func ptr[T any](value T) *T { return &value }

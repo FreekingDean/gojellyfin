@@ -98,6 +98,45 @@ func (f *fixture) episode(t *testing.T, number int32, path string) (uuid.UUID, u
 	return item.ID, file.ID
 }
 
+func (f *fixture) episodes(t *testing.T, dir string, starts []float64) ([]uuid.UUID, []uuid.UUID) {
+	t.Helper()
+
+	var episodes, files []uuid.UUID
+	for i, start := range starts {
+		episode, file := f.episode(t, int32(i+1), episode(t, dir, i+1, start, "128k"))
+		episodes = append(episodes, episode)
+		files = append(files, file)
+	}
+
+	return episodes, files
+}
+
+func (f *fixture) chapterIntro(t *testing.T, ctx context.Context, file uuid.UUID) {
+	t.Helper()
+
+	err := f.client.MediaSegment.Create().
+		SetItemSourceID(file).
+		SetKind(segmentmodel.KindIntro).
+		SetOrigin(segmentmodel.OriginChapter).
+		SetStartTicks(30_000_000).
+		SetEndTicks(330_000_000).
+		Exec(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func (f *fixture) waiting(t *testing.T, ctx context.Context) bool {
+	t.Helper()
+
+	needing, err := f.service.SeasonsNeedingDetection(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return contains(needing, f.season)
+}
+
 func TestService_DetectSeason(t *testing.T) {
 	if _, err := exec.LookPath("ffmpeg"); err != nil {
 		t.Skip("ffmpeg is not on PATH")
@@ -107,29 +146,10 @@ func TestService_DetectSeason(t *testing.T) {
 	dir := t.TempDir()
 
 	starts := []float64{12.37, 5.5, 3.21}
-	var episodes, files []uuid.UUID
-	for i, start := range starts {
-		episode, file := f.episode(t, int32(i+1), episode(t, dir, i+1, start, "128k"))
-		episodes = append(episodes, episode)
-		files = append(files, file)
-	}
+	episodes, files := f.episodes(t, dir, starts)
 
-	err := f.client.MediaSegment.Create().
-		SetItemSourceID(files[2]).
-		SetKind(segmentmodel.KindIntro).
-		SetOrigin(segmentmodel.OriginChapter).
-		SetStartTicks(30_000_000).
-		SetEndTicks(330_000_000).
-		Exec(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	needing, err := f.service.SeasonsNeedingDetection(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !contains(needing, f.season) {
+	f.chapterIntro(t, ctx, files[2])
+	if !f.waiting(t, ctx) {
 		t.Fatal("the season is not waiting for intro detection")
 	}
 
@@ -170,11 +190,7 @@ func TestService_DetectSeason(t *testing.T) {
 		t.Errorf("outros = %v, want none", outros)
 	}
 
-	needing, err = f.service.SeasonsNeedingDetection(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if contains(needing, f.season) {
+	if f.waiting(t, ctx) {
 		t.Error("the season still waits for detection after it ran")
 	}
 }

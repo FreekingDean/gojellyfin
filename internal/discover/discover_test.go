@@ -203,52 +203,9 @@ func TestService_Trending_FailsWithNothingToServe(t *testing.T) {
 func TestService_Title(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("a summary is answered from the trending list without a request", func(t *testing.T) {
-		provider := &stubProvider{trending: []int{603}}
-		service := newService(provider, held{}, time.Now)
-		if _, err := service.Trending(ctx, itemmodel.KindMovie); err != nil {
-			t.Fatalf("failed to read what is trending: %v", err)
-		}
+	t.Run("a summary is answered from the trending list without a request", aSummaryIsAnsweredFromTheTrendingListWithoutARequest(ctx))
 
-		title, found, err := service.Summary(ctx, ID(itemmodel.KindMovie, 603))
-		if err != nil || !found {
-			t.Fatalf("summary = %t, %v", found, err)
-		}
-		if _, pictured := title.Image(imagemodel.KindPrimary); !pictured {
-			t.Error("the summary carries no poster")
-		}
-		if got := provider.asked; !slices.Equal(got, []string{"trending:Movie"}) {
-			t.Errorf("asked = %v, want only the list", got)
-		}
-	})
-
-	t.Run("the whole record is fetched once and kept", func(t *testing.T) {
-		provider := &stubProvider{trending: []int{603}}
-		service := newService(provider, held{}, time.Now)
-		if _, err := service.Trending(ctx, itemmodel.KindMovie); err != nil {
-			t.Fatalf("failed to read what is trending: %v", err)
-		}
-
-		for range 2 {
-			title, found, err := service.Title(ctx, ID(itemmodel.KindMovie, 603))
-			if err != nil || !found {
-				t.Fatalf("title = %t, %v", found, err)
-			}
-			if title.Metadata.Overview == nil {
-				t.Error("the title carries the summary rather than the record")
-			}
-		}
-		if _, err := service.Trending(ctx, itemmodel.KindMovie); err != nil {
-			t.Fatalf("failed to read what is trending: %v", err)
-		}
-		title, _, _ := service.Summary(ctx, ID(itemmodel.KindMovie, 603))
-		if title.Metadata.Overview == nil {
-			t.Error("the record was replaced by a summary")
-		}
-		if got := provider.asked; !slices.Equal(got, []string{"trending:Movie", "movie:603"}) {
-			t.Errorf("asked = %v, want the list and one record", got)
-		}
-	})
+	t.Run("the whole record is fetched once and kept", theWholeRecordIsFetchedOnceAndKept(ctx))
 
 	t.Run("a series is asked for as a series", func(t *testing.T) {
 		provider := &stubProvider{}
@@ -302,6 +259,57 @@ func TestService_Title(t *testing.T) {
 			t.Errorf("err = %v, want the provider's", err)
 		}
 	})
+}
+
+func aSummaryIsAnsweredFromTheTrendingListWithoutARequest(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		provider := &stubProvider{trending: []int{603}}
+		service := newService(provider, held{}, time.Now)
+		if _, err := service.Trending(ctx, itemmodel.KindMovie); err != nil {
+			t.Fatalf("failed to read what is trending: %v", err)
+		}
+
+		title, found, err := service.Summary(ctx, ID(itemmodel.KindMovie, 603))
+		if err != nil || !found {
+			t.Fatalf("summary = %t, %v", found, err)
+		}
+		if _, pictured := title.Image(imagemodel.KindPrimary); !pictured {
+			t.Error("the summary carries no poster")
+		}
+		if got := provider.asked; !slices.Equal(got, []string{"trending:Movie"}) {
+			t.Errorf("asked = %v, want only the list", got)
+		}
+	}
+}
+
+func theWholeRecordIsFetchedOnceAndKept(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		provider := &stubProvider{trending: []int{603}}
+		service := newService(provider, held{}, time.Now)
+		if _, err := service.Trending(ctx, itemmodel.KindMovie); err != nil {
+			t.Fatalf("failed to read what is trending: %v", err)
+		}
+
+		for range 2 {
+			title, found, err := service.Title(ctx, ID(itemmodel.KindMovie, 603))
+			if err != nil || !found {
+				t.Fatalf("title = %t, %v", found, err)
+			}
+			if title.Metadata.Overview == nil {
+				t.Error("the title carries the summary rather than the record")
+			}
+		}
+		if _, err := service.Trending(ctx, itemmodel.KindMovie); err != nil {
+			t.Fatalf("failed to read what is trending: %v", err)
+		}
+		title, _, _ := service.Summary(ctx, ID(itemmodel.KindMovie, 603))
+		if title.Metadata.Overview == nil {
+			t.Error("the record was replaced by a summary")
+		}
+		if got := provider.asked; !slices.Equal(got, []string{"trending:Movie", "movie:603"}) {
+			t.Errorf("asked = %v, want the list and one record", got)
+		}
+	}
 }
 
 func TestTitled_SkipsAnIDItCannotCarry(t *testing.T) {

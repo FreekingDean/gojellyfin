@@ -85,10 +85,8 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to read the environment: %v", err)
 	}
 
-	connection := storetest.Open(t)
-
 	ctx := context.Background()
-	client := connection.Client()
+	client := storetest.Client(t)
 	unique := t.Name() + "-" + uuid.NewString()
 
 	itemService := items.New(client)
@@ -112,7 +110,45 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the session: %v", err)
 	}
 
+	t.Cleanup(newFixtureCleanup(t, library, client, ctx, libraryService, sessionService, token, unique, user))
+
+	transcoder := &stubTranscoder{}
+	return &fixture{
+		downloader: radarr(t, client),
+		client:     client,
+		handler:    New(sessionService, itemService, filesystem.New(config), transcoder, reports.New(client, nil), nil, nil),
+		items:      itemService,
+		transcoder: transcoder,
+		library:    library.ID,
+		token:      token,
+	}
+}
+
+func radarr(t *testing.T, client *store.Client) uuid.UUID {
+	t.Helper()
+
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(downloadermodel.KindRadarr).
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
 	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
+	return downloader.ID
+}
+
+func newFixtureCleanup(t *testing.T, library *libraries.Library, client *store.Client, ctx context.Context, libraryService *libraries.Service, sessionService *sessions.Service, token string, unique string, user *users.User) func() {
+	t.Helper()
+
+	return func() {
 		inLibrary := sourcemodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
 		if _, err := client.MediaStream.Delete().Where(streammodel.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the media streams: %v", err)
@@ -132,33 +168,6 @@ func newFixture(t *testing.T) *fixture {
 		if err := client.User.DeleteOneID(user.ID).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the user: %v", err)
 		}
-	})
-
-	transcoder := &stubTranscoder{}
-
-	downloader, err := client.Source.Create().
-		SetName(t.Name() + "-" + uuid.NewString()).
-		SetURL("http://" + uuid.NewString() + ".invalid").
-		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(downloadermodel.KindRadarr).
-		Save(context.Background())
-	if err != nil {
-		t.Fatalf("failed to create the source: %v", err)
-	}
-	t.Cleanup(func() {
-		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
-			t.Errorf("failed to delete the source: %v", err)
-		}
-	})
-
-	return &fixture{
-		downloader: downloader.ID,
-		client:     client,
-		handler:    New(sessionService, itemService, filesystem.New(config), transcoder, reports.New(client, nil), nil, nil),
-		items:      itemService,
-		transcoder: transcoder,
-		library:    library.ID,
-		token:      token,
 	}
 }
 
@@ -250,24 +259,7 @@ func TestHandler_Serve(t *testing.T) {
 		}
 	})
 
-	t.Run("answers a range request", func(t *testing.T) {
-		request := fixture.get(t, http.MethodGet, target, id)
-		request.Header.Set("Range", "bytes=4-8")
-		recorder := httptest.NewRecorder()
-
-		fixture.handler.Serve(recorder, request)
-
-		if recorder.Code != http.StatusPartialContent {
-			t.Fatalf("status = %d, want %d", recorder.Code, http.StatusPartialContent)
-		}
-		if got := recorder.Body.String(); got != string(song[4:9]) {
-			t.Errorf("body = %q, want %q", got, song[4:9])
-		}
-		want := fmt.Sprintf("bytes 4-8/%d", len(song))
-		if got := recorder.Header().Get("Content-Range"); got != want {
-			t.Errorf("content range = %q, want %q", got, want)
-		}
-	})
+	t.Run("answers a range request", answersARangeRequest(fixture, target, id))
 
 	t.Run("sends no body for a head request", func(t *testing.T) {
 		recorder := httptest.NewRecorder()
@@ -296,7 +288,33 @@ func TestHandler_Serve(t *testing.T) {
 			t.Errorf("status = %d, want %d", recorder.Code, http.StatusUnauthorized)
 		}
 	})
-	t.Run("by container", func(t *testing.T) {
+	t.Run("by container", byContainer())
+
+}
+
+func answersARangeRequest(fixture *fixture, target string, id uuid.UUID) func(*testing.T) {
+	return func(t *testing.T) {
+		request := fixture.get(t, http.MethodGet, target, id)
+		request.Header.Set("Range", "bytes=4-8")
+		recorder := httptest.NewRecorder()
+
+		fixture.handler.Serve(recorder, request)
+
+		if recorder.Code != http.StatusPartialContent {
+			t.Fatalf("status = %d, want %d", recorder.Code, http.StatusPartialContent)
+		}
+		if got := recorder.Body.String(); got != string(song[4:9]) {
+			t.Errorf("body = %q, want %q", got, song[4:9])
+		}
+		want := fmt.Sprintf("bytes 4-8/%d", len(song))
+		if got := recorder.Header().Get("Content-Range"); got != want {
+			t.Errorf("content range = %q, want %q", got, want)
+		}
+	}
+}
+
+func byContainer() func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.add(t, "track.flac", "flac")
 
@@ -324,8 +342,7 @@ func TestHandler_Serve(t *testing.T) {
 				}
 			})
 		}
-	})
-
+	}
 }
 
 func TestHandler_ServeUniversal(t *testing.T) {
@@ -368,7 +385,23 @@ func TestHandler_ServeUniversal(t *testing.T) {
 		})
 	}
 
-	t.Run("sends no body for a head request", func(t *testing.T) {
+	t.Run("sends no body for a head request", sendsNoBodyForAHeadRequest(mp3, fixture))
+
+	t.Run("rejects an unauthenticated request", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/Audio/"+mp3.String()+"/universal", nil)
+		request.SetPathValue("itemId", mp3.String())
+		recorder := httptest.NewRecorder()
+
+		fixture.handler.ServeUniversal(recorder, request)
+
+		if recorder.Code != http.StatusUnauthorized {
+			t.Errorf("status = %d, want %d", recorder.Code, http.StatusUnauthorized)
+		}
+	})
+}
+
+func sendsNoBodyForAHeadRequest(mp3 uuid.UUID, fixture *fixture) func(*testing.T) {
+	return func(t *testing.T) {
 		target := "/Audio/" + mp3.String() + "/universal?container=mp3&"
 		recorder := httptest.NewRecorder()
 
@@ -383,19 +416,7 @@ func TestHandler_ServeUniversal(t *testing.T) {
 		if got := recorder.Header().Get("Content-Length"); got != strconv.Itoa(len(song)) {
 			t.Errorf("content length = %q, want %d", got, len(song))
 		}
-	})
-
-	t.Run("rejects an unauthenticated request", func(t *testing.T) {
-		request := httptest.NewRequest(http.MethodGet, "/Audio/"+mp3.String()+"/universal", nil)
-		request.SetPathValue("itemId", mp3.String())
-		recorder := httptest.NewRecorder()
-
-		fixture.handler.ServeUniversal(recorder, request)
-
-		if recorder.Code != http.StatusUnauthorized {
-			t.Errorf("status = %d, want %d", recorder.Code, http.StatusUnauthorized)
-		}
-	})
+	}
 }
 
 func (f *fixture) newDownloader(t *testing.T) uuid.UUID {

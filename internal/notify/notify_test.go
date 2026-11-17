@@ -54,31 +54,7 @@ func await(t *testing.T, received chan Envelope) Envelope {
 }
 
 func TestService_Publish(t *testing.T) {
-	t.Run("an envelope reaches a listener on another pod", func(t *testing.T) {
-		publisher, _ := newService(t)
-		_, received := newService(t)
-
-		session := uuid.New()
-		if err := publisher.Publish(context.Background(), []uuid.UUID{session}, "SyncPlayGroupUpdate", map[string]string{"Type": "UserJoined"}); err != nil {
-			t.Fatalf("failed to publish: %v", err)
-		}
-
-		envelope := await(t, received)
-		if len(envelope.SessionIDs) != 1 || envelope.SessionIDs[0] != session {
-			t.Fatalf("envelope addressed to %v, want %v", envelope.SessionIDs, session)
-		}
-		if envelope.Type != "SyncPlayGroupUpdate" {
-			t.Fatalf("envelope type = %q, want SyncPlayGroupUpdate", envelope.Type)
-		}
-
-		var data map[string]string
-		if err := json.Unmarshal(envelope.Data, &data); err != nil {
-			t.Fatalf("failed to decode the data: %v", err)
-		}
-		if data["Type"] != "UserJoined" {
-			t.Fatalf("data = %v, want UserJoined", data)
-		}
-	})
+	t.Run("an envelope reaches a listener on another pod", anEnvelopeReachesAListenerOnAnotherPod())
 
 	t.Run("the pod that published holds connections too, so it receives its own envelope", func(t *testing.T) {
 		service, received := newService(t)
@@ -115,6 +91,34 @@ func TestService_Publish(t *testing.T) {
 			t.Fatal("want an error for an oversized payload, got nil")
 		}
 	})
+}
+
+func anEnvelopeReachesAListenerOnAnotherPod() func(*testing.T) {
+	return func(t *testing.T) {
+		publisher, _ := newService(t)
+		_, received := newService(t)
+
+		session := uuid.New()
+		if err := publisher.Publish(context.Background(), []uuid.UUID{session}, "SyncPlayGroupUpdate", map[string]string{"Type": "UserJoined"}); err != nil {
+			t.Fatalf("failed to publish: %v", err)
+		}
+
+		envelope := await(t, received)
+		if len(envelope.SessionIDs) != 1 || envelope.SessionIDs[0] != session {
+			t.Fatalf("envelope addressed to %v, want %v", envelope.SessionIDs, session)
+		}
+		if envelope.Type != "SyncPlayGroupUpdate" {
+			t.Fatalf("envelope type = %q, want SyncPlayGroupUpdate", envelope.Type)
+		}
+
+		var data map[string]string
+		if err := json.Unmarshal(envelope.Data, &data); err != nil {
+			t.Fatalf("failed to decode the data: %v", err)
+		}
+		if data["Type"] != "UserJoined" {
+			t.Fatalf("data = %v, want UserJoined", data)
+		}
+	}
 }
 
 func TestService_OnReconnect(t *testing.T) {

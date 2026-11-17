@@ -183,44 +183,7 @@ func TestServer_GetDeviceInfo(t *testing.T) {
 		lastActivity: lastActivity,
 	})
 
-	t.Run("maps the device onto the dto", func(t *testing.T) {
-		response, err := fixture.server.GetDeviceInfo(ctx, api.GetDeviceInfoRequestObject{
-			Params: api.GetDeviceInfoParams{Id: clientID},
-		})
-		if err != nil {
-			t.Fatalf("failed to get the device info: %v", err)
-		}
-
-		info, ok := response.(api.GetDeviceInfo200JSONResponse)
-		if !ok {
-			t.Fatalf("response = %T, want api.GetDeviceInfo200JSONResponse", response)
-		}
-
-		if *info.Id != clientID {
-			t.Errorf("Id = %q, want %q", *info.Id, clientID)
-		}
-		if *info.Name != "Living Room TV" {
-			t.Errorf("Name = %q, want %q", *info.Name, "Living Room TV")
-		}
-		if *info.CustomName != "Big Screen" {
-			t.Errorf("CustomName = %q, want %q", *info.CustomName, "Big Screen")
-		}
-		if *info.AppName != "Jellyfin Web" {
-			t.Errorf("AppName = %q, want %q", *info.AppName, "Jellyfin Web")
-		}
-		if *info.AppVersion != "10.10.0" {
-			t.Errorf("AppVersion = %q, want %q", *info.AppVersion, "10.10.0")
-		}
-		if *info.IconUrl != "https://example.test/tv.png" {
-			t.Errorf("IconUrl = %q, want %q", *info.IconUrl, "https://example.test/tv.png")
-		}
-		if !info.DateLastActivity.Equal(lastActivity) {
-			t.Errorf("DateLastActivity = %v, want %v", *info.DateLastActivity, lastActivity)
-		}
-		if info.LastUserId != nil {
-			t.Errorf("LastUserId = %v, want nil", *info.LastUserId)
-		}
-	})
+	t.Run("maps the device onto the dto", mapsTheDeviceOntoTheDto(fixture, ctx, clientID, lastActivity))
 
 	t.Run("reports the user of the newest session", func(t *testing.T) {
 		now := time.Now().UTC()
@@ -261,6 +224,47 @@ func TestServer_GetDeviceInfo(t *testing.T) {
 			t.Errorf("response = %T, want api.GetDeviceInfo404JSONResponse", response)
 		}
 	})
+}
+
+func mapsTheDeviceOntoTheDto(fixture *fixture, ctx context.Context, clientID string, lastActivity time.Time) func(*testing.T) {
+	return func(t *testing.T) {
+		response, err := fixture.server.GetDeviceInfo(ctx, api.GetDeviceInfoRequestObject{
+			Params: api.GetDeviceInfoParams{Id: clientID},
+		})
+		if err != nil {
+			t.Fatalf("failed to get the device info: %v", err)
+		}
+
+		info, ok := response.(api.GetDeviceInfo200JSONResponse)
+		if !ok {
+			t.Fatalf("response = %T, want api.GetDeviceInfo200JSONResponse", response)
+		}
+
+		if *info.Id != clientID {
+			t.Errorf("Id = %q, want %q", *info.Id, clientID)
+		}
+		if *info.Name != "Living Room TV" {
+			t.Errorf("Name = %q, want %q", *info.Name, "Living Room TV")
+		}
+		if *info.CustomName != "Big Screen" {
+			t.Errorf("CustomName = %q, want %q", *info.CustomName, "Big Screen")
+		}
+		if *info.AppName != "Jellyfin Web" {
+			t.Errorf("AppName = %q, want %q", *info.AppName, "Jellyfin Web")
+		}
+		if *info.AppVersion != "10.10.0" {
+			t.Errorf("AppVersion = %q, want %q", *info.AppVersion, "10.10.0")
+		}
+		if *info.IconUrl != "https://example.test/tv.png" {
+			t.Errorf("IconUrl = %q, want %q", *info.IconUrl, "https://example.test/tv.png")
+		}
+		if !info.DateLastActivity.Equal(lastActivity) {
+			t.Errorf("DateLastActivity = %v, want %v", *info.DateLastActivity, lastActivity)
+		}
+		if info.LastUserId != nil {
+			t.Errorf("LastUserId = %v, want nil", *info.LastUserId)
+		}
+	}
 }
 
 func TestServer_GetDeviceOptions(t *testing.T) {
@@ -308,40 +312,7 @@ func TestServer_UpdateDeviceOptions(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	tests := []struct {
-		name          string
-		seed          deviceSeed
-		body          *api.DeviceOptionsDto
-		wantForbidden bool
-		wantStored    string
-	}{
-		{
-			name:       "writes the custom name",
-			seed:       deviceSeed{name: "Renamed", customName: "Before"},
-			body:       &api.DeviceOptionsDto{CustomName: ptr("After")},
-			wantStored: "After",
-		},
-		{
-			name:       "leaves the stored name alone when omitted",
-			seed:       deviceSeed{name: "Untouched", customName: "Keep Me"},
-			body:       &api.DeviceOptionsDto{},
-			wantStored: "Keep Me",
-		},
-		{
-			name: "clears the stored name when explicitly empty",
-			seed: deviceSeed{name: "Cleared", customName: "Drop Me"},
-			body: &api.DeviceOptionsDto{CustomName: ptr("")},
-		},
-		{
-			name:          "refuses an empty body",
-			seed:          deviceSeed{name: "NoBody", customName: "Keep Me"},
-			body:          nil,
-			wantForbidden: true,
-			wantStored:    "Keep Me",
-		},
-	}
-
-	for _, test := range tests {
+	for _, test := range serverUpdateDeviceOptionsCases {
 		t.Run(test.name, func(t *testing.T) {
 			clientID := fixture.addDevice(t, test.seed)
 
@@ -383,11 +354,74 @@ func TestServer_UpdateDeviceOptions(t *testing.T) {
 
 }
 
+type serverUpdateDeviceOptionsCase struct {
+	name          string
+	seed          deviceSeed
+	body          *api.DeviceOptionsDto
+	wantForbidden bool
+	wantStored    string
+}
+
+var serverUpdateDeviceOptionsCases = []serverUpdateDeviceOptionsCase{
+	{
+		name:       "writes the custom name",
+		seed:       deviceSeed{name: "Renamed", customName: "Before"},
+		body:       &api.DeviceOptionsDto{CustomName: ptr("After")},
+		wantStored: "After",
+	},
+	{
+		name:       "leaves the stored name alone when omitted",
+		seed:       deviceSeed{name: "Untouched", customName: "Keep Me"},
+		body:       &api.DeviceOptionsDto{},
+		wantStored: "Keep Me",
+	},
+	{
+		name: "clears the stored name when explicitly empty",
+		seed: deviceSeed{name: "Cleared", customName: "Drop Me"},
+		body: &api.DeviceOptionsDto{CustomName: ptr("")},
+	},
+	{
+		name:          "refuses an empty body",
+		seed:          deviceSeed{name: "NoBody", customName: "Keep Me"},
+		body:          nil,
+		wantForbidden: true,
+		wantStored:    "Keep Me",
+	},
+}
+
 func TestServer_DeleteDevice(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	t.Run("removes the device and its sessions", func(t *testing.T) {
+	t.Run("removes the device and its sessions", removesTheDeviceAndItsSessions(fixture, ctx))
+
+	t.Run("succeeds for an unknown device", func(t *testing.T) {
+		response, err := fixture.server.DeleteDevice(ctx, api.DeleteDeviceRequestObject{
+			Params: api.DeleteDeviceParams{Id: &[]string{"missing"}},
+		})
+		if err != nil {
+			t.Fatalf("failed to delete the device: %v", err)
+		}
+
+		if _, ok := response.(api.DeleteDevice204Response); !ok {
+			t.Errorf("response = %T, want api.DeleteDevice204Response", response)
+		}
+	})
+
+	t.Run("rejects a request with no device ids", func(t *testing.T) {
+		response, err := fixture.server.DeleteDevice(ctx, api.DeleteDeviceRequestObject{})
+		if err != nil {
+			t.Fatalf("failed to delete the device: %v", err)
+		}
+
+		if _, ok := response.(api.DeleteDevice400JSONResponse); !ok {
+			t.Errorf("response = %T, want api.DeleteDevice400JSONResponse", response)
+		}
+	})
+}
+
+func removesTheDeviceAndItsSessions(fixture *fixture, ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
 		clientID := fixture.addDevice(t, deviceSeed{name: "Doomed"})
 		kept := fixture.addDevice(t, deviceSeed{name: "Kept"})
 		dean := fixture.addUser(t, "Dean")
@@ -427,31 +461,7 @@ func TestServer_DeleteDevice(t *testing.T) {
 		} else if !exists {
 			t.Error("the other device's session was deleted")
 		}
-	})
-
-	t.Run("succeeds for an unknown device", func(t *testing.T) {
-		response, err := fixture.server.DeleteDevice(ctx, api.DeleteDeviceRequestObject{
-			Params: api.DeleteDeviceParams{Id: &[]string{"missing"}},
-		})
-		if err != nil {
-			t.Fatalf("failed to delete the device: %v", err)
-		}
-
-		if _, ok := response.(api.DeleteDevice204Response); !ok {
-			t.Errorf("response = %T, want api.DeleteDevice204Response", response)
-		}
-	})
-
-	t.Run("rejects a request with no device ids", func(t *testing.T) {
-		response, err := fixture.server.DeleteDevice(ctx, api.DeleteDeviceRequestObject{})
-		if err != nil {
-			t.Fatalf("failed to delete the device: %v", err)
-		}
-
-		if _, ok := response.(api.DeleteDevice400JSONResponse); !ok {
-			t.Errorf("response = %T, want api.DeleteDevice400JSONResponse", response)
-		}
-	})
+	}
 }
 
 func isUpdateForbidden(response api.UpdateDeviceOptionsResponseObject) bool {

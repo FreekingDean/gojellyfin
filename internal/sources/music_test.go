@@ -15,40 +15,40 @@ import (
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
+var lidarrAnswers = map[string]any{
+	"/api/v1/tag": []map[string]any{{"id": 4, "label": "kids"}},
+	"/api/v1/artist": []map[string]any{
+		{
+			"id": 1, "foreignArtistId": "A-ONE", "artistName": "The Band", "tags": []int{4}, "genres": []string{"Rock"},
+			"images": []map[string]any{
+				{"coverType": "poster", "remoteUrl": "https://art/poster.jpg"},
+				{"coverType": "poster", "remoteUrl": "https://art/second.jpg"},
+				{"coverType": "fanart", "remoteUrl": "https://art/fanart.jpg"},
+			},
+		},
+		{"id": 2, "foreignArtistId": "", "artistName": "Unknown"},
+		{"id": 3, "foreignArtistId": "A-EMPTY", "artistName": "Nothing On Disk"},
+	},
+	"/api/v1/album": []map[string]any{
+		{
+			"id": 10, "foreignAlbumId": "R-ONE", "title": "First Album", "releaseDate": "2019-05-10T00:00:00Z",
+			"images": []map[string]any{{"coverType": "cover", "remoteUrl": "https://art/cover.jpg"}},
+		},
+		{"id": 11, "foreignAlbumId": "R-WANTED", "title": "Not Downloaded"},
+	},
+	"/api/v1/track": []map[string]any{
+		{"id": 100, "albumId": 10, "foreignTrackId": "T-ONE", "trackFileId": 1000, "trackNumber": "1", "mediumNumber": 1, "title": "Opener", "hasFile": true},
+		{"id": 101, "albumId": 10, "foreignTrackId": "T-TWO", "trackFileId": 1001, "trackNumber": "A2", "absoluteTrackNumber": 2, "mediumNumber": 1, "title": "Opener", "hasFile": true},
+		{"id": 102, "albumId": 11, "foreignTrackId": "T-THREE", "title": "Wanted", "hasFile": false},
+	},
+	"/api/v1/trackfile": []map[string]any{
+		{"id": 1000, "path": "/music/The Band/First Album/01.flac", "dateAdded": "2024-01-01T00:00:00Z"},
+		{"id": 1001, "path": "/music/The Band/First Album/02.flac", "dateAdded": "2024-01-02T00:00:00Z"},
+	},
+}
+
 func lidarrServer(t *testing.T, asked *[]string) *httptest.Server {
 	t.Helper()
-
-	answers := map[string]any{
-		"/api/v1/tag": []map[string]any{{"id": 4, "label": "kids"}},
-		"/api/v1/artist": []map[string]any{
-			{
-				"id": 1, "foreignArtistId": "A-ONE", "artistName": "The Band", "tags": []int{4}, "genres": []string{"Rock"},
-				"images": []map[string]any{
-					{"coverType": "poster", "remoteUrl": "https://art/poster.jpg"},
-					{"coverType": "poster", "remoteUrl": "https://art/second.jpg"},
-					{"coverType": "fanart", "remoteUrl": "https://art/fanart.jpg"},
-				},
-			},
-			{"id": 2, "foreignArtistId": "", "artistName": "Unknown"},
-			{"id": 3, "foreignArtistId": "A-EMPTY", "artistName": "Nothing On Disk"},
-		},
-		"/api/v1/album": []map[string]any{
-			{
-				"id": 10, "foreignAlbumId": "R-ONE", "title": "First Album", "releaseDate": "2019-05-10T00:00:00Z",
-				"images": []map[string]any{{"coverType": "cover", "remoteUrl": "https://art/cover.jpg"}},
-			},
-			{"id": 11, "foreignAlbumId": "R-WANTED", "title": "Not Downloaded"},
-		},
-		"/api/v1/track": []map[string]any{
-			{"id": 100, "albumId": 10, "foreignTrackId": "T-ONE", "trackFileId": 1000, "trackNumber": "1", "mediumNumber": 1, "title": "Opener", "hasFile": true},
-			{"id": 101, "albumId": 10, "foreignTrackId": "T-TWO", "trackFileId": 1001, "trackNumber": "A2", "absoluteTrackNumber": 2, "mediumNumber": 1, "title": "Opener", "hasFile": true},
-			{"id": 102, "albumId": 11, "foreignTrackId": "T-THREE", "title": "Wanted", "hasFile": false},
-		},
-		"/api/v1/trackfile": []map[string]any{
-			{"id": 1000, "path": "/music/The Band/First Album/01.flac", "dateAdded": "2024-01-01T00:00:00Z"},
-			{"id": 1001, "path": "/music/The Band/First Album/02.flac", "dateAdded": "2024-01-02T00:00:00Z"},
-		},
-	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		*asked = append(*asked, r.URL.Path+"?"+r.URL.RawQuery)
@@ -58,7 +58,7 @@ func lidarrServer(t *testing.T, asked *[]string) *httptest.Server {
 		}
 
 		if r.URL.Path == "/api/v1/artist/1" {
-			_ = json.NewEncoder(w).Encode(answers["/api/v1/artist"].([]map[string]any)[0])
+			_ = json.NewEncoder(w).Encode(lidarrAnswers["/api/v1/artist"].([]map[string]any)[0])
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, "/api/v1/artist/") {
@@ -66,7 +66,7 @@ func lidarrServer(t *testing.T, asked *[]string) *httptest.Server {
 			return
 		}
 
-		answer, ok := answers[r.URL.Path]
+		answer, ok := lidarrAnswers[r.URL.Path]
 		if !ok || (r.URL.Path != "/api/v1/artist" && r.URL.Path != "/api/v1/tag" && r.URL.Query().Get("artistId") != "1") {
 			_ = json.NewEncoder(w).Encode([]any{})
 			return
@@ -114,6 +114,18 @@ func TestTitles_Lidarr(t *testing.T) {
 		}
 	}
 
+	titlesLidarrTree(t, byKey)
+
+	for _, path := range asked {
+		if path[:8] != "/api/v1/" {
+			t.Errorf("asked %q, want everything under Lidarr's v1 api", path)
+		}
+	}
+}
+
+func titlesLidarrTree(t *testing.T, byKey map[string]Title) {
+	t.Helper()
+
 	artist := byKey["artist:mb:a-one"]
 	if artist.Kind != itemmodel.KindMusicArtist || !artist.Tagged || artist.ParentKey != "" {
 		t.Errorf("artist = %+v, want a tagged top-level MusicArtist", artist)
@@ -145,12 +157,6 @@ func TestTitles_Lidarr(t *testing.T) {
 	}
 	if second.Index == nil || *second.Index != 2 || second.ParentIndex == nil || *second.ParentIndex != 1 {
 		t.Errorf("track number = %v disc %v, want the absolute number 2 on disc 1 for a side-lettered track", second.Index, second.ParentIndex)
-	}
-
-	for _, path := range asked {
-		if path[:8] != "/api/v1/" {
-			t.Errorf("asked %q, want everything under Lidarr's v1 api", path)
-		}
 	}
 }
 

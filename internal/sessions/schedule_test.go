@@ -29,13 +29,7 @@ func TestService_ByToken_AccessSchedule(t *testing.T) {
 	saturdayEvening := []entities.AccessSchedule{{DayOfWeek: "Saturday", StartHour: 16, EndHour: 20}}
 	lateNights := []entities.AccessSchedule{{DayOfWeek: "Everyday", StartHour: 22, EndHour: 2}}
 
-	tests := []struct {
-		name          string
-		schedules     []entities.AccessSchedule
-		administrator bool
-		at            time.Time
-		admitted      bool
-	}{
+	tests := []serviceByTokenAccessScheduleCase{
 		{"no schedule admits any time", nil, false, at(monday, 3, 0), true},
 		{"an empty schedule admits any time", []entities.AccessSchedule{}, false, at(monday, 3, 0), true},
 		{"inside a window", saturdayEvening, false, at(saturday, 17, 30), true},
@@ -58,39 +52,51 @@ func TestService_ByToken_AccessSchedule(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			fixture := newFixture(t)
-			ctx := context.Background()
-
-			policy := fixture.client.UserPolicy.Create().SetUserID(fixture.user.ID).SetIsAdministrator(test.administrator)
-			if test.schedules != nil {
-				policy.SetAccessSchedules(test.schedules)
-			}
-			if err := policy.Exec(ctx); err != nil {
-				t.Fatalf("failed to create the policy: %v", err)
-			}
-
-			token := uuid.NewString()
-			if err := fixture.service.insert(ctx, fixture.user.ID, token, fixture.device, nil); err != nil {
-				t.Fatalf("failed to create the session: %v", err)
-			}
-
-			fixture.service.now = func() time.Time { return test.at }
-			_, err := fixture.service.ByToken(ctx, token)
-			if test.admitted && err != nil {
-				t.Errorf("err = %v, want the session admitted", err)
-			}
-			if !test.admitted && !store.IsNotFound(err) {
-				t.Errorf("err = %v, want not found outside the schedule", err)
-			}
-
-			_, err = fixture.service.Create(ctx, fixture.user.ID, uuid.NewString(), fixture.device)
-			if test.admitted && err != nil {
-				t.Errorf("sign in err = %v, want it admitted", err)
-			}
-			if !test.admitted && !errors.Is(err, ErrOutsideSchedule) {
-				t.Errorf("sign in err = %v, want ErrOutsideSchedule", err)
-			}
-		})
+		t.Run(test.name, testService_ByToken_AccessScheduleCase(test))
 	}
+}
+
+func testService_ByToken_AccessScheduleCase(test serviceByTokenAccessScheduleCase) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newFixture(t)
+		ctx := context.Background()
+
+		policy := fixture.client.UserPolicy.Create().SetUserID(fixture.user.ID).SetIsAdministrator(test.administrator)
+		if test.schedules != nil {
+			policy.SetAccessSchedules(test.schedules)
+		}
+		if err := policy.Exec(ctx); err != nil {
+			t.Fatalf("failed to create the policy: %v", err)
+		}
+
+		token := uuid.NewString()
+		if err := fixture.service.insert(ctx, fixture.user.ID, token, fixture.device, nil); err != nil {
+			t.Fatalf("failed to create the session: %v", err)
+		}
+
+		fixture.service.now = func() time.Time { return test.at }
+		_, err := fixture.service.ByToken(ctx, token)
+		if test.admitted && err != nil {
+			t.Errorf("err = %v, want the session admitted", err)
+		}
+		if !test.admitted && !store.IsNotFound(err) {
+			t.Errorf("err = %v, want not found outside the schedule", err)
+		}
+
+		_, err = fixture.service.Create(ctx, fixture.user.ID, uuid.NewString(), fixture.device)
+		if test.admitted && err != nil {
+			t.Errorf("sign in err = %v, want it admitted", err)
+		}
+		if !test.admitted && !errors.Is(err, ErrOutsideSchedule) {
+			t.Errorf("sign in err = %v, want ErrOutsideSchedule", err)
+		}
+	}
+}
+
+type serviceByTokenAccessScheduleCase struct {
+	name          string
+	schedules     []entities.AccessSchedule
+	administrator bool
+	at            time.Time
+	admitted      bool
 }

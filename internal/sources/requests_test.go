@@ -110,7 +110,55 @@ func TestSubmit_Radarr(t *testing.T) {
 	ctx := context.Background()
 	wanted := Wanted{Name: "The Matrix", TmdbID: 603}
 
-	t.Run("adds what the instance looked up, where the source says requests go", func(t *testing.T) {
+	t.Run("adds what the instance looked up, where the source says requests go", addsWhatTheInstanceLookedUpWhereTheSourceSaysRequestsGo(ctx, wanted))
+
+	t.Run("a source naming no tag asks for none and sends none", func(t *testing.T) {
+		radarr := newInstance(t, map[string]any{
+			"GET /api/v3/movie/lookup/tmdb": map[string]any{"tmdbId": 603},
+			"POST /api/v3/movie":            map[string]any{"id": 12},
+		})
+
+		if err := submitter().Submit(ctx, radarr.source(KindRadarr, ""), wanted); err != nil {
+			t.Fatalf("failed to submit: %v", err)
+		}
+		if got := radarr.bodies()[0]["tags"].([]any); len(got) != 0 {
+			t.Errorf("tags = %v, want none", got)
+		}
+		if slices.Contains(radarr.requests(), "GET /api/v3/tag") {
+			t.Error("the tags were read for a source that names none")
+		}
+	})
+
+	t.Run("a title the instance already manages is not added again", func(t *testing.T) {
+		radarr := newInstance(t, map[string]any{
+			"GET /api/v3/movie/lookup/tmdb": map[string]any{"id": 12, "tmdbId": 603},
+		})
+
+		if err := submitter().Submit(ctx, radarr.source(KindRadarr, ""), wanted); err != nil {
+			t.Fatalf("failed to submit: %v", err)
+		}
+		if posted := radarr.bodies(); len(posted) != 0 {
+			t.Errorf("posted = %v, want nothing", posted)
+		}
+	})
+
+	for _, test := range submitRadarrCases {
+		t.Run(test.name, func(t *testing.T) {
+			radarr := newInstance(t, test.answers)
+
+			err := submitter().Submit(ctx, test.source(radarr), wanted)
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Errorf("err = %v, want one naming %q", err, test.want)
+			}
+			if posted := radarr.bodies(); len(posted) > 0 && test.want != "400" {
+				t.Errorf("posted = %v, want nothing", posted)
+			}
+		})
+	}
+}
+
+func addsWhatTheInstanceLookedUpWhereTheSourceSaysRequestsGo(ctx context.Context, wanted Wanted) func(*testing.T) {
+	return func(t *testing.T) {
 		radarr := newInstance(t, map[string]any{
 			"GET /api/v3/movie/lookup/tmdb": map[string]any{"tmdbId": 603, "title": "The Matrix", "year": 1999, "titleSlug": "the-matrix-603"},
 			"GET /api/v3/tag":               tags,
@@ -145,91 +193,49 @@ func TestSubmit_Radarr(t *testing.T) {
 		if got := body["addOptions"].(map[string]any)["searchForMovie"]; got != true {
 			t.Errorf("searchForMovie = %v, want a search started", got)
 		}
-	})
+	}
+}
 
-	t.Run("a source naming no tag asks for none and sends none", func(t *testing.T) {
-		radarr := newInstance(t, map[string]any{
+type submitRadarrCase struct {
+	name    string
+	answers map[string]any
+	source  func(*instance) Source
+	want    string
+}
+
+var submitRadarrCases = []submitRadarrCase{
+	{
+		name:    "a tag the instance does not define",
+		answers: map[string]any{"GET /api/v3/movie/lookup/tmdb": map[string]any{"tmdbId": 603}, "GET /api/v3/tag": tags},
+		source:  func(i *instance) Source { return i.source(KindRadarr, "4k") },
+		want:    `has no tag "4k"`,
+	},
+	{
+		name:    "a title the instance cannot look up",
+		answers: map[string]any{},
+		source:  func(i *instance) Source { return i.source(KindRadarr, "") },
+		want:    "404",
+	},
+	{
+		name: "an add the instance refuses",
+		answers: map[string]any{
 			"GET /api/v3/movie/lookup/tmdb": map[string]any{"tmdbId": 603},
-			"POST /api/v3/movie":            map[string]any{"id": 12},
-		})
-
-		if err := submitter().Submit(ctx, radarr.source(KindRadarr, ""), wanted); err != nil {
-			t.Fatalf("failed to submit: %v", err)
-		}
-		if got := radarr.bodies()[0]["tags"].([]any); len(got) != 0 {
-			t.Errorf("tags = %v, want none", got)
-		}
-		if slices.Contains(radarr.requests(), "GET /api/v3/tag") {
-			t.Error("the tags were read for a source that names none")
-		}
-	})
-
-	t.Run("a title the instance already manages is not added again", func(t *testing.T) {
-		radarr := newInstance(t, map[string]any{
-			"GET /api/v3/movie/lookup/tmdb": map[string]any{"id": 12, "tmdbId": 603},
-		})
-
-		if err := submitter().Submit(ctx, radarr.source(KindRadarr, ""), wanted); err != nil {
-			t.Fatalf("failed to submit: %v", err)
-		}
-		if posted := radarr.bodies(); len(posted) != 0 {
-			t.Errorf("posted = %v, want nothing", posted)
-		}
-	})
-
-	failures := []struct {
-		name    string
-		answers map[string]any
-		source  func(*instance) Source
-		want    string
-	}{
-		{
-			name:    "a tag the instance does not define",
-			answers: map[string]any{"GET /api/v3/movie/lookup/tmdb": map[string]any{"tmdbId": 603}, "GET /api/v3/tag": tags},
-			source:  func(i *instance) Source { return i.source(KindRadarr, "4k") },
-			want:    `has no tag "4k"`,
+			"POST /api/v3/movie":            http.StatusBadRequest,
 		},
-		{
-			name:    "a title the instance cannot look up",
-			answers: map[string]any{},
-			source:  func(i *instance) Source { return i.source(KindRadarr, "") },
-			want:    "404",
-		},
-		{
-			name: "an add the instance refuses",
-			answers: map[string]any{
-				"GET /api/v3/movie/lookup/tmdb": map[string]any{"tmdbId": 603},
-				"POST /api/v3/movie":            http.StatusBadRequest,
-			},
-			source: func(i *instance) Source { return i.source(KindRadarr, "") },
-			want:   "400",
-		},
-		{
-			name:    "a source that takes no requests",
-			answers: map[string]any{},
-			source: func(i *instance) Source {
-				source := i.source(KindRadarr, "")
-				source.RequestProfileID = nil
+		source: func(i *instance) Source { return i.source(KindRadarr, "") },
+		want:   "400",
+	},
+	{
+		name:    "a source that takes no requests",
+		answers: map[string]any{},
+		source: func(i *instance) Source {
+			source := i.source(KindRadarr, "")
+			source.RequestProfileID = nil
 
-				return source
-			},
-			want: "takes no requests",
+			return source
 		},
-	}
-
-	for _, test := range failures {
-		t.Run(test.name, func(t *testing.T) {
-			radarr := newInstance(t, test.answers)
-
-			err := submitter().Submit(ctx, test.source(radarr), wanted)
-			if err == nil || !strings.Contains(err.Error(), test.want) {
-				t.Errorf("err = %v, want one naming %q", err, test.want)
-			}
-			if posted := radarr.bodies(); len(posted) > 0 && test.want != "400" {
-				t.Errorf("posted = %v, want nothing", posted)
-			}
-		})
-	}
+		want: "takes no requests",
+	},
 }
 
 func TestSubmit_Sonarr(t *testing.T) {

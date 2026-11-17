@@ -281,7 +281,46 @@ func TestServer_GetItemImage_Library(t *testing.T) {
 	}))
 	t.Cleanup(cdn.Close)
 
-	t.Run("serves a card of the library's posters", func(t *testing.T) {
+	t.Run("serves a card of the library's posters", servesACardOfTheLibrarysPosters(cdn))
+
+	t.Run("tells the client not to keep a card missing a poster", tellsTheClientNotToKeepACardMissingAPoster(cdn))
+
+	t.Run("answers 404 for a library with no posters", func(t *testing.T) {
+		fixture := newFixture(t)
+
+		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
+			ItemId:    fixture.libraryID,
+			ImageType: api.Primary,
+		})
+		if err != nil {
+			t.Fatalf("failed to get the image: %v", err)
+		}
+
+		if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
+			t.Errorf("response = %T, want a 404", response)
+		}
+	})
+
+	t.Run("answers 404 for a library image that is not its primary", func(t *testing.T) {
+		fixture := newFixture(t)
+		fixture.store(t, imagemodel.KindPrimary, 0, cdn.URL+"/poster.png", "postertag")
+
+		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
+			ItemId:    fixture.libraryID,
+			ImageType: api.Backdrop,
+		})
+		if err != nil {
+			t.Fatalf("failed to get the image: %v", err)
+		}
+
+		if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
+			t.Errorf("response = %T, want a 404", response)
+		}
+	})
+}
+
+func servesACardOfTheLibrarysPosters(cdn *httptest.Server) func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.store(t, imagemodel.KindPrimary, 0, cdn.URL+"/poster.png", "postertag")
 
@@ -310,9 +349,11 @@ func TestServer_GetItemImage_Library(t *testing.T) {
 		if _, _, err := image.Decode(recorder.Body); err != nil {
 			t.Errorf("failed to decode the card: %v", err)
 		}
-	})
+	}
+}
 
-	t.Run("tells the client not to keep a card missing a poster", func(t *testing.T) {
+func tellsTheClientNotToKeepACardMissingAPoster(cdn *httptest.Server) func(*testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.store(t, imagemodel.KindPrimary, 0, cdn.URL+"/poster.png", "postertag")
 
@@ -358,40 +399,7 @@ func TestServer_GetItemImage_Library(t *testing.T) {
 		if got := recorder.Header().Get("Cache-Control"); got != "no-store" {
 			t.Errorf("cache control = %q, want no-store", got)
 		}
-	})
-
-	t.Run("answers 404 for a library with no posters", func(t *testing.T) {
-		fixture := newFixture(t)
-
-		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
-			ItemId:    fixture.libraryID,
-			ImageType: api.Primary,
-		})
-		if err != nil {
-			t.Fatalf("failed to get the image: %v", err)
-		}
-
-		if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
-			t.Errorf("response = %T, want a 404", response)
-		}
-	})
-
-	t.Run("answers 404 for a library image that is not its primary", func(t *testing.T) {
-		fixture := newFixture(t)
-		fixture.store(t, imagemodel.KindPrimary, 0, cdn.URL+"/poster.png", "postertag")
-
-		response, err := fixture.server.GetItemImage(context.Background(), api.GetItemImageRequestObject{
-			ItemId:    fixture.libraryID,
-			ImageType: api.Backdrop,
-		})
-		if err != nil {
-			t.Fatalf("failed to get the image: %v", err)
-		}
-
-		if _, ok := response.(api.GetItemImage404JSONResponse); !ok {
-			t.Errorf("response = %T, want a 404", response)
-		}
-	})
+	}
 }
 
 type everyone struct{}

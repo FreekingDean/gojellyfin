@@ -93,11 +93,7 @@ func TestService_Report(t *testing.T) {
 		{Source: sources.Source{Name: "Lidarr"}},
 	}
 
-	tests := []struct {
-		name    string
-		service *Service
-		want    map[string]Status
-	}{
+	tests := []serviceReportCase{
 		{
 			name:    "nothing configured",
 			service: New(client(t), stubJobs{}, stubSwitch(false), stubSignOn{}, stubEncoder{}, downloaders, stubSwitch(false), stubCatalogue{}),
@@ -129,28 +125,38 @@ func TestService_Report(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			report, err := test.service.Report(context.Background())
-			if err != nil {
-				t.Fatalf("Report = %v", err)
-			}
-
-			found := statuses(report)
-			for name, want := range test.want {
-				if found[name].Status != want {
-					t.Errorf("%s = %s (%s), want %s", name, found[name].Status, found[name].Detail, want)
-				}
-			}
-
-			library := report.Library
-			if library.Movies != 4 || library.Shows != 2 || library.Episodes != 9 || library.Unprobed != 1 || library.Unidentified != 2 {
-				t.Errorf("library = %+v", library)
-			}
-			if library.RefreshedAt == nil || !library.RefreshedAt.Equal(synced) {
-				t.Errorf("refreshed = %v, want %v", library.RefreshedAt, synced)
-			}
-		})
+		t.Run(test.name, testService_ReportCase(test, synced))
 	}
+}
+
+func testService_ReportCase(test serviceReportCase, synced time.Time) func(*testing.T) {
+	return func(t *testing.T) {
+		report, err := test.service.Report(context.Background())
+		if err != nil {
+			t.Fatalf("Report = %v", err)
+		}
+
+		found := statuses(report)
+		for name, want := range test.want {
+			if found[name].Status != want {
+				t.Errorf("%s = %s (%s), want %s", name, found[name].Status, found[name].Detail, want)
+			}
+		}
+
+		library := report.Library
+		if library.Movies != 4 || library.Shows != 2 || library.Episodes != 9 || library.Unprobed != 1 || library.Unidentified != 2 {
+			t.Errorf("library = %+v", library)
+		}
+		if library.RefreshedAt == nil || !library.RefreshedAt.Equal(synced) {
+			t.Errorf("refreshed = %v, want %v", library.RefreshedAt, synced)
+		}
+	}
+}
+
+type serviceReportCase struct {
+	name    string
+	service *Service
+	want    map[string]Status
 }
 
 func TestService_Report_SignOnNamesTheIssuersHost(t *testing.T) {

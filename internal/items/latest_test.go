@@ -70,49 +70,7 @@ func TestService_LatestItems(t *testing.T) {
 	fixture.added(t, unaired, *day(1))
 	fixture.added(t, movie, *day(10))
 
-	tests := []struct {
-		name       string
-		query      LatestQuery
-		wantNames  []string
-		wantCounts []int32
-	}{
-		{
-			name:       "added orders by the file's date and groups a series holding several",
-			query:      LatestQuery{Viewer: Everyone, Order: LatestAdded},
-			wantNames:  []string{"Ended", "Airing", "Movie"},
-			wantCounts: []int32{2, 2, 0},
-		},
-		{
-			name:       "aired orders by premiere, leaves out what has not aired and keeps a lone episode as itself",
-			query:      LatestQuery{Viewer: Everyone, Order: LatestAired},
-			wantNames:  []string{"Airing E1", "Movie", "Ended"},
-			wantCounts: []int32{0, 0, 2},
-		},
-		{
-			name:       "newest only answers the newest episode of a series rather than the series",
-			query:      LatestQuery{Viewer: Everyone, Order: LatestAired, NewestOnly: true},
-			wantNames:  []string{"Airing E1", "Movie", "Ended E2"},
-			wantCounts: []int32{0, 0, 0},
-		},
-		{
-			name:       "ungrouped answers every episode",
-			query:      LatestQuery{Viewer: Everyone, Order: LatestAired, Ungrouped: true},
-			wantNames:  []string{"Airing E1", "Movie", "Ended E2", "Ended E1"},
-			wantCounts: []int32{0, 0, 0, 0},
-		},
-		{
-			name:       "the limit counts groups rather than episodes",
-			query:      LatestQuery{Viewer: Everyone, Order: LatestAdded, Limit: 1},
-			wantNames:  []string{"Ended"},
-			wantCounts: []int32{2},
-		},
-		{
-			name:  "the zero viewer sees nothing",
-			query: LatestQuery{Order: LatestAdded, Viewer: Viewer{}},
-		},
-	}
-
-	for _, test := range tests {
+	for _, test := range serviceLatestItemsCases {
 		t.Run(test.name, func(t *testing.T) {
 			query := test.query
 			query.LibraryID = &fixture.libraryID
@@ -131,4 +89,48 @@ func TestService_LatestItems(t *testing.T) {
 			}
 		})
 	}
+}
+
+type serviceLatestItemsCase struct {
+	name       string
+	query      LatestQuery
+	wantNames  []string
+	wantCounts []int32
+}
+
+var serviceLatestItemsCases = []serviceLatestItemsCase{
+	{
+		name:       "added orders by the file's date and groups a series holding several",
+		query:      LatestQuery{Viewer: Everyone, Order: LatestAdded},
+		wantNames:  []string{"Ended", "Airing", "Movie"},
+		wantCounts: []int32{2, 2, 0},
+	},
+	{
+		name:       "aired orders by premiere, leaves out what has not aired and keeps a lone episode as itself",
+		query:      LatestQuery{Viewer: Everyone, Order: LatestAired},
+		wantNames:  []string{"Airing E1", "Movie", "Ended"},
+		wantCounts: []int32{0, 0, 2},
+	},
+	{
+		name:       "newest only answers the newest episode of a series rather than the series",
+		query:      LatestQuery{Viewer: Everyone, Order: LatestAired, NewestOnly: true},
+		wantNames:  []string{"Airing E1", "Movie", "Ended E2"},
+		wantCounts: []int32{0, 0, 0},
+	},
+	{
+		name:       "ungrouped answers every episode",
+		query:      LatestQuery{Viewer: Everyone, Order: LatestAired, Ungrouped: true},
+		wantNames:  []string{"Airing E1", "Movie", "Ended E2", "Ended E1"},
+		wantCounts: []int32{0, 0, 0, 0},
+	},
+	{
+		name:       "the limit counts groups rather than episodes",
+		query:      LatestQuery{Viewer: Everyone, Order: LatestAdded, Limit: 1},
+		wantNames:  []string{"Ended"},
+		wantCounts: []int32{2},
+	},
+	{
+		name:  "the zero viewer sees nothing",
+		query: LatestQuery{Order: LatestAdded, Viewer: Viewer{}},
+	},
 }
