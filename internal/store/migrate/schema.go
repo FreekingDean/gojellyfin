@@ -87,7 +87,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "number", Type: field.TypeInt32, Unique: true},
 		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "order", Type: field.TypeEnum, Enums: []string{"Shuffle", "Sequential"}, Default: "Shuffle"},
+		{Name: "order", Type: field.TypeEnum, Enums: []string{"Shuffle", "Sequential", "Interleave"}, Default: "Shuffle"},
 		{Name: "seed", Type: field.TypeInt64},
 		{Name: "epoch", Type: field.TypeTime},
 	}

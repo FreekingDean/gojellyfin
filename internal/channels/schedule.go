@@ -1,7 +1,9 @@
 package channels
 
 import (
+	"cmp"
 	"math/rand/v2"
+	"slices"
 	"sort"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 const tick = 100 * time.Nanosecond
 
 type Slot struct {
+	Root     uuid.UUID
 	ItemID   uuid.UUID
 	SourceID uuid.UUID
 	Length   time.Duration
@@ -41,8 +44,52 @@ func NewSchedule(order Order, seed int64, epoch time.Time, slots []Slot) Schedul
 			schedule.cycle += slot.Length
 		}
 	}
+	if order == channelmodel.OrderInterleave {
+		schedule.slots = interleaved(schedule.slots)
+	}
 
 	return schedule
+}
+
+type turn struct {
+	slot  Slot
+	group int
+	index int
+	count int
+}
+
+func interleaved(slots []Slot) []Slot {
+	groups := map[uuid.UUID]int{}
+	counts := []int{}
+	turns := make([]turn, len(slots))
+	for i, slot := range slots {
+		group, seen := groups[slot.Root]
+		if !seen {
+			group = len(counts)
+			groups[slot.Root] = group
+			counts = append(counts, 0)
+		}
+		turns[i] = turn{slot: slot, group: group, index: counts[group]}
+		counts[group]++
+	}
+
+	for i := range turns {
+		turns[i].count = counts[turns[i].group]
+	}
+	slices.SortStableFunc(turns, func(a, b turn) int {
+		if byShare := cmp.Compare(int64(2*a.index+1)*int64(b.count), int64(2*b.index+1)*int64(a.count)); byShare != 0 {
+			return byShare
+		}
+
+		return cmp.Compare(a.group, b.group)
+	})
+
+	ordered := make([]Slot, len(turns))
+	for i, each := range turns {
+		ordered[i] = each.slot
+	}
+
+	return ordered
 }
 
 func (s Schedule) Empty() bool {

@@ -208,7 +208,7 @@ func (s *Service) validate(ctx context.Context, definition Definition) error {
 		return fmt.Errorf("%w: a channel needs a name", ErrInvalid)
 	}
 	if channelmodel.OrderValidator(definition.Order) != nil {
-		return fmt.Errorf("%w: order is Shuffle or Sequential", ErrInvalid)
+		return fmt.Errorf("%w: order is Shuffle, Sequential or Interleave", ErrInvalid)
 	}
 	if len(definition.ItemIDs) == 0 {
 		return fmt.Errorf("%w: a channel needs something to air", ErrInvalid)
@@ -305,6 +305,7 @@ func (s *Service) slots(ctx context.Context, roots []uuid.UUID) ([]Slot, error) 
 
 		root := rootOf(leaf, roots)
 		byRoot[root] = append(byRoot[root], Slot{
+			Root:     root,
 			ItemID:   leaf.ID,
 			SourceID: file.ID,
 			Length:   time.Duration(*file.RunTimeTicks) * tick,
