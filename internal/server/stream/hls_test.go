@@ -203,11 +203,11 @@ func TestHandler_HLS(t *testing.T) {
 
 	t.Run("a start cuts the playlists from the window holding it", aStartCutsThePlaylistsFromTheWindowHoldingIt(fixture, query))
 
-	t.Run("a copied picture without a keyframe index has no playlist", func(t *testing.T) {
+	t.Run("a copied picture whose keyframe index is gone is encoded instead", func(t *testing.T) {
 		id := fixture.addFilm(t, "aac", false)
-		listed := fixture.hls(t, fixture.handler.ServeMediaPlaylist, "/Videos/"+id.String()+"/main.m3u8?"+query, map[string]string{"itemId": id.String()})
-		if listed.Code != http.StatusNotFound {
-			t.Errorf("status = %d, want %d", listed.Code, http.StatusNotFound)
+
+		if frames := count(t, fixture.play(t, id, mainPlaylist, query), "h264"); frames != filmSeconds*filmRate {
+			t.Errorf("%d frames, want %d", frames, filmSeconds*filmRate)
 		}
 	})
 
