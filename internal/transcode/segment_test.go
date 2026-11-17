@@ -226,6 +226,34 @@ func TestSegments_CopiedPictureJoinsBackToBack(t *testing.T) {
 	assertFrames(t, path)
 }
 
+func reorderedSource(t *testing.T) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), "reordered.mkv")
+	generate := exec.Command("ffmpeg", "-nostdin", "-loglevel", "error",
+		"-f", "lavfi", "-i", "testsrc2=size=320x180:rate=30000/1001:duration=30",
+		"-c:v", "libx264", "-preset", "ultrafast", "-bf", "3", "-b_strategy", "0",
+		"-x264-params", "open-gop=1:b-pyramid=normal:keyint=60:min-keyint=60:scenecut=0",
+		path)
+	if output, err := generate.CombinedOutput(); err != nil {
+		t.Skipf("this ffmpeg cannot build the fixture: %v: %s", err, output)
+	}
+
+	return path
+}
+
+func TestSegments_ReorderedPictureJoinsBackToBack(t *testing.T) {
+	source := reorderedSource(t)
+	keyframes, err := ffmpeg.New().Keyframes(context.Background(), source)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	windows := CopiedWindows(keyframes, 30*ticksPerSecond)
+	path := played(t, NewEncoder(4, 0), Segment{Path: source, Track: TrackVideo, Codec: "h264"}, windows)
+	assertEveryFrame(t, path, source, ntscStep)
+}
+
 func TestSegments_SnappedPictureJoinsBackToBack(t *testing.T) {
 	source := seamSource(t, 4*seamRate, "-c:a", "ac3")
 	keyframes, err := ffmpeg.New().Keyframes(context.Background(), source)
