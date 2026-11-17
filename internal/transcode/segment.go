@@ -196,7 +196,7 @@ func (s Segment) ContentType() string {
 }
 
 func (s Segment) Args() []string {
-	args := []string{"-nostdin", "-loglevel", "error", "-copyts"}
+	args := []string{"-nostdin", "-loglevel", "error", "-copyts", "-start_at_zero"}
 	if s.Track == TrackAudio && s.Encode {
 		args = append(args, "-noaccurate_seek")
 	}
@@ -232,7 +232,7 @@ func (s Segment) movflags() string {
 }
 
 func (s Segment) seek() int64 {
-	if s.Track == TrackVideo {
+	if s.Track == TrackVideo && !s.Encode {
 		return s.Window.Start
 	}
 
