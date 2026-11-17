@@ -79,7 +79,7 @@ func TestTransport(t *testing.T) {
 			t.Error("the trace was not propagated")
 		}
 		for _, attribute := range span.Attributes {
-			if value := attribute.Value.Emit(); value == "secret" || value == server.URL+"/movie?api_key=secret" {
+			if value := attribute.Value.String(); value == "secret" || value == server.URL+"/movie?api_key=secret" {
 				t.Errorf("%s carries the query string", attribute.Key)
 			}
 		}
@@ -146,7 +146,7 @@ func TestQueries(t *testing.T) {
 			t.Fatalf("no query span among %v", recorder.Names())
 		}
 		for _, attribute := range span.Attributes {
-			if attribute.Value.Emit() == "secret" {
+			if attribute.Value.String() == "secret" {
 				t.Errorf("%s carries an argument", attribute.Key)
 			}
 		}
@@ -195,7 +195,7 @@ func TestDescribe(t *testing.T) {
 
 	values := map[string]string{}
 	for _, attribute := range described.Attributes() {
-		values[string(attribute.Key)] = attribute.Value.Emit()
+		values[string(attribute.Key)] = attribute.Value.String()
 	}
 	want := map[string]string{"service.name": "gojellyfin-worker", "k8s.pod.ip": "10.0.0.1", "deployment.environment.name": "home lab"}
 	for key, value := range want {
@@ -204,7 +204,7 @@ func TestDescribe(t *testing.T) {
 		}
 	}
 
-	if named, _ := describe(env.Tracing{}); named.Attributes()[0].Value.Emit() != serviceName {
+	if named, _ := describe(env.Tracing{}); named.Attributes()[0].Value.String() != serviceName {
 		t.Errorf("an unnamed service is %v, want %s", named.Attributes(), serviceName)
 	}
 
