@@ -92,11 +92,17 @@ func (h *Handler) serveLivePlaylist(w http.ResponseWriter, r *http.Request, sche
 		return
 	}
 
+	lengths := h.pieceLengths(r, playlist, pieces)
+	longest := step
+	for _, length := range lengths {
+		longest = max(longest, length)
+	}
+
 	query := r.URL.RawQuery
 	var b strings.Builder
 	b.WriteString("#EXTM3U\n")
 	fmt.Fprintf(&b, "#EXT-X-VERSION:%d\n", playlistVersion)
-	fmt.Fprintf(&b, "#EXT-X-TARGETDURATION:%d\n", (step+time.Second-1)/time.Second)
+	fmt.Fprintf(&b, "#EXT-X-TARGETDURATION:%d\n", (longest+time.Second-1)/time.Second)
 	fmt.Fprintf(&b, "#EXT-X-MEDIA-SEQUENCE:%d\n", pieces[0].Sequence)
 	fmt.Fprintf(&b, "#EXT-X-DISCONTINUITY-SEQUENCE:%d\n", pieces[0].Number)
 	b.WriteString("#EXT-X-INDEPENDENT-SEGMENTS\n")
@@ -108,7 +114,7 @@ func (h *Handler) serveLivePlaylist(w http.ResponseWriter, r *http.Request, sche
 			fmt.Fprintf(&b, "#EXT-X-MAP:URI=\"hls1/%s%s/%d.%s?%s\"\n", playlist, headerSuffix, piece.Sequence, segmentContainer, query)
 		}
 		fmt.Fprintf(&b, "#EXT-X-PROGRAM-DATE-TIME:%s\n", piece.Begins.UTC().Format(programLayout))
-		fmt.Fprintf(&b, "#EXTINF:%.6f,\n", piece.Length().Seconds())
+		fmt.Fprintf(&b, "#EXTINF:%.6f,\n", lengths[i].Seconds())
 		fmt.Fprintf(&b, "hls1/%s/%d.%s?%s\n", playlist, piece.Sequence, segmentContainer, query)
 	}
 
@@ -141,9 +147,14 @@ func (h *Handler) serveLiveSegment(w http.ResponseWriter, r *http.Request, sched
 	if playlist == mainPlaylist {
 		segment.Track = transcode.TrackVideo
 		segment.Codec = codecOf(items.Picture(source))
-		segment.MaxHeight = transcode.MaxHeight
-		segment.Transfer = items.HDRTransfer(source)
-		windows = transcode.EncodedWindows(runtime)
+		copied := false
+		windows, copied = h.pictureWindows(r, source, runtime)
+		if copied {
+			segment.Encode = false
+		} else {
+			segment.MaxHeight = transcode.MaxHeight
+			segment.Transfer = items.HDRTransfer(source)
+		}
 	} else {
 		segment.Track = transcode.TrackAudio
 		segment.Codec = codecOf(items.Sound(source))
@@ -185,6 +196,85 @@ func (h *Handler) aired(w http.ResponseWriter, r *http.Request, piece channels.P
 	w.WriteHeader(http.StatusNotFound)
 
 	return nil, "", false
+}
+
+func (h *Handler) pieceLengths(r *http.Request, playlist string, pieces []channels.Piece) []time.Duration {
+	lengths := make([]time.Duration, len(pieces))
+	windows := map[int64][]transcode.Window{}
+	for i, piece := range pieces {
+		lengths[i] = piece.Length()
+		if playlist != mainPlaylist {
+			continue
+		}
+
+		snapped, known := windows[piece.Number]
+		if !known {
+			snapped = h.snapped(r, piece)
+			windows[piece.Number] = snapped
+		}
+		if piece.Index < len(snapped) {
+			lengths[i] = time.Duration(snapped[piece.Index].Length()) * tick
+		}
+	}
+
+	return lengths
+}
+
+func (h *Handler) snapped(r *http.Request, piece channels.Piece) []transcode.Window {
+	sources, err := h.items.MediaSources(r.Context(), piece.ItemID)
+	if err != nil {
+		return nil
+	}
+
+	for _, source := range sources {
+		if source.ID == piece.SourceID {
+			windows, copied := h.pictureWindows(r, source, int64(piece.Slot.Length/tick))
+			if copied {
+				return windows
+			}
+		}
+	}
+
+	return nil
+}
+
+func (h *Handler) pictureWindows(r *http.Request, source *items.MediaSource, runtime int64) ([]transcode.Window, bool) {
+	if !copiesLive(source) {
+		return transcode.EncodedWindows(runtime), false
+	}
+
+	keyframes, err := h.items.Keyframes(r.Context(), source.ID)
+	if err != nil {
+		log.Printf("failed to read the keyframes of %s: %v", source.ID, err)
+		return transcode.EncodedWindows(runtime), false
+	}
+
+	windows, ok := transcode.SnappedWindows(keyframes, runtime)
+	if !ok {
+		return transcode.EncodedWindows(runtime), false
+	}
+
+	return windows, true
+}
+
+var liveProfiles = []string{"baseline", "constrained baseline", "main", "high"}
+
+func copiesLive(source *items.MediaSource) bool {
+	picture := items.Picture(source)
+	switch {
+	case picture == nil || !strings.EqualFold(picture.Codec, transcode.VideoCodec):
+		return false
+	case !slices.Contains(liveProfiles, strings.ToLower(picture.Profile)):
+		return false
+	case picture.PixelFormat != "" && picture.PixelFormat != "yuv420p":
+		return false
+	case picture.Height == nil || *picture.Height > transcode.MaxHeight:
+		return false
+	case picture.IsInterlaced || picture.IsAnamorphic:
+		return false
+	}
+
+	return items.HDRTransfer(source) == ""
 }
 
 func liveStep(playlist string) (time.Duration, bool) {

@@ -209,3 +209,40 @@ func readAll(t *testing.T, path string) []byte {
 
 	return body
 }
+
+func TestHandler_LiveCopiesAPictureItCanCutOnKeyframes(t *testing.T) {
+	fixture := newFixture(t)
+	fixture.withEncoder(t)
+	query := "api_key=" + fixture.token
+	id, _ := fixture.tuneTo(t, fixture.addFilm(t, "aac", true), fixture.addFilm(t, "ac3", true))
+
+	listed := fixture.hls(t, fixture.handler.ServeMediaPlaylist, "/Videos/"+id.String()+"/main.m3u8?"+query, map[string]string{"itemId": id.String()})
+	if listed.Code != http.StatusOK {
+		t.Fatalf("status = %d: %s", listed.Code, listed.Body)
+	}
+	body := listed.Body.String()
+	if !strings.Contains(body, "#EXTINF:8.000000,") || !strings.Contains(body, "#EXT-X-TARGETDURATION:8\n") {
+		t.Fatalf("pieces are not cut on the film's keyframes four seconds apart:\n%s", body)
+	}
+
+	header := ""
+	longest := 0
+	for _, line := range lines(body) {
+		if after, found := strings.CutPrefix(line, "#EXT-X-MAP:URI=\""); found {
+			header = fixture.fetch(t, id, strings.TrimSuffix(after, "\""))
+			continue
+		}
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		path := filepath.Join(t.TempDir(), "piece.mp4")
+		if err := os.WriteFile(path, append(readAll(t, header), readAll(t, fixture.fetch(t, id, line))...), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		longest = max(longest, count(t, path, "h264"))
+	}
+	if longest != 8*filmRate {
+		t.Errorf("the longest piece holds %d frames, want the %d of eight copied seconds", longest, 8*filmRate)
+	}
+}
