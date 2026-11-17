@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"os/exec"
 	"slices"
@@ -34,7 +35,7 @@ func (ffmpeg *FFMpeg) Keyframes(ctx context.Context, path string) ([]int64, erro
 	cmd := exec.CommandContext(ctx, ffmpeg.probe,
 		"-v", "error",
 		"-select_streams", "V:0",
-		"-show_entries", "packet=pts_time,flags",
+		"-show_entries", "packet=pts_time,flags:stream=start_time",
 		"-of", "csv=p=0",
 		path,
 	)
@@ -50,14 +51,7 @@ func (ffmpeg *FFMpeg) Keyframes(ctx context.Context, path string) ([]int64, erro
 		return nil, fmt.Errorf("failed to start ffprobe: %w", err)
 	}
 
-	keyframes := []int64{}
-	lines := bufio.NewScanner(output)
-	for lines.Scan() {
-		if ticks, ok := keyframe(lines.Text()); ok {
-			keyframes = append(keyframes, ticks)
-		}
-	}
-	scanned := lines.Err()
+	keyframes, scanned := fromStart(output)
 
 	if err := cmd.Wait(); err != nil {
 		span.Failed()
@@ -75,11 +69,29 @@ func (ffmpeg *FFMpeg) Keyframes(ctx context.Context, path string) ([]int64, erro
 		return nil, scanned
 	}
 
-	slices.Sort(keyframes)
-	keyframes = slices.Compact(keyframes)
 	span.Set(tracing.Int("ffmpeg.keyframes", len(keyframes)))
 
 	return keyframes, nil
+}
+
+func fromStart(output io.Reader) ([]int64, error) {
+	keyframes := []int64{}
+	var start int64
+	lines := bufio.NewScanner(output)
+	for lines.Scan() {
+		if ticks, ok := keyframe(lines.Text()); ok {
+			keyframes = append(keyframes, ticks)
+		} else if ticks, ok := startTime(lines.Text()); ok {
+			start = ticks
+		}
+	}
+
+	for i := range keyframes {
+		keyframes[i] -= start
+	}
+	slices.Sort(keyframes)
+
+	return slices.Compact(keyframes), lines.Err()
 }
 
 func keyframe(line string) (int64, bool) {
@@ -88,7 +100,20 @@ func keyframe(line string) (int64, bool) {
 		return 0, false
 	}
 
-	seconds, err := strconv.ParseFloat(pts, 64)
+	return toTicks(pts)
+}
+
+func startTime(line string) (int64, bool) {
+	line = strings.TrimSpace(line)
+	if strings.Contains(line, ",") {
+		return 0, false
+	}
+
+	return toTicks(line)
+}
+
+func toTicks(text string) (int64, bool) {
+	seconds, err := strconv.ParseFloat(text, 64)
 	if err != nil || math.IsNaN(seconds) || math.IsInf(seconds, 0) {
 		return 0, false
 	}

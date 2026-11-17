@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -76,5 +77,17 @@ func TestKeyframe(t *testing.T) {
 		if ticks != want.ticks || ok != want.ok {
 			t.Errorf("keyframe(%q) = %d, %v, want %d, %v", line, ticks, ok, want.ticks, want.ok)
 		}
+	}
+}
+
+func TestFromStart(t *testing.T) {
+	output := "1.500000,K__,\n1.533000,___,\n5.500000,K__,\n1.500000\n"
+
+	keyframes, err := fromStart(strings.NewReader(output))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []int64{0, 4 * ticksPerSecond}; !slices.Equal(keyframes, want) {
+		t.Errorf("keyframes = %v, want %v", keyframes, want)
 	}
 }

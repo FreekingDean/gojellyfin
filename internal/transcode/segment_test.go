@@ -19,6 +19,7 @@ import (
 const (
 	seamSeconds = 40
 	seamRate    = 24
+	ntscStep    = 1001.0 / 30000
 )
 
 func seamSource(t *testing.T, gop int, audio ...string) string {
@@ -138,6 +139,31 @@ func assertFrames(t *testing.T, path string) {
 			t.Errorf("frame %d follows frame %d by %.4fs, want %.4fs", i, i-1, gap, step)
 		}
 	}
+}
+
+func assertEveryFrame(t *testing.T, path, source string, step float64) {
+	t.Helper()
+
+	frames := timestamps(t, path, "frame=pts_time")
+	if want := videoFrames(t, source); len(frames) != want {
+		t.Errorf("decoded %d frames, want %d", len(frames), want)
+	}
+	for i := 1; i < len(frames); i++ {
+		if gap := frames[i][0] - frames[i-1][0]; math.Abs(gap-step) > step/4 {
+			t.Errorf("frame %d follows frame %d by %.4fs, want %.4fs", i, i-1, gap, step)
+		}
+	}
+}
+
+func videoFrames(t *testing.T, path string) int {
+	t.Helper()
+
+	output, err := exec.Command("ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "frame=pts_time", "-of", "csv=p=0", path).Output()
+	if err != nil {
+		t.Fatalf("failed to count the frames: %v", err)
+	}
+
+	return strings.Count(string(output), "\n")
 }
 
 func assertPackets(t *testing.T, path string) int {
@@ -313,17 +339,7 @@ func TestSegments_EncodedPictureKeepsEveryFrameAtNTSCRate(t *testing.T) {
 
 	windows := EncodedWindows(seamSeconds * ticksPerSecond)
 	path := played(t, NewEncoder(4, 0), Segment{Path: source, Track: TrackVideo, Encode: true}, windows)
-
-	frames := timestamps(t, path, "frame=pts_time")
-	if want := len(timestamps(t, source, "frame=pts_time")); len(frames) != want {
-		t.Errorf("decoded %d frames, want %d", len(frames), want)
-	}
-	step := 1001.0 / 30000
-	for i := 1; i < len(frames); i++ {
-		if gap := frames[i][0] - frames[i-1][0]; math.Abs(gap-step) > step/4 {
-			t.Errorf("frame %d follows frame %d by %.4fs, want %.4fs", i, i-1, gap, step)
-		}
-	}
+	assertEveryFrame(t, path, source, ntscStep)
 
 	flags, err := exec.Command("ffprobe", "-v", "error", "-show_entries", "packet=flags", "-of", "csv=p=0", path).Output()
 	if err != nil {
@@ -389,6 +405,79 @@ func TestSegments_HeaderIsTheSameFromEverySegment(t *testing.T) {
 		later.Window = Window{Start: 24 * ticksPerSecond, End: 32 * ticksPerSecond}
 		if !bytes.Equal(cut(t, encoder, first, true), cut(t, encoder, later, true)) {
 			t.Errorf("%s: the header of a later segment differs from the first", name)
+		}
+	}
+}
+
+func transportSource(t *testing.T, video ...string) string {
+	t.Helper()
+
+	if !Available() {
+		t.Fatal("ffmpeg is not on PATH")
+	}
+
+	path := filepath.Join(t.TempDir(), "late.ts")
+	generate := exec.Command("ffmpeg", append(append([]string{"-nostdin", "-loglevel", "error",
+		"-f", "lavfi", "-i", "testsrc2=size=320x240:rate=30000/1001:duration=" + strconv.Itoa(seamSeconds),
+		"-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000:duration=" + strconv.Itoa(seamSeconds),
+	}, video...), "-c:a", "ac3", path)...)
+	if output, err := generate.CombinedOutput(); err != nil {
+		t.Skipf("this ffmpeg cannot build the fixture: %v: %s", err, output)
+	}
+
+	starts := timestamps(t, path, "format=start_time")
+	if len(starts) != 1 || starts[0][0] < 1 {
+		t.Fatalf("the fixture starts at %v, want a second or more in", starts)
+	}
+
+	return path
+}
+
+func TestSegments_LateStartingFileJoinsBackToBack(t *testing.T) {
+	runtime := int64(seamSeconds * ticksPerSecond)
+	encoded := transportSource(t, "-c:v", "mpeg2video", "-bf", "2")
+	copied := transportSource(t, "-c:v", "libx264", "-preset", "ultrafast", "-bf", "3", "-g", "120", "-keyint_min", "120", "-sc_threshold", "0")
+
+	t.Run("encoded picture", lateEncodedPicture(encoded, runtime))
+	t.Run("copied picture", lateCopiedPicture(copied, runtime))
+	t.Run("encoded sound", lateSound(encoded, runtime, Segment{Path: encoded, Track: TrackAudio, Encode: true}))
+	t.Run("copied sound", lateSound(encoded, runtime, Segment{Path: encoded, Track: TrackAudio, Codec: "ac3"}))
+}
+
+func lateEncodedPicture(source string, runtime int64) func(*testing.T) {
+	return func(t *testing.T) {
+		path := played(t, NewEncoder(4, 0), Segment{Path: source, Track: TrackVideo, Encode: true}, EncodedWindows(runtime))
+		assertEveryFrame(t, path, source, ntscStep)
+	}
+}
+
+func lateCopiedPicture(source string, runtime int64) func(*testing.T) {
+	return func(t *testing.T) {
+		keyframes, err := ffmpeg.New().Keyframes(context.Background(), source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(keyframes) == 0 || keyframes[0] > ticksPerSecond/10 {
+			t.Fatalf("keyframes = %v, want them counted from the start of the file", keyframes)
+		}
+
+		path := played(t, NewEncoder(4, 0), Segment{Path: source, Track: TrackVideo, Codec: "h264"}, CopiedWindows(keyframes, runtime))
+		assertEveryFrame(t, path, source, ntscStep)
+	}
+}
+
+func lateSound(source string, runtime int64, template Segment) func(*testing.T) {
+	return func(t *testing.T) {
+		path := played(t, NewEncoder(4, 0), template, AudioWindows(runtime))
+		packets := timestamps(t, path, "packet=pts_time")
+		if len(packets) == 0 || packets[0][0] > 0.1 {
+			t.Fatalf("the sound starts at %v, want the start", packets[:min(len(packets), 1)])
+		}
+		assertPackets(t, path)
+
+		joined, reference := len(samples(t, path)), len(samples(t, source))
+		if math.Abs(float64(joined-reference)) > 2*audioFrame {
+			t.Errorf("the joined sound is %d samples, want about %d", joined, reference)
 		}
 	}
 }
