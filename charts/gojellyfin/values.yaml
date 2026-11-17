@@ -95,6 +95,11 @@ trustedProxies: []
 # Europe/London. Empty is UTC.
 timeZone: ""
 
+# TRANSCODER_MAX_SOURCE_HEIGHT. The tallest file whose picture is ever
+# encoded. A taller copy still plays when it needs no encode; otherwise a
+# shorter copy is chosen, and a title with none cannot play.
+transcoderMaxSourceHeight: 1080
+
 # CORS_ORIGINS. Off allows only https://apps.jellyfin.org, the Google Cast
 # receiver, which the server always allows. Enabled adds one origin and needs
 # it — the chart refuses to render a restriction that would

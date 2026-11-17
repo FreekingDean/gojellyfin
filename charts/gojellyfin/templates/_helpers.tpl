@@ -185,6 +185,8 @@ IfNotPresent
   value: {{ include "gojellyfin.transcoderJobs" .workload | quote }}
 - name: TRANSCODER_STALL_TIMEOUT
   value: {{ .workload.transcoderStallTimeout | quote }}
+- name: TRANSCODER_MAX_SOURCE_HEIGHT
+  value: {{ .root.Values.transcoderMaxSourceHeight | quote }}
 {{- include "gojellyfin.sharedEnv" .root }}
 {{- end }}
 
