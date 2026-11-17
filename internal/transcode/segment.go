@@ -122,6 +122,16 @@ func AudioWindows(runtime int64) []Window {
 	return grid(runtime, AudioSegmentTicks)
 }
 
+func Trim(windows []Window, from int64) []Window {
+	for i, window := range windows {
+		if window.End > from {
+			return windows[i:]
+		}
+	}
+
+	return windows[len(windows)-min(len(windows), 1):]
+}
+
 func grid(runtime, length int64) []Window {
 	var windows []Window
 	for start := int64(0); start < runtime || start == 0; start += length {

@@ -215,6 +215,7 @@ func (h *Handler) rendition(w http.ResponseWriter, r *http.Request, playlist str
 		return rendition{}, false
 	}
 
+	chosen.windows = transcode.Trim(chosen.windows, fromTicks(r))
 	if len(chosen.windows) == 0 || chosen.codec == "" {
 		log.Printf("no segments for %s: the file has no %s to cut", r.URL.Path, playlist)
 		w.WriteHeader(http.StatusNotFound)

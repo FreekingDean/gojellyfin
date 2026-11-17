@@ -234,7 +234,34 @@ type Standing = Schemas['PlaybackOverride'];
 type Person = { id: string; name: string };
 type Found = { id: string; name: string; detail: string };
 
-const mockedOverride: Standing = { Enabled: true, ItemId: 'm1', ItemName: 'An Invented Feature', From: '2027-04-01T00:00:00Z', Until: '2027-04-02T00:00:00Z', UserIds: [] };
+const mockedOverride: Standing = { Enabled: true, ItemId: 'm1', ItemName: 'An Invented Feature', From: '2027-04-01T00:00:00Z', Until: '2027-04-02T00:00:00Z', UserIds: [], StartTicks: 0 };
+
+const ticksPerSecond = 10_000_000;
+
+function clock(ticks: number | undefined): string {
+  const seconds = Math.floor((ticks ?? 0) / ticksPerSecond);
+  if (seconds <= 0) {
+    return '';
+  }
+  const pad = (value: number) => String(value).padStart(2, '0');
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  return (hours > 0 ? hours + ':' + pad(minutes) : String(minutes)) + ':' + pad(seconds % 60);
+}
+
+function ticksOf(text: string): number | undefined {
+  const trimmed = text.trim();
+  if (trimmed === '') {
+    return 0;
+  }
+  const parts = trimmed.split(':');
+  if (parts.length > 3 || parts.some((part) => !/^\d+$/.test(part))) {
+    return undefined;
+  }
+
+  return parts.reduce((total, part) => total * 60 + Number(part), 0) * ticksPerSecond;
+}
 
 function local(stamp: string | null | undefined): string {
   if (!stamp) {
@@ -256,6 +283,7 @@ function Override() {
   const [search, setSearch] = useState('');
   const [found, setFound] = useState<Found[]>([]);
   const [failure, setFailure] = useState('');
+  const [start, setStart] = useState(clock(mock.mocked ? mockedOverride.StartTicks : 0));
 
   async function load() {
     const [override, users] = await Promise.all([api.GET('/GoJellyfin/PlaybackOverride'), api.GET('/Users')]);
@@ -264,6 +292,7 @@ function Override() {
       return;
     }
     setStanding(override.data);
+    setStart(clock(override.data.StartTicks));
     setPeople(users.data.map((user) => ({ id: user.Id ?? '', name: user.Name ?? '' })));
   }
 
@@ -318,7 +347,13 @@ function Override() {
       setStanding(next);
       return;
     }
-    const body = { Enabled: next.Enabled, ItemId: next.ItemId, From: next.From, Until: next.Until, UserIds: next.UserIds };
+    const startTicks = ticksOf(start);
+    if (startTicks === undefined) {
+      setFailure('Write the start as minutes and seconds, like 12:30, or hours too, like 1:02:03.');
+      return;
+    }
+    setFailure('');
+    const body = { Enabled: next.Enabled, ItemId: next.ItemId, From: next.From, Until: next.Until, UserIds: next.UserIds, StartTicks: startTicks };
     const { response, error } = await api.PUT('/GoJellyfin/PlaybackOverride', { body });
     if (response.ok) {
       notify(next.Enabled ? 'The override is on. Plays started from now on are swapped while the window is open.' : 'The override is off. Plays go back to what was picked from the next request.');
@@ -372,6 +407,11 @@ function Override() {
             </ul>
           </div>
         )}
+        <label>
+          Starts at
+          <input placeholder="From the beginning" value={start} onInput={(event) => setStart(event.currentTarget.value)} />
+          <span class="line small muted">How far into the title it begins, like 12:30 or 1:02:03.</span>
+        </label>
         <label>
           From
           <input type="datetime-local" value={local(standing.From)} onInput={(event) => change({ From: stamped(event.currentTarget.value) })} />

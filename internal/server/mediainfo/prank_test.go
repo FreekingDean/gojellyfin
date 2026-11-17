@@ -18,12 +18,17 @@ import (
 type standIn struct {
 	catalogue *items.Service
 	id        uuid.UUID
+	start     int64
 }
 
 func (s standIn) Swap(ctx context.Context, _ uuid.UUID, _ *items.Item) (*items.Item, bool, error) {
 	item, err := s.catalogue.ItemByID(ctx, items.Everyone, s.id)
 
 	return item, true, err
+}
+
+func (s standIn) Start(context.Context) (int64, error) {
+	return s.start, nil
 }
 
 func TestServer_GetPostedPlaybackInfo_PlansTheStandIn(t *testing.T) {
@@ -58,4 +63,58 @@ func TestServer_GetPostedPlaybackInfo_PlansTheStandIn(t *testing.T) {
 	if got := apiutil.Deref(source.TranscodingSubProtocol); got != api.MediaStreamProtocolHls {
 		t.Errorf("transcoding protocol = %q, want the stand-in's AC-3 planned as a conversion", got)
 	}
+}
+
+func TestServer_GetPostedPlaybackInfo_StartsTheStandInAtItsStart(t *testing.T) {
+	chrome := profileFrom(t, chromeProfile)
+	user := uuid.New()
+	session := &sessions.Session{ID: uuid.New(), UserID: &user}
+	ctx := auth.ContextWithSession(auth.ContextWithAuthorization(context.Background(), auth.Authorization{Token: "the-token"}), session)
+
+	plan := func(t *testing.T, container, codec string, start int64) api.MediaSourceInfo {
+		t.Helper()
+
+		fixture := newFixture(t)
+		picked := fixture.addRip(t, itemmodel.KindEpisode, "mkv", "aac")
+		played := fixture.addRip(t, itemmodel.KindMovie, container, codec)
+		fixture.server.pranks = standIn{catalogue: fixture.server.items, id: played, start: start}
+		fixture.server.sessions = sessions.New(fixture.client, nil)
+
+		response, err := fixture.server.GetPostedPlaybackInfo(ctx, api.GetPostedPlaybackInfoRequestObject{ItemId: picked, JSONBody: firstPlay(&chrome)})
+		if err != nil {
+			t.Fatalf("failed to answer playback info: %v", err)
+		}
+
+		return (*response.(api.GetPostedPlaybackInfo200JSONResponse).MediaSources)[0]
+	}
+
+	t.Run("a converted stand-in's playlist starts at the start", func(t *testing.T) {
+		source := plan(t, "mkv", "ac3", 30_000_000)
+		if url := apiutil.Deref(source.TranscodingUrl); !strings.Contains(url, "fromTicks=30000000") {
+			t.Errorf("transcoding url = %q, want the playlist cut from the start", url)
+		}
+	})
+
+	t.Run("a stand-in the client plays untouched is segmented so it can start part way", func(t *testing.T) {
+		source := plan(t, "mp4", "aac", 30_000_000)
+		if got := apiutil.Deref(source.TranscodingSubProtocol); got != api.MediaStreamProtocolHls {
+			t.Errorf("transcoding protocol = %q, want hls so the start can be cut", got)
+		}
+		if apiutil.Deref(source.SupportsDirectPlay) {
+			t.Error("direct play offered, want the client kept off the whole file")
+		}
+		if url := apiutil.Deref(source.TranscodingUrl); !strings.Contains(url, "fromTicks=30000000") {
+			t.Errorf("transcoding url = %q, want the playlist cut from the start", url)
+		}
+	})
+
+	t.Run("no start leaves an untouched stand-in to direct play", func(t *testing.T) {
+		source := plan(t, "mp4", "aac", 0)
+		if !apiutil.Deref(source.SupportsDirectPlay) {
+			t.Error("direct play refused, want the file played whole when nothing is cut")
+		}
+		if url := apiutil.Deref(source.TranscodingUrl); strings.Contains(url, "fromTicks") {
+			t.Errorf("transcoding url = %q, want nothing cut", url)
+		}
+	})
 }

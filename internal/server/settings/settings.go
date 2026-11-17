@@ -9,6 +9,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/prank"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
+	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/shelves"
 )
 
@@ -98,11 +99,12 @@ func (s *Server) GoJellyfinGetPlaybackOverride(
 	}
 
 	answer := api.PlaybackOverride{
-		Enabled: override.Enabled,
-		ItemId:  override.ItemID,
-		From:    override.From,
-		Until:   override.Until,
-		UserIds: override.UserIDs,
+		Enabled:    override.Enabled,
+		ItemId:     override.ItemID,
+		From:       override.From,
+		Until:      override.Until,
+		UserIds:    override.UserIDs,
+		StartTicks: apiutil.Ptr(override.StartTicks),
 	}
 	if answer.UserIds == nil {
 		answer.UserIds = []uuid.UUID{}
@@ -123,11 +125,12 @@ func (s *Server) GoJellyfinUpdatePlaybackOverride(
 	}
 
 	err := s.pranks.Save(ctx, prank.Override{
-		Enabled: request.Body.Enabled,
-		ItemID:  request.Body.ItemId,
-		From:    request.Body.From,
-		Until:   request.Body.Until,
-		UserIDs: request.Body.UserIds,
+		Enabled:    request.Body.Enabled,
+		ItemID:     request.Body.ItemId,
+		From:       request.Body.From,
+		Until:      request.Body.Until,
+		UserIDs:    request.Body.UserIds,
+		StartTicks: apiutil.Deref(request.Body.StartTicks),
 	})
 	switch {
 	case errors.Is(err, prank.ErrInvalid):

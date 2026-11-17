@@ -106,8 +106,13 @@ func streamURL(root string, itemID uuid.UUID, plan items.Plan, token, session st
 	return fmt.Sprintf("/%s/%s/stream.%s?%s", root, itemID, plan.Container, query.Encode())
 }
 
-func playlistURL(itemID uuid.UUID, plan items.Plan, token, session string, startTicks int64) string {
-	return fmt.Sprintf("/Videos/%s/master.m3u8?%s", itemID, instruction(plan, token, session, startTicks).Encode())
+func playlistURL(itemID uuid.UUID, plan items.Plan, token, session string, startTicks, from int64) string {
+	query := instruction(plan, token, session, startTicks)
+	if from > 0 {
+		query.Set("fromTicks", strconv.FormatInt(from, 10))
+	}
+
+	return fmt.Sprintf("/Videos/%s/master.m3u8?%s", itemID, query.Encode())
 }
 
 func instruction(plan items.Plan, token, session string, startTicks int64) url.Values {
