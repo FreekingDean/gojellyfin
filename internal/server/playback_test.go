@@ -86,10 +86,8 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 		t.Fatalf("failed to read the environment: %v", err)
 	}
 
-	connection := storetest.Open(t)
-
 	ctx := context.Background()
-	client := connection.Client()
+	client := storetest.Client(t)
 	unique := t.Name() + "-" + uuid.NewString()
 
 	itemService := items.New(client)
@@ -115,32 +113,19 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 
 	t.Cleanup(newPlaybackFixtureCleanup(t, library, client, ctx, libraryService, sessionService, token, unique, user))
 
-	downloader, err := client.Source.Create().
-		SetName(t.Name() + "-" + uuid.NewString()).
-		SetURL("http://" + uuid.NewString() + ".invalid").
-		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(downloadermodel.KindRadarr).
-		Save(context.Background())
-	if err != nil {
-		t.Fatalf("failed to create the source: %v", err)
+	fixture := &playbackFixture{
+		client:   client,
+		sessions: sessionService,
+		info:     mediainfo.New(itemService, allLibraries{}, sessionService, nil, nil),
+		streams:  stream.New(sessionService, itemService, filesystem.New(config), transcode.NewEncoder(2, 0), reports.New(client, nil), nil, nil),
+		items:    itemService,
+		library:  library.ID,
+		token:    token,
+		paths:    map[string]string{},
 	}
-	t.Cleanup(func() {
-		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
-			t.Errorf("failed to delete the source: %v", err)
-		}
-	})
+	fixture.downloader = fixture.newDownloader(t)
 
-	return &playbackFixture{
-		downloader: downloader.ID,
-		client:     client,
-		sessions:   sessionService,
-		info:       mediainfo.New(itemService, allLibraries{}, sessionService, nil, nil),
-		streams:    stream.New(sessionService, itemService, filesystem.New(config), transcode.NewEncoder(2, 0), reports.New(client, nil), nil, nil),
-		items:      itemService,
-		library:    library.ID,
-		token:      token,
-		paths:      map[string]string{},
-	}
+	return fixture
 }
 
 func newPlaybackFixtureCleanup(t *testing.T, library *libraries.Library, client *store.Client, ctx context.Context, libraryService *libraries.Service, sessionService *sessions.Service, token string, unique string, user *users.User) func() {
@@ -796,6 +781,52 @@ var playbackIsShownOnTheSessionCases = []playbackIsShownOnTheSessionCase{
 	},
 }
 
+func (f *playbackFixture) shown(t *testing.T, id uuid.UUID) *api.SessionInfoDto {
+	t.Helper()
+
+	ctx := context.Background()
+	mine, err := f.sessions.ByToken(ctx, f.token)
+	if err != nil {
+		t.Fatalf("failed to read the session: %v", err)
+	}
+	if err := f.sessions.Playing(ctx, mine.ID, "", sessions.Playback{ItemID: id, PlayMethod: "Transcode"}); err != nil {
+		t.Fatalf("failed to report playing: %v", err)
+	}
+
+	listed, err := f.sessions.List(ctx)
+	if err != nil {
+		t.Fatalf("failed to list sessions: %v", err)
+	}
+	var shown *api.SessionInfoDto
+	for _, session := range listed {
+		if session.ID == mine.ID {
+			shown = dto.SessionDto(session)
+		}
+	}
+	if shown == nil {
+		t.Fatal("the session is not listed")
+	}
+
+	return shown
+}
+
+func shownTranscoding(t *testing.T, info *api.TranscodingInfo, tc playbackIsShownOnTheSessionCase) {
+	t.Helper()
+
+	if info == nil {
+		t.Fatal("transcoding info is missing")
+	}
+	if apiutil.Deref(info.IsVideoDirect) != apiutil.Deref(tc.shown.IsVideoDirect) || apiutil.Deref(info.IsAudioDirect) != apiutil.Deref(tc.shown.IsAudioDirect) {
+		t.Errorf("video direct %v, audio direct %v, want %v and %v", apiutil.Deref(info.IsVideoDirect), apiutil.Deref(info.IsAudioDirect), apiutil.Deref(tc.shown.IsVideoDirect), apiutil.Deref(tc.shown.IsAudioDirect))
+	}
+	if apiutil.Deref(info.VideoCodec) != apiutil.Deref(tc.shown.VideoCodec) || apiutil.Deref(info.AudioCodec) != apiutil.Deref(tc.shown.AudioCodec) {
+		t.Errorf("codecs = %q and %q, want %q and %q", apiutil.Deref(info.VideoCodec), apiutil.Deref(info.AudioCodec), apiutil.Deref(tc.shown.VideoCodec), apiutil.Deref(tc.shown.AudioCodec))
+	}
+	if !slices.Equal(apiutil.Deref(info.TranscodeReasons), tc.reasons) {
+		t.Errorf("reasons = %v, want %v", apiutil.Deref(info.TranscodeReasons), tc.reasons)
+	}
+}
+
 func testPlaybackIsShownOnTheSessionCase(tc playbackIsShownOnTheSessionCase) func(*testing.T) {
 	return func(t *testing.T) {
 		fixture := newPlaybackFixture(t)
@@ -807,29 +838,7 @@ func testPlaybackIsShownOnTheSessionCase(tc playbackIsShownOnTheSessionCase) fun
 		}
 		fixture.offer(t, id, chromeProfile, 0)
 
-		ctx := context.Background()
-		mine, err := fixture.sessions.ByToken(ctx, fixture.token)
-		if err != nil {
-			t.Fatalf("failed to read the session: %v", err)
-		}
-		if err := fixture.sessions.Playing(ctx, mine.ID, "", sessions.Playback{ItemID: id, PlayMethod: "Transcode"}); err != nil {
-			t.Fatalf("failed to report playing: %v", err)
-		}
-
-		listed, err := fixture.sessions.List(ctx)
-		if err != nil {
-			t.Fatalf("failed to list sessions: %v", err)
-		}
-		var shown *api.SessionInfoDto
-		for _, session := range listed {
-			if session.ID == mine.ID {
-				shown = dto.SessionDto(session)
-			}
-		}
-		if shown == nil {
-			t.Fatal("the session is not listed")
-		}
-
+		shown := fixture.shown(t, id)
 		if got := apiutil.Deref(shown.PlayState.PlayMethod); got != tc.method {
 			t.Errorf("play method = %q, want %q", got, tc.method)
 		}
@@ -850,18 +859,7 @@ func testPlaybackIsShownOnTheSessionCase(tc playbackIsShownOnTheSessionCase) fun
 			}
 			return
 		}
-		if info == nil {
-			t.Fatal("transcoding info is missing")
-		}
-		if apiutil.Deref(info.IsVideoDirect) != apiutil.Deref(tc.shown.IsVideoDirect) || apiutil.Deref(info.IsAudioDirect) != apiutil.Deref(tc.shown.IsAudioDirect) {
-			t.Errorf("video direct %v, audio direct %v, want %v and %v", apiutil.Deref(info.IsVideoDirect), apiutil.Deref(info.IsAudioDirect), apiutil.Deref(tc.shown.IsVideoDirect), apiutil.Deref(tc.shown.IsAudioDirect))
-		}
-		if apiutil.Deref(info.VideoCodec) != apiutil.Deref(tc.shown.VideoCodec) || apiutil.Deref(info.AudioCodec) != apiutil.Deref(tc.shown.AudioCodec) {
-			t.Errorf("codecs = %q and %q, want %q and %q", apiutil.Deref(info.VideoCodec), apiutil.Deref(info.AudioCodec), apiutil.Deref(tc.shown.VideoCodec), apiutil.Deref(tc.shown.AudioCodec))
-		}
-		if !slices.Equal(apiutil.Deref(info.TranscodeReasons), tc.reasons) {
-			t.Errorf("reasons = %v, want %v", apiutil.Deref(info.TranscodeReasons), tc.reasons)
-		}
+		shownTranscoding(t, info, tc)
 	}
 }
 

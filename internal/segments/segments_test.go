@@ -111,6 +111,21 @@ func (f *fixture) episodes(t *testing.T, dir string, starts []float64) ([]uuid.U
 	return episodes, files
 }
 
+func (f *fixture) chapterIntro(t *testing.T, ctx context.Context, file uuid.UUID) {
+	t.Helper()
+
+	err := f.client.MediaSegment.Create().
+		SetItemSourceID(file).
+		SetKind(segmentmodel.KindIntro).
+		SetOrigin(segmentmodel.OriginChapter).
+		SetStartTicks(30_000_000).
+		SetEndTicks(330_000_000).
+		Exec(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func (f *fixture) waiting(t *testing.T, ctx context.Context) bool {
 	t.Helper()
 
@@ -133,17 +148,7 @@ func TestService_DetectSeason(t *testing.T) {
 	starts := []float64{12.37, 5.5, 3.21}
 	episodes, files := f.episodes(t, dir, starts)
 
-	err := f.client.MediaSegment.Create().
-		SetItemSourceID(files[2]).
-		SetKind(segmentmodel.KindIntro).
-		SetOrigin(segmentmodel.OriginChapter).
-		SetStartTicks(30_000_000).
-		SetEndTicks(330_000_000).
-		Exec(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	f.chapterIntro(t, ctx, files[2])
 	if !f.waiting(t, ctx) {
 		t.Fatal("the season is not waiting for intro detection")
 	}

@@ -153,53 +153,64 @@ func TestRun(t *testing.T) {
 			require.NoError(t, err)
 
 			t.Run("reports what it carried and what it could not", reportsWhatItCarriedAndWhatItCouldNot(report))
-
 			t.Run("a user keeps their id, their password and their policy", aUserKeepsTheirIdTheirPasswordAndTheirPolicy(h, ctx))
-
 			t.Run("a token Jellyfin issued signs in as the same user", aTokenJellyfinIssuedSignsInAsTheSameUser(signedIn, ctx))
-
-			t.Run("a signed out device and a skipped user's device stay behind", func(t *testing.T) {
-				for _, token := range []string{fixture.AliceOldToken, fixture.CarolToken} {
-					_, err := signedIn.ByToken(ctx, token)
-					require.Error(t, err)
-				}
-			})
-
-			t.Run("an api key is carried", func(t *testing.T) {
-				key, err := h.client.ApiKey.Query().Where(apikeymodel.AccessToken(fixture.APIKey)).Only(ctx)
-				require.NoError(t, err)
-				require.Equal(t, "Homepage", key.AppName)
-			})
-
-			t.Run("watch state lands on the title its provider id names", func(t *testing.T) {
-				movie := h.state(t, aliceID, items.MovieKey(fixture.MovieTmdb))
-				require.True(t, movie.Played)
-				require.Equal(t, int32(2), movie.PlayCount)
-				require.Equal(t, time.Date(2024, 5, 1, 20, 15, 0, 0, time.UTC), movie.LastPlayedAt.UTC())
-
-				series := h.state(t, aliceID, items.SeriesKey(fixture.SeriesTmdb))
-				require.True(t, series.IsFavorite)
-				require.InDelta(t, 8.5, *series.Rating, 0.001)
-
-				require.True(t, h.state(t, aliceID, items.SeasonKey(fixture.SeriesTmdb, 1)).Played)
-				require.Equal(t, int32(3), h.state(t, aliceID, items.EpisodeKey(fixture.SeriesTmdb, 1, 2)).PlayCount)
-				require.Equal(t, int64(500000000), h.state(t, bobID, items.MovieKey(fixture.MovieTmdb)).PlaybackPositionTicks)
-			})
-
-			t.Run("a title with no tmdb id is found by another provider's", func(t *testing.T) {
-				require.True(t, h.state(t, aliceID, items.MovieKey(fixture.ImdbOnlyTmdb)).IsFavorite)
-				episode := h.state(t, aliceID, items.EpisodeKey(fixture.ImdbSeriesTmdb, 2, 5))
-				require.Equal(t, int64(fixture.EpisodePosition), episode.PlaybackPositionTicks)
-			})
-
-			t.Run("a title with no provider id is found by its path", func(t *testing.T) {
-				require.Equal(t, int64(fixture.ResumePosition), h.state(t, aliceID, items.MovieKey(pathOnlyTmdb)).PlaybackPositionTicks)
-			})
-
+			t.Run("a signed out device and a skipped user's device stay behind", aSignedOutDeviceAndASkippedUsersDeviceStayBehind(signedIn, ctx))
+			t.Run("an api key is carried", anAPIKeyIsCarried(h, ctx))
+			t.Run("watch state lands on the title its provider id names", watchStateLandsOnTheTitleItsProviderIDNames(h))
+			t.Run("a title with no tmdb id is found by another provider's", aTitleWithNoTmdbIDIsFoundByAnotherProviders(h))
+			t.Run("a title with no provider id is found by its path", aTitleWithNoProviderIDIsFoundByItsPath(h))
 			t.Run("a second run carries nothing twice", aSecondRunCarriesNothingTwice(ctx, h, source))
-
 			t.Run("a later run keeps whichever answer is further along", aLaterRunKeepsWhicheverAnswerIsFurtherAlong(h, ctx, source))
 		})
+	}
+}
+
+func aSignedOutDeviceAndASkippedUsersDeviceStayBehind(signedIn *sessions.Service, ctx context.Context) func(t *testing.T) {
+	return func(t *testing.T) {
+		for _, token := range []string{fixture.AliceOldToken, fixture.CarolToken} {
+			_, err := signedIn.ByToken(ctx, token)
+			require.Error(t, err)
+		}
+	}
+}
+
+func anAPIKeyIsCarried(h *harness, ctx context.Context) func(t *testing.T) {
+	return func(t *testing.T) {
+		key, err := h.client.ApiKey.Query().Where(apikeymodel.AccessToken(fixture.APIKey)).Only(ctx)
+		require.NoError(t, err)
+		require.Equal(t, "Homepage", key.AppName)
+	}
+}
+
+func watchStateLandsOnTheTitleItsProviderIDNames(h *harness) func(t *testing.T) {
+	return func(t *testing.T) {
+		movie := h.state(t, aliceID, items.MovieKey(fixture.MovieTmdb))
+		require.True(t, movie.Played)
+		require.Equal(t, int32(2), movie.PlayCount)
+		require.Equal(t, time.Date(2024, 5, 1, 20, 15, 0, 0, time.UTC), movie.LastPlayedAt.UTC())
+
+		series := h.state(t, aliceID, items.SeriesKey(fixture.SeriesTmdb))
+		require.True(t, series.IsFavorite)
+		require.InDelta(t, 8.5, *series.Rating, 0.001)
+
+		require.True(t, h.state(t, aliceID, items.SeasonKey(fixture.SeriesTmdb, 1)).Played)
+		require.Equal(t, int32(3), h.state(t, aliceID, items.EpisodeKey(fixture.SeriesTmdb, 1, 2)).PlayCount)
+		require.Equal(t, int64(500000000), h.state(t, bobID, items.MovieKey(fixture.MovieTmdb)).PlaybackPositionTicks)
+	}
+}
+
+func aTitleWithNoTmdbIDIsFoundByAnotherProviders(h *harness) func(t *testing.T) {
+	return func(t *testing.T) {
+		require.True(t, h.state(t, aliceID, items.MovieKey(fixture.ImdbOnlyTmdb)).IsFavorite)
+		episode := h.state(t, aliceID, items.EpisodeKey(fixture.ImdbSeriesTmdb, 2, 5))
+		require.Equal(t, int64(fixture.EpisodePosition), episode.PlaybackPositionTicks)
+	}
+}
+
+func aTitleWithNoProviderIDIsFoundByItsPath(h *harness) func(t *testing.T) {
+	return func(t *testing.T) {
+		require.Equal(t, int64(fixture.ResumePosition), h.state(t, aliceID, items.MovieKey(pathOnlyTmdb)).PlaybackPositionTicks)
 	}
 }
 

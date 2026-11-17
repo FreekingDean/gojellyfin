@@ -85,10 +85,8 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to read the environment: %v", err)
 	}
 
-	connection := storetest.Open(t)
-
 	ctx := context.Background()
-	client := connection.Client()
+	client := storetest.Client(t)
 	unique := t.Name() + "-" + uuid.NewString()
 
 	itemService := items.New(client)
@@ -115,6 +113,19 @@ func newFixture(t *testing.T) *fixture {
 	t.Cleanup(newFixtureCleanup(t, library, client, ctx, libraryService, sessionService, token, unique, user))
 
 	transcoder := &stubTranscoder{}
+	return &fixture{
+		downloader: radarr(t, client),
+		client:     client,
+		handler:    New(sessionService, itemService, filesystem.New(config), transcoder, reports.New(client, nil), nil, nil),
+		items:      itemService,
+		transcoder: transcoder,
+		library:    library.ID,
+		token:      token,
+	}
+}
+
+func radarr(t *testing.T, client *store.Client) uuid.UUID {
+	t.Helper()
 
 	downloader, err := client.Source.Create().
 		SetName(t.Name() + "-" + uuid.NewString()).
@@ -131,15 +142,7 @@ func newFixture(t *testing.T) *fixture {
 		}
 	})
 
-	return &fixture{
-		downloader: downloader.ID,
-		client:     client,
-		handler:    New(sessionService, itemService, filesystem.New(config), transcoder, reports.New(client, nil), nil, nil),
-		items:      itemService,
-		transcoder: transcoder,
-		library:    library.ID,
-		token:      token,
-	}
+	return downloader.ID
 }
 
 func newFixtureCleanup(t *testing.T, library *libraries.Library, client *store.Client, ctx context.Context, libraryService *libraries.Service, sessionService *sessions.Service, token string, unique string, user *users.User) func() {

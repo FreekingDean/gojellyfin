@@ -326,7 +326,15 @@ func (k *killed) Close() error {
 func TestHandler_relay(t *testing.T) {
 	exited := fmt.Errorf("%w: exit status 1: Error while decoding", transcode.ErrExited)
 
-	t.Run("aborts the response and reports the file when ffmpeg dies partway", func(t *testing.T) {
+	t.Run("aborts the response and reports the file when ffmpeg dies partway", abortsTheResponseAndReportsTheFileWhenFfmpegDiesPartway(exited))
+	t.Run("reports nothing when the relay fails for a reason other than ffmpeg", reportsNothingWhenTheRelayFailsForAReasonOtherThanFfmpeg())
+	t.Run("reports nothing when the stall timer kills the encode", reportsNothingWhenTheStallTimerKillsTheEncode())
+	t.Run("reports nothing when the client goes away", reportsNothingWhenTheClientGoesAway())
+	t.Run("ends the response cleanly when ffmpeg finishes", endsTheResponseCleanlyWhenFfmpegFinishes())
+}
+
+func abortsTheResponseAndReportsTheFileWhenFfmpegDiesPartway(exited error) func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.add(t, uuid.NewString()+".flac", "flac")
 
@@ -350,9 +358,11 @@ func TestHandler_relay(t *testing.T) {
 		if !strings.Contains(found[0].Note, "Error while decoding") {
 			t.Errorf("note = %q, want what ffmpeg said", found[0].Note)
 		}
-	})
+	}
+}
 
-	t.Run("reports nothing when the relay fails for a reason other than ffmpeg", func(t *testing.T) {
+func reportsNothingWhenTheRelayFailsForAReasonOtherThanFfmpeg() func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.add(t, uuid.NewString()+".flac", "flac")
 
@@ -367,10 +377,11 @@ func TestHandler_relay(t *testing.T) {
 		if found := fixture.filed(t, id); len(found) != 0 {
 			t.Errorf("got %d reports, want none", len(found))
 		}
-	})
+	}
+}
 
-	t.Run("reports nothing when the stall timer kills the encode", reportsNothingWhenTheStallTimerKillsTheEncode())
-	t.Run("reports nothing when the client goes away", func(t *testing.T) {
+func reportsNothingWhenTheClientGoesAway() func(t *testing.T) {
+	return func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.add(t, uuid.NewString()+".flac", "flac")
 
@@ -408,9 +419,7 @@ func TestHandler_relay(t *testing.T) {
 		if found := fixture.filed(t, id); len(found) != 0 {
 			t.Errorf("got %d reports, want none", len(found))
 		}
-	})
-
-	t.Run("ends the response cleanly when ffmpeg finishes", endsTheResponseCleanlyWhenFfmpegFinishes())
+	}
 }
 
 func reportsNothingWhenTheStallTimerKillsTheEncode() func(*testing.T) {

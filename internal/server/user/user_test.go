@@ -69,100 +69,105 @@ func TestServer_ForgotPasswordPin(t *testing.T) {
 }
 
 func TestServer_AuthenticateUserByName(t *testing.T) {
-	t.Run("records an authentication that leaks no secret", recordsAnAuthenticationThatLeaksNoSecret())
+	ctx := context.Background()
+	client := storetest.Client(t)
+	activities := activity.New(client)
+	server := New(users.New(client), sessions.New(client, activities), nil)
+
+	username := t.Name() + "-" + uuid.NewString()
+	password := "hunter2"
+	deviceID := uuid.NewString()
+
+	user, hash := hashedUser(t, ctx, client, username, password)
+	t.Cleanup(authenticationCleanup(t, client, user, ctx, deviceID))
+
+	ctx = auth.ContextWithAuthorization(ctx, auth.Authorization{
+		Client:   "Jellyfin Web",
+		Device:   "Firefox",
+		DeviceID: deviceID,
+		Version:  "10.10.0",
+	})
+
+	start := time.Now()
+	response, err := server.AuthenticateUserByName(ctx, api.AuthenticateUserByNameRequestObject{
+		JSONBody: &api.AuthenticateUserByNameJSONRequestBody{
+			Username: apiutil.Ptr(username),
+			Pw:       apiutil.Ptr(password),
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to authenticate: %v", err)
+	}
+
+	result, ok := response.(api.AuthenticateUserByName200JSONResponse)
+	if !ok {
+		t.Fatalf("response = %T, want a 200", response)
+	}
+	token := apiutil.Deref(result.AccessToken)
+	if token == "" {
+		t.Fatal("access token is empty")
+	}
+
+	entries, _, err := activities.Entries(ctx, activity.Query{MinDate: &start, HasUserID: apiutil.Ptr(true)})
+	if err != nil {
+		t.Fatalf("failed to query the entries: %v", err)
+	}
+
+	found := 0
+	for _, entry := range entries {
+		if entry.User == nil || entry.User.ID != user.ID {
+			continue
+		}
+		found++
+		authenticationEntry(t, entry, username, password, hash, token)
+	}
+
+	if found != 1 {
+		t.Errorf("entries for the user = %d, want 1", found)
+	}
 }
 
-func recordsAnAuthenticationThatLeaksNoSecret() func(*testing.T) {
-	return func(t *testing.T) {
+func hashedUser(t *testing.T, ctx context.Context, client *store.Client, username, password string) (*store.User, string) {
+	t.Helper()
 
-		connection := storetest.Open(t)
+	hash, err := auth.Hash(password)
+	if err != nil {
+		t.Fatalf("failed to hash the password: %v", err)
+	}
+	user, err := client.User.Create().
+		SetName(username).
+		SetUsername(username).
+		SetPasswordHash(hash).
+		Save(ctx)
+	if err != nil {
+		t.Fatalf("failed to create the user: %v", err)
+	}
 
-		ctx := context.Background()
-		client := connection.Client()
-		activities := activity.New(client)
-		server := New(users.New(client), sessions.New(client, activities), nil)
+	return user, hash
+}
 
-		username := t.Name() + "-" + uuid.NewString()
-		password := "hunter2"
-		deviceID := uuid.NewString()
+func authenticationEntry(t *testing.T, entry *activity.Entry, username string, secrets ...string) {
+	t.Helper()
 
-		hash, err := auth.Hash(password)
-		if err != nil {
-			t.Fatalf("failed to hash the password: %v", err)
-		}
-		user, err := client.User.Create().
-			SetName(username).
-			SetUsername(username).
-			SetPasswordHash(hash).
-			Save(ctx)
-		if err != nil {
-			t.Fatalf("failed to create the user: %v", err)
-		}
-
-		t.Cleanup(recordsAnAuthenticationThatLeaksNoSecretCleanup(t, client, user, ctx, deviceID))
-
-		ctx = auth.ContextWithAuthorization(ctx, auth.Authorization{
-			Client:   "Jellyfin Web",
-			Device:   "Firefox",
-			DeviceID: deviceID,
-			Version:  "10.10.0",
-		})
-
-		start := time.Now()
-		response, err := server.AuthenticateUserByName(ctx, api.AuthenticateUserByNameRequestObject{
-			JSONBody: &api.AuthenticateUserByNameJSONRequestBody{
-				Username: apiutil.Ptr(username),
-				Pw:       apiutil.Ptr(password),
-			},
-		})
-		if err != nil {
-			t.Fatalf("failed to authenticate: %v", err)
-		}
-
-		result, ok := response.(api.AuthenticateUserByName200JSONResponse)
-		if !ok {
-			t.Fatalf("response = %T, want a 200", response)
-		}
-		token := apiutil.Deref(result.AccessToken)
-		if token == "" {
-			t.Fatal("access token is empty")
-		}
-
-		entries, _, err := activities.Entries(ctx, activity.Query{MinDate: &start, HasUserID: apiutil.Ptr(true)})
-		if err != nil {
-			t.Fatalf("failed to query the entries: %v", err)
-		}
-
-		found := 0
-		for _, entry := range entries {
-			if entry.User == nil || entry.User.ID != user.ID {
-				continue
+	if entry.Kind != activity.KindAuthenticationSucceeded {
+		t.Errorf("kind = %q, want %q", entry.Kind, activity.KindAuthenticationSucceeded)
+	}
+	if !strings.Contains(entry.Name, username) {
+		t.Errorf("name = %q, want it to name %q", entry.Name, username)
+	}
+	if entry.ShortOverview != "Firefox" {
+		t.Errorf("short overview = %q, want %q", entry.ShortOverview, "Firefox")
+	}
+	for field, value := range map[string]string{"name": entry.Name, "overview": entry.Overview, "short overview": entry.ShortOverview} {
+		for _, secret := range secrets {
+			if strings.Contains(value, secret) {
+				t.Errorf("%s leaks a secret: %q", field, value)
 			}
-			found++
-
-			if entry.Kind != activity.KindAuthenticationSucceeded {
-				t.Errorf("kind = %q, want %q", entry.Kind, activity.KindAuthenticationSucceeded)
-			}
-			if !strings.Contains(entry.Name, username) {
-				t.Errorf("name = %q, want it to name %q", entry.Name, username)
-			}
-			if entry.ShortOverview != "Firefox" {
-				t.Errorf("short overview = %q, want %q", entry.ShortOverview, "Firefox")
-			}
-			for field, value := range map[string]string{"name": entry.Name, "overview": entry.Overview, "short overview": entry.ShortOverview} {
-				if strings.Contains(value, password) || strings.Contains(value, hash) || strings.Contains(value, token) {
-					t.Errorf("%s leaks a secret: %q", field, value)
-				}
-			}
-		}
-
-		if found != 1 {
-			t.Errorf("entries for the user = %d, want 1", found)
 		}
 	}
 }
 
-func recordsAnAuthenticationThatLeaksNoSecretCleanup(t *testing.T, client *store.Client, user *store.User, ctx context.Context, deviceID string) func() {
+func authenticationCleanup(t *testing.T, client *store.Client, user *store.User, ctx context.Context, deviceID string) func() {
 	t.Helper()
 
 	return func() {

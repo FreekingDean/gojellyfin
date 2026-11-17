@@ -63,7 +63,6 @@ func TestServer_GetGenres(t *testing.T) {
 func serverGetGenresSeed(t *testing.T, ctx context.Context) (*items.Service, *store.Library, string) {
 	t.Helper()
 
-
 	client := storetest.Client(t)
 	name := t.Name() + "-" + uuid.NewString()
 	library, err := client.Library.Create().SetName(name).Save(ctx)
