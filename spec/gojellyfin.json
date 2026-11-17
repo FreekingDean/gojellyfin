@@ -1160,6 +1160,87 @@
           }
         ]
       }
+    },
+    "/GoJellyfin/PlaybackOverride": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Reads the playback override: the title that plays in place of whatever a user plays.",
+        "operationId": "GoJellyfinGetPlaybackOverride",
+        "responses": {
+          "200": {
+            "description": "The override.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaybackOverride"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Replaces the playback override.",
+        "operationId": "GoJellyfinUpdatePlaybackOverride",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaybackOverride"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Override saved."
+          },
+          "400": {
+            "description": "The override cannot be saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "CustomAuthentication": [
+              "DefaultAuthorization",
+              "RequiresElevation"
+            ]
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -2047,6 +2128,51 @@
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/LiveChannel"
+        }
+      },
+      "PlaybackOverride": {
+        "type": "object",
+        "required": [
+          "Enabled",
+          "UserIds"
+        ],
+        "properties": {
+          "Enabled": {
+            "type": "boolean",
+            "description": "Whether the override is on. Turning it off stops it at once."
+          },
+          "ItemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The movie or episode that plays instead."
+          },
+          "ItemName": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true,
+            "description": "The name of that title."
+          },
+          "From": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When it starts; none means as soon as it is on."
+          },
+          "Until": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When it ends; none means until it is turned off."
+          },
+          "UserIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Who it applies to; empty means every user who is not an administrator."
+          }
         }
       }
     },

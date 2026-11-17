@@ -11,6 +11,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/auth"
 	"github.com/FreekingDean/gojellyfin/internal/channels"
 	"github.com/FreekingDean/gojellyfin/internal/items"
+	"github.com/FreekingDean/gojellyfin/internal/prank"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
 	"github.com/FreekingDean/gojellyfin/internal/server/dto"
@@ -18,15 +19,23 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
+type Pranks interface {
+	Swap(ctx context.Context, userID uuid.UUID, item *items.Item) (*items.Item, bool, error)
+}
+
 type Server struct {
 	channels Channels
 	policies dto.Access
 	items    *items.Service
 	sessions *sessions.Service
+	pranks   Pranks
 }
 
-func New(items *items.Service, policies dto.Access, sessions *sessions.Service, channels *channels.Service) *Server {
+func New(items *items.Service, policies dto.Access, sessions *sessions.Service, channels *channels.Service, pranks *prank.Service) *Server {
 	server := &Server{items: items, policies: policies, sessions: sessions}
+	if pranks != nil {
+		server.pranks = pranks
+	}
 	if channels != nil {
 		server.channels = channels
 	}
@@ -108,7 +117,12 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 		MediaSources:  &[]api.MediaSourceInfo{},
 		PlaySessionId: apiutil.Ptr(session),
 	}
-	plan, err := s.items.SourceFor(ctx, item, capabilities(question.profile))
+	played, standsIn, err := s.standIn(ctx, item)
+	if err != nil {
+		return api.PlaybackInfoResponse{}, err
+	}
+
+	plan, err := s.items.SourceFor(ctx, played, capabilities(question.profile))
 	if errors.Is(err, items.ErrNoSource) || errors.Is(err, items.ErrNoPlayable) {
 		log.Printf("nothing to play for %s: %v", item.Name, err)
 		response.ErrorCode = apiutil.Ptr(api.NoCompatibleStream)
@@ -119,7 +133,11 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	s.record(ctx, plan)
+	playback := plan.Playback()
+	if standsIn {
+		playback.StandsInFor = &item.ID
+	}
+	s.record(ctx, plan, playback)
 
 	token := auth.AuthorizationFrom(ctx).Token
 	source := dto.MediaSourceDto(plan.Source)
@@ -151,12 +169,21 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 	return response, nil
 }
 
-func (s *Server) record(ctx context.Context, plan items.Plan) {
+func (s *Server) standIn(ctx context.Context, item *items.Item) (*items.Item, bool, error) {
+	session := auth.SessionFrom(ctx)
+	if s.pranks == nil || session == nil || session.UserID == nil {
+		return item, false, nil
+	}
+
+	return s.pranks.Swap(ctx, *session.UserID, item)
+}
+
+func (s *Server) record(ctx context.Context, plan items.Plan, playback items.Playback) {
 	session := auth.SessionFrom(ctx)
 	if session == nil {
 		return
 	}
-	if err := s.sessions.Planned(ctx, session.ID, plan.Source.ID, plan.Playback()); err != nil {
+	if err := s.sessions.Planned(ctx, session.ID, plan.Source.ID, playback); err != nil {
 		log.Printf("failed to record how %s is served: %v", plan.Source.ID, err)
 	}
 }

@@ -24,7 +24,7 @@ func TestServer_GetBitrateTestBytes(t *testing.T) {
 		{name: "negative", size: apiutil.Ptr(int32(-5)), want: 1},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			response, err := New(nil, nil, nil, nil).GetBitrateTestBytes(context.Background(), api.GetBitrateTestBytesRequestObject{
+			response, err := New(nil, nil, nil, nil, nil).GetBitrateTestBytes(context.Background(), api.GetBitrateTestBytesRequestObject{
 				Params: api.GetBitrateTestBytesParams{Size: tc.size},
 			})
 			if err != nil {

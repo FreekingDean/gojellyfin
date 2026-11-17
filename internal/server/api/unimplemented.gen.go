@@ -295,6 +295,14 @@ func (Unimplemented) GoJellyfinListMyRequests(ctx context.Context, request GoJel
 	return nil, ErrNotImplemented
 }
 
+func (Unimplemented) GoJellyfinGetPlaybackOverride(ctx context.Context, request GoJellyfinGetPlaybackOverrideRequestObject) (GoJellyfinGetPlaybackOverrideResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
+func (Unimplemented) GoJellyfinUpdatePlaybackOverride(ctx context.Context, request GoJellyfinUpdatePlaybackOverrideRequestObject) (GoJellyfinUpdatePlaybackOverrideResponseObject, error) {
+	return nil, ErrNotImplemented
+}
+
 func (Unimplemented) GoJellyfinListReports(ctx context.Context, request GoJellyfinListReportsRequestObject) (GoJellyfinListReportsResponseObject, error) {
 	return nil, ErrNotImplemented
 }
