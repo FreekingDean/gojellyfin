@@ -451,3 +451,17 @@ func Picture(source *MediaSource) *MediaStream {
 func Sound(source *MediaSource) *MediaStream {
 	return stream(source, streammodel.KindAudio)
 }
+
+func (s *Service) Encoded(plan Plan, can Capabilities) Plan {
+	if !s.encodable(plan.Source) {
+		return plan
+	}
+
+	audio := AudioCodec(plan.Source)
+	encoded := can.encodePlan(Plan{Source: plan.Source, Container: Container(plan.Source), AudioCodec: audio}, audio)
+	if !encoded.Change.Available() {
+		return plan
+	}
+
+	return encoded
+}
