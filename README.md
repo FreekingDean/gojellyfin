@@ -11,32 +11,30 @@ Everything ships as one binary, `cmd/gojellyfin`, with a subcommand each for
 
 | | |
 |---|---|
-| **Movies** | Scanned, played, and their metadata answered |
-| **TV** | Series, seasons and episodes, including next-up and resume |
-| **Library scanning** | Walks the tree, probes with ffprobe, sweeps what is gone |
+| **Movies, TV and music** | Filled from Radarr, Sonarr and Lidarr, with next-up, resume and lyrics |
 | **Metadata** | Movies, series and episodes identified against TMDB, with your own `TMDB_API_KEY` (a v3 API key or a v4 read access token) |
+| **Playback** | A file the client can play is sent whole; anything else is remuxed, has its audio converted, or is encoded to 1080p H.264, over HLS |
+| **Live TV** | Channels built from your own titles, with a guide, played as live HLS |
+| **SyncPlay** | Groups that play together across replicas |
+| **Requests and reports** | A heart on a title the library lacks asks Radarr or Sonarr for it; Delete reports a broken copy and asks for another |
+| **Sign-in** | Passwords, Quick Connect with a QR on the television, OpenID Connect single sign-on and API keys |
 | **Background jobs** | Temporal workflows in a separate worker deployment |
-| **High availability** | The API is stateless — run as many replicas as you like |
-| **Automatic encoding** | Audio a client cannot decode is re-encoded on the fly; the video is copied, never transcoded |
-| Live TV | Not implemented |
-| Music | Not implemented — the scanner does not walk audio files |
-| SyncPlay | Not implemented |
+| **High availability** | Every server pod is interchangeable — run as many replicas as you like |
+| **Admin app** | `/admin`, beside `jellyfin-web`'s own dashboard |
 
-Two of those want a caveat rather than a tick.
+**Playback** is decided by the server rather than the client: it reads the
+client's `DeviceProfile`, picks the file that needs the least changing, and
+hands back one url. A picture encode is the last resort and starts only from a
+source at or under `TRANSCODER_MAX_SOURCE_HEIGHT` (1080 by default), so a title
+whose only copies are 4K and need encoding is refused rather than encoded.
 
-**Automatic encoding** covers the common case and no more. A rip whose video a
-browser *can* decode but whose audio it cannot — H.264 beside AC-3 or DTS, which
-is most of them — is remuxed to fragmented mp4 with the audio re-encoded and the
-video copied. Video the client genuinely cannot decode (HEVC, 10-bit H.264,
-VC-1) is refused with a 415 rather than transcoded, which is a deliberate
-position and not a gap to be filled: keep a second copy on disk instead. The
-choice is also not yet driven by the client's declared `DeviceProfile`, so it
-reads from a small table of what browsers decode.
+**High availability** means nothing a request leaves behind lives in one
+process: sessions, Quick Connect, SyncPlay and the websocket's delivery are
+Postgres, and every HLS segment is cut on its own. It does not mean the
+database is replicated.
 
-**High availability** means the API holds no per-request state and needs no
-session affinity — a transcode is one HTTP request from start to finish, so a
-second replica breaks nothing. It does not mean the database is replicated.
-
+Live TV has no tuner and no recordings, and remote control of another session
+is not offered.
 
 ## Development
 
@@ -45,7 +43,7 @@ default — and the `Makefile` supplies the development one, so `make` targets
 work out of the box and an explicit `DATABASE_URL` still wins.
 
 ```sh
-make dev     # watch and restart on :8081
+make dev     # migrate, build and serve on :8081
 make build test lint
 echo hunter2 | DATABASE_URL=... go run ./cmd/gojellyfin adduser Dean   # bootstrap the first user
 ```
@@ -128,7 +126,7 @@ differ; parental ratings; and display preferences.
 
 ### Cutover
 
-1. **Fill gojellyfin first.** Create the libraries, bind the sources and let a
+1. **Fill gojellyfin first.** Bind the downloaders to the libraries and let a
    refresh finish, so the titles exist for the watch state to land on.
 2. **Rehearse.** Copy Jellyfin's data directory somewhere the script can read
    and run it with `--dry-run`. It prints what it would carry and every title it

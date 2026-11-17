@@ -8,6 +8,7 @@ tool (
 )
 
 require (
+	ariga.io/atlas v0.36.2-0.20250730182955-2c6300d0a3e1
 	entgo.io/ent v0.14.6
 	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/cyruzin/golang-tmdb v1.9.4
@@ -30,7 +31,6 @@ require (
 	go.temporal.io/sdk/contrib/opentelemetry v0.8.1
 	go.uber.org/fx v1.24.0
 	go.uber.org/mock v0.6.0
-	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.54.0
 	golang.org/x/image v0.33.0
 	golang.org/x/oauth2 v0.36.0
@@ -41,7 +41,6 @@ require (
 )
 
 require (
-	ariga.io/atlas v0.36.2-0.20250730182955-2c6300d0a3e1 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
@@ -101,6 +100,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
 	go.uber.org/dig v1.19.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
+	go.uber.org/zap v1.26.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/mod v0.38.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
