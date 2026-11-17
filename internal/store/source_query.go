@@ -380,8 +380,9 @@ func (_q *SourceQuery) Clone() *SourceQuery {
 		withMemberships: _q.withMemberships.Clone(),
 		withSubmissions: _q.withSubmissions.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -849,6 +850,12 @@ func (_q *SourceQuery) ForShare(opts ...sql.LockOption) *SourceQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *SourceQuery) Modify(modifiers ...func(s *sql.Selector)) *SourceSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // SourceGroupBy is the group-by builder for Source entities.
 type SourceGroupBy struct {
 	selector
@@ -937,4 +944,10 @@ func (_s *SourceSelect) sqlScan(ctx context.Context, root *SourceQuery, v any) e
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *SourceSelect) Modify(modifiers ...func(s *sql.Selector)) *SourceSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -63,7 +62,7 @@ func (s *Service) Hook(ctx context.Context, id uuid.UUID) error {
 		if hookErr != nil {
 			update.ClearWebhookRegisteredAt().SetWebhookError(hookErr.Error())
 		} else {
-			update.SetWebhookRegisteredAt(time.Now()).SetWebhookError("")
+			update.Modify(store.StampNow(sourcemodel.FieldWebhookRegisteredAt)).SetWebhookError("")
 		}
 
 		return update.Exec(ctx)

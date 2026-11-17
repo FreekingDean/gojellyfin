@@ -15,7 +15,6 @@ import (
 	playlistmodel "github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	entrymodel "github.com/FreekingDean/gojellyfin/internal/store/playlistentry"
 	sharemodel "github.com/FreekingDean/gojellyfin/internal/store/playlistshare"
-	usermodel "github.com/FreekingDean/gojellyfin/internal/store/user"
 )
 
 type (
@@ -354,10 +353,6 @@ func (s *Service) SetShare(ctx context.Context, itemID uuid.UUID, permission Sha
 			return err
 		}
 
-		if err := checkPermissions(ctx, tx.User, []Share{permission}); err != nil {
-			return err
-		}
-
 		return upsertShare(ctx, tx.PlaylistShare, playlist.ID, permission)
 	})
 }
@@ -490,65 +485,39 @@ func renumber(ctx context.Context, client *store.PlaylistEntryClient, entries []
 }
 
 func replaceShares(ctx context.Context, tx *store.Tx, playlistID uuid.UUID, permissions []Share) error {
-	if err := checkPermissions(ctx, tx.User, permissions); err != nil {
-		return err
-	}
-
 	if _, err := tx.PlaylistShare.Delete().
 		Where(sharemodel.PlaylistID(playlistID)).
 		Exec(ctx); err != nil {
 		return fmt.Errorf("failed to clear playlist shares: %w", err)
 	}
 
+	builders := make([]*store.PlaylistShareCreate, 0, len(permissions))
 	for _, permission := range permissions {
-		if err := upsertShare(ctx, tx.PlaylistShare, playlistID, permission); err != nil {
-			return err
-		}
+		builders = append(builders, tx.PlaylistShare.Create().
+			SetPlaylistID(playlistID).
+			SetUserID(permission.UserID).
+			SetCanEdit(permission.CanEdit))
 	}
 
-	return nil
+	return shareError(tx.PlaylistShare.CreateBulk(builders...).Exec(ctx))
 }
 
 func upsertShare(ctx context.Context, client *store.PlaylistShareClient, playlistID uuid.UUID, permission Share) error {
-	if err := client.Create().
+	return shareError(client.Create().
 		SetPlaylistID(playlistID).
 		SetUserID(permission.UserID).
 		SetCanEdit(permission.CanEdit).
 		OnConflictColumns(sharemodel.FieldPlaylistID, sharemodel.FieldUserID).
 		UpdateCanEdit().
-		UpdateUpdatedAt().
-		Exec(ctx); err != nil {
-		return fmt.Errorf("failed to save playlist share: %w", err)
-	}
-
-	return nil
+		Exec(ctx))
 }
 
-func checkPermissions(ctx context.Context, client *store.UserClient, permissions []Share) error {
-	userIDs := make([]uuid.UUID, 0, len(permissions))
-	seen := make(map[uuid.UUID]bool, len(permissions))
-
-	for _, permission := range permissions {
-		if permission.UserID == uuid.Nil {
-			return fmt.Errorf("%w: no user id", ErrInvalidShare)
-		}
-		if seen[permission.UserID] {
-			return fmt.Errorf("%w: user %s appears twice", ErrInvalidShare, permission.UserID)
-		}
-		seen[permission.UserID] = true
-		userIDs = append(userIDs, permission.UserID)
+func shareError(err error) error {
+	if store.IsConstraintError(err) {
+		return fmt.Errorf("%w: %w", ErrInvalidShare, err)
 	}
-
-	if len(userIDs) == 0 {
-		return nil
-	}
-
-	found, err := client.Query().Where(usermodel.IDIn(userIDs...)).Count(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to count playlist share users: %w", err)
-	}
-	if found != len(userIDs) {
-		return fmt.Errorf("%w: unknown user", ErrInvalidShare)
+		return fmt.Errorf("failed to save playlist shares: %w", err)
 	}
 
 	return nil

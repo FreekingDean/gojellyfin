@@ -48,14 +48,6 @@ func (s *Service) AddUser(ctx context.Context, sessionID, userID uuid.UUID) erro
 		return ErrPrimaryUser
 	}
 
-	exists, err := s.store.User.Query().Where(usermodel.ID(userID)).Exist(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to find the user: %w", err)
-	}
-	if !exists {
-		return fmt.Errorf("%w: %s", ErrNoUser, userID)
-	}
-
 	joined, err := s.store.Session.Query().
 		Where(sessionmodel.ID(sessionID), sessionmodel.HasAdditionalUsersWith(usermodel.ID(userID))).
 		Exist(ctx)
@@ -66,7 +58,11 @@ func (s *Service) AddUser(ctx context.Context, sessionID, userID uuid.UUID) erro
 		return nil
 	}
 
-	if err := s.store.Session.UpdateOneID(sessionID).AddAdditionalUserIDs(userID).Exec(ctx); err != nil {
+	err = s.store.Session.UpdateOneID(sessionID).AddAdditionalUserIDs(userID).Exec(ctx)
+	if store.IsConstraintError(err) {
+		return fmt.Errorf("%w: %s", ErrNoUser, userID)
+	}
+	if err != nil {
 		return fmt.Errorf("failed to add the user to the session: %w", err)
 	}
 

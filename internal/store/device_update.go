@@ -21,8 +21,9 @@ import (
 // DeviceUpdate is the builder for updating Device entities.
 type DeviceUpdate struct {
 	config
-	hooks    []Hook
-	mutation *DeviceMutation
+	hooks     []Hook
+	mutation  *DeviceMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the DeviceUpdate builder.
@@ -31,23 +32,17 @@ func (_u *DeviceUpdate) Where(ps ...predicate.Device) *DeviceUpdate {
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *DeviceUpdate) SetCreatedAt(v time.Time) *DeviceUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *DeviceUpdate) SetNillableCreatedAt(v *time.Time) *DeviceUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *DeviceUpdate) SetUpdatedAt(v time.Time) *DeviceUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *DeviceUpdate) SetNillableUpdatedAt(v *time.Time) *DeviceUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -286,7 +281,6 @@ func (_u *DeviceUpdate) RemoveSessions(v ...*Session) *DeviceUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *DeviceUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -312,12 +306,10 @@ func (_u *DeviceUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *DeviceUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := device.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *DeviceUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *DeviceUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *DeviceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -328,9 +320,6 @@ func (_u *DeviceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(device.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(device.FieldUpdatedAt, field.TypeTime, value)
@@ -444,6 +433,7 @@ func (_u *DeviceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{device.Label}
@@ -459,28 +449,23 @@ func (_u *DeviceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 // DeviceUpdateOne is the builder for updating a single Device entity.
 type DeviceUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *DeviceMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *DeviceUpdateOne) SetCreatedAt(v time.Time) *DeviceUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *DeviceUpdateOne) SetNillableCreatedAt(v *time.Time) *DeviceUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *DeviceMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *DeviceUpdateOne) SetUpdatedAt(v time.Time) *DeviceUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *DeviceUpdateOne) SetNillableUpdatedAt(v *time.Time) *DeviceUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -732,7 +717,6 @@ func (_u *DeviceUpdateOne) Select(field string, fields ...string) *DeviceUpdateO
 
 // Save executes the query and returns the updated Device entity.
 func (_u *DeviceUpdateOne) Save(ctx context.Context) (*Device, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -758,12 +742,10 @@ func (_u *DeviceUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *DeviceUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := device.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *DeviceUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *DeviceUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *DeviceUpdateOne) sqlSave(ctx context.Context) (_node *Device, err error) {
@@ -791,9 +773,6 @@ func (_u *DeviceUpdateOne) sqlSave(ctx context.Context) (_node *Device, err erro
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(device.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(device.FieldUpdatedAt, field.TypeTime, value)
@@ -907,6 +886,7 @@ func (_u *DeviceUpdateOne) sqlSave(ctx context.Context) (_node *Device, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &Device{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

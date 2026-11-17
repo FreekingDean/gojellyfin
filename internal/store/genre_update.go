@@ -20,8 +20,9 @@ import (
 // GenreUpdate is the builder for updating Genre entities.
 type GenreUpdate struct {
 	config
-	hooks    []Hook
-	mutation *GenreMutation
+	hooks     []Hook
+	mutation  *GenreMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the GenreUpdate builder.
@@ -30,23 +31,17 @@ func (_u *GenreUpdate) Where(ps ...predicate.Genre) *GenreUpdate {
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *GenreUpdate) SetCreatedAt(v time.Time) *GenreUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *GenreUpdate) SetNillableCreatedAt(v *time.Time) *GenreUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *GenreUpdate) SetUpdatedAt(v time.Time) *GenreUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *GenreUpdate) SetNillableUpdatedAt(v *time.Time) *GenreUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -107,7 +102,6 @@ func (_u *GenreUpdate) RemoveItems(v ...*Item) *GenreUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *GenreUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -133,12 +127,10 @@ func (_u *GenreUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *GenreUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := genre.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *GenreUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *GenreUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *GenreUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -149,9 +141,6 @@ func (_u *GenreUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(genre.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(genre.FieldUpdatedAt, field.TypeTime, value)
@@ -204,6 +193,7 @@ func (_u *GenreUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{genre.Label}
@@ -219,28 +209,23 @@ func (_u *GenreUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 // GenreUpdateOne is the builder for updating a single Genre entity.
 type GenreUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *GenreMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *GenreUpdateOne) SetCreatedAt(v time.Time) *GenreUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *GenreUpdateOne) SetNillableCreatedAt(v *time.Time) *GenreUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *GenreMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *GenreUpdateOne) SetUpdatedAt(v time.Time) *GenreUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *GenreUpdateOne) SetNillableUpdatedAt(v *time.Time) *GenreUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -314,7 +299,6 @@ func (_u *GenreUpdateOne) Select(field string, fields ...string) *GenreUpdateOne
 
 // Save executes the query and returns the updated Genre entity.
 func (_u *GenreUpdateOne) Save(ctx context.Context) (*Genre, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -340,12 +324,10 @@ func (_u *GenreUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *GenreUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := genre.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *GenreUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *GenreUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *GenreUpdateOne) sqlSave(ctx context.Context) (_node *Genre, err error) {
@@ -373,9 +355,6 @@ func (_u *GenreUpdateOne) sqlSave(ctx context.Context) (_node *Genre, err error)
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(genre.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(genre.FieldUpdatedAt, field.TypeTime, value)
@@ -428,6 +407,7 @@ func (_u *GenreUpdateOne) sqlSave(ctx context.Context) (_node *Genre, err error)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &Genre{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

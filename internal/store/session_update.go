@@ -26,8 +26,9 @@ import (
 // SessionUpdate is the builder for updating Session entities.
 type SessionUpdate struct {
 	config
-	hooks    []Hook
-	mutation *SessionMutation
+	hooks     []Hook
+	mutation  *SessionMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the SessionUpdate builder.
@@ -36,23 +37,17 @@ func (_u *SessionUpdate) Where(ps ...predicate.Session) *SessionUpdate {
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *SessionUpdate) SetCreatedAt(v time.Time) *SessionUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *SessionUpdate) SetNillableCreatedAt(v *time.Time) *SessionUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *SessionUpdate) SetUpdatedAt(v time.Time) *SessionUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *SessionUpdate) SetNillableUpdatedAt(v *time.Time) *SessionUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -502,7 +497,6 @@ func (_u *SessionUpdate) RemoveSyncPlayMemberships(v ...*SyncPlayGroupMember) *S
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *SessionUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -528,14 +522,6 @@ func (_u *SessionUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *SessionUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := session.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *SessionUpdate) check() error {
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
@@ -545,6 +531,12 @@ func (_u *SessionUpdate) check() error {
 		return errors.New(`store: clearing a required unique edge "Session.device"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *SessionUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *SessionUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -558,9 +550,6 @@ func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(session.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(session.FieldUpdatedAt, field.TypeTime, value)
@@ -883,6 +872,7 @@ func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{session.Label}
@@ -898,28 +888,23 @@ func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 // SessionUpdateOne is the builder for updating a single Session entity.
 type SessionUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *SessionMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *SessionUpdateOne) SetCreatedAt(v time.Time) *SessionUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *SessionUpdateOne) SetNillableCreatedAt(v *time.Time) *SessionUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *SessionMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *SessionUpdateOne) SetUpdatedAt(v time.Time) *SessionUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillableUpdatedAt(v *time.Time) *SessionUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -1382,7 +1367,6 @@ func (_u *SessionUpdateOne) Select(field string, fields ...string) *SessionUpdat
 
 // Save executes the query and returns the updated Session entity.
 func (_u *SessionUpdateOne) Save(ctx context.Context) (*Session, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -1408,14 +1392,6 @@ func (_u *SessionUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *SessionUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := session.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *SessionUpdateOne) check() error {
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
@@ -1425,6 +1401,12 @@ func (_u *SessionUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "Session.device"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *SessionUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *SessionUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err error) {
@@ -1455,9 +1437,6 @@ func (_u *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err er
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(session.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(session.FieldUpdatedAt, field.TypeTime, value)
@@ -1780,6 +1759,7 @@ func (_u *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &Session{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

@@ -280,8 +280,9 @@ func (_q *PersonQuery) Clone() *PersonQuery {
 		predicates:  append([]predicate.Person{}, _q.predicates...),
 		withCredits: _q.withCredits.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -554,6 +555,12 @@ func (_q *PersonQuery) ForShare(opts ...sql.LockOption) *PersonQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *PersonQuery) Modify(modifiers ...func(s *sql.Selector)) *PersonSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // PersonGroupBy is the group-by builder for Person entities.
 type PersonGroupBy struct {
 	selector
@@ -642,4 +649,10 @@ func (_s *PersonSelect) sqlScan(ctx context.Context, root *PersonQuery, v any) e
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *PersonSelect) Modify(modifiers ...func(s *sql.Selector)) *PersonSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

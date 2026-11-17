@@ -1236,18 +1236,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *UserPolicyUpsert) SetCreatedAt(v time.Time) *UserPolicyUpsert {
-	u.Set(userpolicy.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *UserPolicyUpsert) UpdateCreatedAt() *UserPolicyUpsert {
-	u.SetExcluded(userpolicy.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *UserPolicyUpsert) SetUpdatedAt(v time.Time) *UserPolicyUpsert {
 	u.Set(userpolicy.FieldUpdatedAt, v)
@@ -1913,6 +1901,9 @@ func (u *UserPolicyUpsertOne) UpdateNewValues() *UserPolicyUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(userpolicy.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(userpolicy.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -1942,20 +1933,6 @@ func (u *UserPolicyUpsertOne) Update(set func(*UserPolicyUpsert)) *UserPolicyUps
 		set(&UserPolicyUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *UserPolicyUpsertOne) SetCreatedAt(v time.Time) *UserPolicyUpsertOne {
-	return u.Update(func(s *UserPolicyUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *UserPolicyUpsertOne) UpdateCreatedAt() *UserPolicyUpsertOne {
-	return u.Update(func(s *UserPolicyUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -2897,6 +2874,9 @@ func (u *UserPolicyUpsertBulk) UpdateNewValues() *UserPolicyUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(userpolicy.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(userpolicy.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -2927,20 +2907,6 @@ func (u *UserPolicyUpsertBulk) Update(set func(*UserPolicyUpsert)) *UserPolicyUp
 		set(&UserPolicyUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *UserPolicyUpsertBulk) SetCreatedAt(v time.Time) *UserPolicyUpsertBulk {
-	return u.Update(func(s *UserPolicyUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *UserPolicyUpsertBulk) UpdateCreatedAt() *UserPolicyUpsertBulk {
-	return u.Update(func(s *UserPolicyUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

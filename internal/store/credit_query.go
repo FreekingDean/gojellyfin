@@ -305,8 +305,9 @@ func (_q *CreditQuery) Clone() *CreditQuery {
 		withItem:   _q.withItem.Clone(),
 		withPerson: _q.withPerson.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -636,6 +637,12 @@ func (_q *CreditQuery) ForShare(opts ...sql.LockOption) *CreditQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *CreditQuery) Modify(modifiers ...func(s *sql.Selector)) *CreditSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // CreditGroupBy is the group-by builder for Credit entities.
 type CreditGroupBy struct {
 	selector
@@ -724,4 +731,10 @@ func (_s *CreditSelect) sqlScan(ctx context.Context, root *CreditQuery, v any) e
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *CreditSelect) Modify(modifiers ...func(s *sql.Selector)) *CreditSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

@@ -584,18 +584,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *UserConfigurationUpsert) SetCreatedAt(v time.Time) *UserConfigurationUpsert {
-	u.Set(userconfiguration.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *UserConfigurationUpsert) UpdateCreatedAt() *UserConfigurationUpsert {
-	u.SetExcluded(userconfiguration.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *UserConfigurationUpsert) SetUpdatedAt(v time.Time) *UserConfigurationUpsert {
 	u.Set(userconfiguration.FieldUpdatedAt, v)
@@ -859,6 +847,9 @@ func (u *UserConfigurationUpsertOne) UpdateNewValues() *UserConfigurationUpsertO
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(userconfiguration.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(userconfiguration.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -888,20 +879,6 @@ func (u *UserConfigurationUpsertOne) Update(set func(*UserConfigurationUpsert)) 
 		set(&UserConfigurationUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *UserConfigurationUpsertOne) SetCreatedAt(v time.Time) *UserConfigurationUpsertOne {
-	return u.Update(func(s *UserConfigurationUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *UserConfigurationUpsertOne) UpdateCreatedAt() *UserConfigurationUpsertOne {
-	return u.Update(func(s *UserConfigurationUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -1374,6 +1351,9 @@ func (u *UserConfigurationUpsertBulk) UpdateNewValues() *UserConfigurationUpsert
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(userconfiguration.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(userconfiguration.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -1404,20 +1384,6 @@ func (u *UserConfigurationUpsertBulk) Update(set func(*UserConfigurationUpsert))
 		set(&UserConfigurationUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *UserConfigurationUpsertBulk) SetCreatedAt(v time.Time) *UserConfigurationUpsertBulk {
-	return u.Update(func(s *UserConfigurationUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *UserConfigurationUpsertBulk) UpdateCreatedAt() *UserConfigurationUpsertBulk {
-	return u.Update(func(s *UserConfigurationUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

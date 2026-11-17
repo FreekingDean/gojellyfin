@@ -325,18 +325,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *CreditUpsert) SetCreatedAt(v time.Time) *CreditUpsert {
-	u.Set(credit.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *CreditUpsert) UpdateCreatedAt() *CreditUpsert {
-	u.SetExcluded(credit.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *CreditUpsert) SetUpdatedAt(v time.Time) *CreditUpsert {
 	u.Set(credit.FieldUpdatedAt, v)
@@ -420,6 +408,9 @@ func (u *CreditUpsertOne) UpdateNewValues() *CreditUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(credit.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(credit.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -449,20 +440,6 @@ func (u *CreditUpsertOne) Update(set func(*CreditUpsert)) *CreditUpsertOne {
 		set(&CreditUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *CreditUpsertOne) SetCreatedAt(v time.Time) *CreditUpsertOne {
-	return u.Update(func(s *CreditUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *CreditUpsertOne) UpdateCreatedAt() *CreditUpsertOne {
-	return u.Update(func(s *CreditUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -725,6 +702,9 @@ func (u *CreditUpsertBulk) UpdateNewValues() *CreditUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(credit.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(credit.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -755,20 +735,6 @@ func (u *CreditUpsertBulk) Update(set func(*CreditUpsert)) *CreditUpsertBulk {
 		set(&CreditUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *CreditUpsertBulk) SetCreatedAt(v time.Time) *CreditUpsertBulk {
-	return u.Update(func(s *CreditUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *CreditUpsertBulk) UpdateCreatedAt() *CreditUpsertBulk {
-	return u.Update(func(s *CreditUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

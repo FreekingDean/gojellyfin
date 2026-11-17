@@ -20,8 +20,9 @@ import (
 // RequestSubmissionUpdate is the builder for updating RequestSubmission entities.
 type RequestSubmissionUpdate struct {
 	config
-	hooks    []Hook
-	mutation *RequestSubmissionMutation
+	hooks     []Hook
+	mutation  *RequestSubmissionMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the RequestSubmissionUpdate builder.
@@ -30,23 +31,17 @@ func (_u *RequestSubmissionUpdate) Where(ps ...predicate.RequestSubmission) *Req
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *RequestSubmissionUpdate) SetCreatedAt(v time.Time) *RequestSubmissionUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *RequestSubmissionUpdate) SetNillableCreatedAt(v *time.Time) *RequestSubmissionUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *RequestSubmissionUpdate) SetUpdatedAt(v time.Time) *RequestSubmissionUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *RequestSubmissionUpdate) SetNillableUpdatedAt(v *time.Time) *RequestSubmissionUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -136,7 +131,6 @@ func (_u *RequestSubmissionUpdate) ClearSource() *RequestSubmissionUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *RequestSubmissionUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -162,20 +156,18 @@ func (_u *RequestSubmissionUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *RequestSubmissionUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := requestsubmission.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *RequestSubmissionUpdate) check() error {
 	if _u.mutation.SourceCleared() && len(_u.mutation.SourceIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "RequestSubmission.source"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *RequestSubmissionUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *RequestSubmissionUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *RequestSubmissionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -189,9 +181,6 @@ func (_u *RequestSubmissionUpdate) sqlSave(ctx context.Context) (_node int, err 
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(requestsubmission.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(requestsubmission.FieldUpdatedAt, field.TypeTime, value)
@@ -240,6 +229,7 @@ func (_u *RequestSubmissionUpdate) sqlSave(ctx context.Context) (_node int, err 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{requestsubmission.Label}
@@ -255,28 +245,23 @@ func (_u *RequestSubmissionUpdate) sqlSave(ctx context.Context) (_node int, err 
 // RequestSubmissionUpdateOne is the builder for updating a single RequestSubmission entity.
 type RequestSubmissionUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *RequestSubmissionMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *RequestSubmissionUpdateOne) SetCreatedAt(v time.Time) *RequestSubmissionUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *RequestSubmissionUpdateOne) SetNillableCreatedAt(v *time.Time) *RequestSubmissionUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *RequestSubmissionMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *RequestSubmissionUpdateOne) SetUpdatedAt(v time.Time) *RequestSubmissionUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *RequestSubmissionUpdateOne) SetNillableUpdatedAt(v *time.Time) *RequestSubmissionUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -379,7 +364,6 @@ func (_u *RequestSubmissionUpdateOne) Select(field string, fields ...string) *Re
 
 // Save executes the query and returns the updated RequestSubmission entity.
 func (_u *RequestSubmissionUpdateOne) Save(ctx context.Context) (*RequestSubmission, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -405,20 +389,18 @@ func (_u *RequestSubmissionUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *RequestSubmissionUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := requestsubmission.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *RequestSubmissionUpdateOne) check() error {
 	if _u.mutation.SourceCleared() && len(_u.mutation.SourceIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "RequestSubmission.source"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *RequestSubmissionUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *RequestSubmissionUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *RequestSubmissionUpdateOne) sqlSave(ctx context.Context) (_node *RequestSubmission, err error) {
@@ -449,9 +431,6 @@ func (_u *RequestSubmissionUpdateOne) sqlSave(ctx context.Context) (_node *Reque
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(requestsubmission.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(requestsubmission.FieldUpdatedAt, field.TypeTime, value)
@@ -500,6 +479,7 @@ func (_u *RequestSubmissionUpdateOne) sqlSave(ctx context.Context) (_node *Reque
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &RequestSubmission{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

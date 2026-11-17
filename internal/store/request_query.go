@@ -279,8 +279,9 @@ func (_q *RequestQuery) Clone() *RequestQuery {
 		predicates: append([]predicate.Request{}, _q.predicates...),
 		withUser:   _q.withUser.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -553,6 +554,12 @@ func (_q *RequestQuery) ForShare(opts ...sql.LockOption) *RequestQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *RequestQuery) Modify(modifiers ...func(s *sql.Selector)) *RequestSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // RequestGroupBy is the group-by builder for Request entities.
 type RequestGroupBy struct {
 	selector
@@ -641,4 +648,10 @@ func (_s *RequestSelect) sqlScan(ctx context.Context, root *RequestQuery, v any)
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *RequestSelect) Modify(modifiers ...func(s *sql.Selector)) *RequestSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

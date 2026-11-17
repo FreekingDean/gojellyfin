@@ -21,8 +21,9 @@ import (
 // CreditUpdate is the builder for updating Credit entities.
 type CreditUpdate struct {
 	config
-	hooks    []Hook
-	mutation *CreditMutation
+	hooks     []Hook
+	mutation  *CreditMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the CreditUpdate builder.
@@ -31,23 +32,17 @@ func (_u *CreditUpdate) Where(ps ...predicate.Credit) *CreditUpdate {
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *CreditUpdate) SetCreatedAt(v time.Time) *CreditUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *CreditUpdate) SetNillableCreatedAt(v *time.Time) *CreditUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *CreditUpdate) SetUpdatedAt(v time.Time) *CreditUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *CreditUpdate) SetNillableUpdatedAt(v *time.Time) *CreditUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -153,7 +148,6 @@ func (_u *CreditUpdate) ClearPerson() *CreditUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *CreditUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -179,14 +173,6 @@ func (_u *CreditUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *CreditUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := credit.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *CreditUpdate) check() error {
 	if v, ok := _u.mutation.Kind(); ok {
@@ -203,6 +189,12 @@ func (_u *CreditUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *CreditUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *CreditUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
+}
+
 func (_u *CreditUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
@@ -214,9 +206,6 @@ func (_u *CreditUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(credit.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(credit.FieldUpdatedAt, field.TypeTime, value)
@@ -297,6 +286,7 @@ func (_u *CreditUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{credit.Label}
@@ -312,28 +302,23 @@ func (_u *CreditUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 // CreditUpdateOne is the builder for updating a single Credit entity.
 type CreditUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *CreditMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *CreditUpdateOne) SetCreatedAt(v time.Time) *CreditUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *CreditUpdateOne) SetNillableCreatedAt(v *time.Time) *CreditUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *CreditMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *CreditUpdateOne) SetUpdatedAt(v time.Time) *CreditUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *CreditUpdateOne) SetNillableUpdatedAt(v *time.Time) *CreditUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -452,7 +437,6 @@ func (_u *CreditUpdateOne) Select(field string, fields ...string) *CreditUpdateO
 
 // Save executes the query and returns the updated Credit entity.
 func (_u *CreditUpdateOne) Save(ctx context.Context) (*Credit, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -478,14 +462,6 @@ func (_u *CreditUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *CreditUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := credit.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *CreditUpdateOne) check() error {
 	if v, ok := _u.mutation.Kind(); ok {
@@ -500,6 +476,12 @@ func (_u *CreditUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "Credit.person"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *CreditUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *CreditUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *CreditUpdateOne) sqlSave(ctx context.Context) (_node *Credit, err error) {
@@ -530,9 +512,6 @@ func (_u *CreditUpdateOne) sqlSave(ctx context.Context) (_node *Credit, err erro
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(credit.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(credit.FieldUpdatedAt, field.TypeTime, value)
@@ -613,6 +592,7 @@ func (_u *CreditUpdateOne) sqlSave(ctx context.Context) (_node *Credit, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &Credit{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

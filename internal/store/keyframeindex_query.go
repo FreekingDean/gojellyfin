@@ -279,8 +279,9 @@ func (_q *KeyframeIndexQuery) Clone() *KeyframeIndexQuery {
 		predicates: append([]predicate.KeyframeIndex{}, _q.predicates...),
 		withSource: _q.withSource.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -553,6 +554,12 @@ func (_q *KeyframeIndexQuery) ForShare(opts ...sql.LockOption) *KeyframeIndexQue
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *KeyframeIndexQuery) Modify(modifiers ...func(s *sql.Selector)) *KeyframeIndexSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // KeyframeIndexGroupBy is the group-by builder for KeyframeIndex entities.
 type KeyframeIndexGroupBy struct {
 	selector
@@ -641,4 +648,10 @@ func (_s *KeyframeIndexSelect) sqlScan(ctx context.Context, root *KeyframeIndexQ
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *KeyframeIndexSelect) Modify(modifiers ...func(s *sql.Selector)) *KeyframeIndexSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

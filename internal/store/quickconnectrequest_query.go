@@ -279,8 +279,9 @@ func (_q *QuickConnectRequestQuery) Clone() *QuickConnectRequestQuery {
 		predicates:       append([]predicate.QuickConnectRequest{}, _q.predicates...),
 		withAuthorizedBy: _q.withAuthorizedBy.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -556,6 +557,12 @@ func (_q *QuickConnectRequestQuery) ForShare(opts ...sql.LockOption) *QuickConne
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *QuickConnectRequestQuery) Modify(modifiers ...func(s *sql.Selector)) *QuickConnectRequestSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // QuickConnectRequestGroupBy is the group-by builder for QuickConnectRequest entities.
 type QuickConnectRequestGroupBy struct {
 	selector
@@ -644,4 +651,10 @@ func (_s *QuickConnectRequestSelect) sqlScan(ctx context.Context, root *QuickCon
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *QuickConnectRequestSelect) Modify(modifiers ...func(s *sql.Selector)) *QuickConnectRequestSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

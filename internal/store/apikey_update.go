@@ -21,8 +21,9 @@ import (
 // ApiKeyUpdate is the builder for updating ApiKey entities.
 type ApiKeyUpdate struct {
 	config
-	hooks    []Hook
-	mutation *ApiKeyMutation
+	hooks     []Hook
+	mutation  *ApiKeyMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the ApiKeyUpdate builder.
@@ -31,23 +32,17 @@ func (_u *ApiKeyUpdate) Where(ps ...predicate.ApiKey) *ApiKeyUpdate {
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *ApiKeyUpdate) SetCreatedAt(v time.Time) *ApiKeyUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ApiKeyUpdate) SetNillableCreatedAt(v *time.Time) *ApiKeyUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ApiKeyUpdate) SetUpdatedAt(v time.Time) *ApiKeyUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ApiKeyUpdate) SetNillableUpdatedAt(v *time.Time) *ApiKeyUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -173,7 +168,6 @@ func (_u *ApiKeyUpdate) RemoveSessions(v ...*Session) *ApiKeyUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *ApiKeyUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -199,12 +193,10 @@ func (_u *ApiKeyUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *ApiKeyUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := apikey.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ApiKeyUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ApiKeyUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *ApiKeyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -215,9 +207,6 @@ func (_u *ApiKeyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(apikey.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(apikey.FieldUpdatedAt, field.TypeTime, value)
@@ -308,6 +297,7 @@ func (_u *ApiKeyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{apikey.Label}
@@ -323,28 +313,23 @@ func (_u *ApiKeyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 // ApiKeyUpdateOne is the builder for updating a single ApiKey entity.
 type ApiKeyUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *ApiKeyMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *ApiKeyUpdateOne) SetCreatedAt(v time.Time) *ApiKeyUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ApiKeyUpdateOne) SetNillableCreatedAt(v *time.Time) *ApiKeyUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *ApiKeyMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ApiKeyUpdateOne) SetUpdatedAt(v time.Time) *ApiKeyUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ApiKeyUpdateOne) SetNillableUpdatedAt(v *time.Time) *ApiKeyUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -483,7 +468,6 @@ func (_u *ApiKeyUpdateOne) Select(field string, fields ...string) *ApiKeyUpdateO
 
 // Save executes the query and returns the updated ApiKey entity.
 func (_u *ApiKeyUpdateOne) Save(ctx context.Context) (*ApiKey, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -509,12 +493,10 @@ func (_u *ApiKeyUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *ApiKeyUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := apikey.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ApiKeyUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ApiKeyUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *ApiKeyUpdateOne) sqlSave(ctx context.Context) (_node *ApiKey, err error) {
@@ -542,9 +524,6 @@ func (_u *ApiKeyUpdateOne) sqlSave(ctx context.Context) (_node *ApiKey, err erro
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(apikey.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(apikey.FieldUpdatedAt, field.TypeTime, value)
@@ -635,6 +614,7 @@ func (_u *ApiKeyUpdateOne) sqlSave(ctx context.Context) (_node *ApiKey, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &ApiKey{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

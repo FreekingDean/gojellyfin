@@ -21,8 +21,9 @@ import (
 // SyncPlayQueueEntryUpdate is the builder for updating SyncPlayQueueEntry entities.
 type SyncPlayQueueEntryUpdate struct {
 	config
-	hooks    []Hook
-	mutation *SyncPlayQueueEntryMutation
+	hooks     []Hook
+	mutation  *SyncPlayQueueEntryMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the SyncPlayQueueEntryUpdate builder.
@@ -31,23 +32,17 @@ func (_u *SyncPlayQueueEntryUpdate) Where(ps ...predicate.SyncPlayQueueEntry) *S
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *SyncPlayQueueEntryUpdate) SetCreatedAt(v time.Time) *SyncPlayQueueEntryUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *SyncPlayQueueEntryUpdate) SetNillableCreatedAt(v *time.Time) *SyncPlayQueueEntryUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *SyncPlayQueueEntryUpdate) SetUpdatedAt(v time.Time) *SyncPlayQueueEntryUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *SyncPlayQueueEntryUpdate) SetNillableUpdatedAt(v *time.Time) *SyncPlayQueueEntryUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -156,7 +151,6 @@ func (_u *SyncPlayQueueEntryUpdate) ClearItem() *SyncPlayQueueEntryUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *SyncPlayQueueEntryUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -182,14 +176,6 @@ func (_u *SyncPlayQueueEntryUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *SyncPlayQueueEntryUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := syncplayqueueentry.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *SyncPlayQueueEntryUpdate) check() error {
 	if _u.mutation.GroupCleared() && len(_u.mutation.GroupIDs()) > 0 {
@@ -199,6 +185,12 @@ func (_u *SyncPlayQueueEntryUpdate) check() error {
 		return errors.New(`store: clearing a required unique edge "SyncPlayQueueEntry.item"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *SyncPlayQueueEntryUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *SyncPlayQueueEntryUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *SyncPlayQueueEntryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -212,9 +204,6 @@ func (_u *SyncPlayQueueEntryUpdate) sqlSave(ctx context.Context) (_node int, err
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(syncplayqueueentry.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(syncplayqueueentry.FieldUpdatedAt, field.TypeTime, value)
@@ -292,6 +281,7 @@ func (_u *SyncPlayQueueEntryUpdate) sqlSave(ctx context.Context) (_node int, err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{syncplayqueueentry.Label}
@@ -307,28 +297,23 @@ func (_u *SyncPlayQueueEntryUpdate) sqlSave(ctx context.Context) (_node int, err
 // SyncPlayQueueEntryUpdateOne is the builder for updating a single SyncPlayQueueEntry entity.
 type SyncPlayQueueEntryUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *SyncPlayQueueEntryMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *SyncPlayQueueEntryUpdateOne) SetCreatedAt(v time.Time) *SyncPlayQueueEntryUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *SyncPlayQueueEntryUpdateOne) SetNillableCreatedAt(v *time.Time) *SyncPlayQueueEntryUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *SyncPlayQueueEntryMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *SyncPlayQueueEntryUpdateOne) SetUpdatedAt(v time.Time) *SyncPlayQueueEntryUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *SyncPlayQueueEntryUpdateOne) SetNillableUpdatedAt(v *time.Time) *SyncPlayQueueEntryUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -450,7 +435,6 @@ func (_u *SyncPlayQueueEntryUpdateOne) Select(field string, fields ...string) *S
 
 // Save executes the query and returns the updated SyncPlayQueueEntry entity.
 func (_u *SyncPlayQueueEntryUpdateOne) Save(ctx context.Context) (*SyncPlayQueueEntry, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -476,14 +460,6 @@ func (_u *SyncPlayQueueEntryUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *SyncPlayQueueEntryUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := syncplayqueueentry.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *SyncPlayQueueEntryUpdateOne) check() error {
 	if _u.mutation.GroupCleared() && len(_u.mutation.GroupIDs()) > 0 {
@@ -493,6 +469,12 @@ func (_u *SyncPlayQueueEntryUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "SyncPlayQueueEntry.item"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *SyncPlayQueueEntryUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *SyncPlayQueueEntryUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *SyncPlayQueueEntryUpdateOne) sqlSave(ctx context.Context) (_node *SyncPlayQueueEntry, err error) {
@@ -523,9 +505,6 @@ func (_u *SyncPlayQueueEntryUpdateOne) sqlSave(ctx context.Context) (_node *Sync
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(syncplayqueueentry.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(syncplayqueueentry.FieldUpdatedAt, field.TypeTime, value)
@@ -603,6 +582,7 @@ func (_u *SyncPlayQueueEntryUpdateOne) sqlSave(ctx context.Context) (_node *Sync
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &SyncPlayQueueEntry{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

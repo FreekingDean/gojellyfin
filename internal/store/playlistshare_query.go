@@ -304,8 +304,9 @@ func (_q *PlaylistShareQuery) Clone() *PlaylistShareQuery {
 		withPlaylist: _q.withPlaylist.Clone(),
 		withUser:     _q.withUser.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -628,6 +629,12 @@ func (_q *PlaylistShareQuery) ForShare(opts ...sql.LockOption) *PlaylistShareQue
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *PlaylistShareQuery) Modify(modifiers ...func(s *sql.Selector)) *PlaylistShareSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // PlaylistShareGroupBy is the group-by builder for PlaylistShare entities.
 type PlaylistShareGroupBy struct {
 	selector
@@ -716,4 +723,10 @@ func (_s *PlaylistShareSelect) sqlScan(ctx context.Context, root *PlaylistShareQ
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *PlaylistShareSelect) Modify(modifiers ...func(s *sql.Selector)) *PlaylistShareSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

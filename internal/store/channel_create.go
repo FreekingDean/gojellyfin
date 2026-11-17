@@ -331,18 +331,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *ChannelUpsert) SetCreatedAt(v time.Time) *ChannelUpsert {
-	u.Set(channel.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ChannelUpsert) UpdateCreatedAt() *ChannelUpsert {
-	u.SetExcluded(channel.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *ChannelUpsert) SetUpdatedAt(v time.Time) *ChannelUpsert {
 	u.Set(channel.FieldUpdatedAt, v)
@@ -444,6 +432,9 @@ func (u *ChannelUpsertOne) UpdateNewValues() *ChannelUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(channel.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(channel.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -473,20 +464,6 @@ func (u *ChannelUpsertOne) Update(set func(*ChannelUpsert)) *ChannelUpsertOne {
 		set(&ChannelUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ChannelUpsertOne) SetCreatedAt(v time.Time) *ChannelUpsertOne {
-	return u.Update(func(s *ChannelUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ChannelUpsertOne) UpdateCreatedAt() *ChannelUpsertOne {
-	return u.Update(func(s *ChannelUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -770,6 +747,9 @@ func (u *ChannelUpsertBulk) UpdateNewValues() *ChannelUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(channel.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(channel.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -800,20 +780,6 @@ func (u *ChannelUpsertBulk) Update(set func(*ChannelUpsert)) *ChannelUpsertBulk 
 		set(&ChannelUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ChannelUpsertBulk) SetCreatedAt(v time.Time) *ChannelUpsertBulk {
-	return u.Update(func(s *ChannelUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ChannelUpsertBulk) UpdateCreatedAt() *ChannelUpsertBulk {
-	return u.Update(func(s *ChannelUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

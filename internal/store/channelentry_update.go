@@ -21,8 +21,9 @@ import (
 // ChannelEntryUpdate is the builder for updating ChannelEntry entities.
 type ChannelEntryUpdate struct {
 	config
-	hooks    []Hook
-	mutation *ChannelEntryMutation
+	hooks     []Hook
+	mutation  *ChannelEntryMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the ChannelEntryUpdate builder.
@@ -31,23 +32,17 @@ func (_u *ChannelEntryUpdate) Where(ps ...predicate.ChannelEntry) *ChannelEntryU
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *ChannelEntryUpdate) SetCreatedAt(v time.Time) *ChannelEntryUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ChannelEntryUpdate) SetNillableCreatedAt(v *time.Time) *ChannelEntryUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ChannelEntryUpdate) SetUpdatedAt(v time.Time) *ChannelEntryUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ChannelEntryUpdate) SetNillableUpdatedAt(v *time.Time) *ChannelEntryUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -129,7 +124,6 @@ func (_u *ChannelEntryUpdate) ClearItem() *ChannelEntryUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *ChannelEntryUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -155,14 +149,6 @@ func (_u *ChannelEntryUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *ChannelEntryUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := channelentry.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *ChannelEntryUpdate) check() error {
 	if _u.mutation.ChannelCleared() && len(_u.mutation.ChannelIDs()) > 0 {
@@ -172,6 +158,12 @@ func (_u *ChannelEntryUpdate) check() error {
 		return errors.New(`store: clearing a required unique edge "ChannelEntry.item"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ChannelEntryUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ChannelEntryUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *ChannelEntryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -185,9 +177,6 @@ func (_u *ChannelEntryUpdate) sqlSave(ctx context.Context) (_node int, err error
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(channelentry.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(channelentry.FieldUpdatedAt, field.TypeTime, value)
@@ -256,6 +245,7 @@ func (_u *ChannelEntryUpdate) sqlSave(ctx context.Context) (_node int, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{channelentry.Label}
@@ -271,28 +261,23 @@ func (_u *ChannelEntryUpdate) sqlSave(ctx context.Context) (_node int, err error
 // ChannelEntryUpdateOne is the builder for updating a single ChannelEntry entity.
 type ChannelEntryUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *ChannelEntryMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *ChannelEntryUpdateOne) SetCreatedAt(v time.Time) *ChannelEntryUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ChannelEntryUpdateOne) SetNillableCreatedAt(v *time.Time) *ChannelEntryUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *ChannelEntryMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ChannelEntryUpdateOne) SetUpdatedAt(v time.Time) *ChannelEntryUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ChannelEntryUpdateOne) SetNillableUpdatedAt(v *time.Time) *ChannelEntryUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -387,7 +372,6 @@ func (_u *ChannelEntryUpdateOne) Select(field string, fields ...string) *Channel
 
 // Save executes the query and returns the updated ChannelEntry entity.
 func (_u *ChannelEntryUpdateOne) Save(ctx context.Context) (*ChannelEntry, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -413,14 +397,6 @@ func (_u *ChannelEntryUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *ChannelEntryUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := channelentry.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *ChannelEntryUpdateOne) check() error {
 	if _u.mutation.ChannelCleared() && len(_u.mutation.ChannelIDs()) > 0 {
@@ -430,6 +406,12 @@ func (_u *ChannelEntryUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "ChannelEntry.item"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ChannelEntryUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ChannelEntryUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *ChannelEntryUpdateOne) sqlSave(ctx context.Context) (_node *ChannelEntry, err error) {
@@ -460,9 +442,6 @@ func (_u *ChannelEntryUpdateOne) sqlSave(ctx context.Context) (_node *ChannelEnt
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(channelentry.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(channelentry.FieldUpdatedAt, field.TypeTime, value)
@@ -531,6 +510,7 @@ func (_u *ChannelEntryUpdateOne) sqlSave(ctx context.Context) (_node *ChannelEnt
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &ChannelEntry{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

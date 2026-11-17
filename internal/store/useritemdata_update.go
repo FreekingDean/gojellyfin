@@ -21,8 +21,9 @@ import (
 // UserItemDataUpdate is the builder for updating UserItemData entities.
 type UserItemDataUpdate struct {
 	config
-	hooks    []Hook
-	mutation *UserItemDataMutation
+	hooks     []Hook
+	mutation  *UserItemDataMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the UserItemDataUpdate builder.
@@ -31,23 +32,17 @@ func (_u *UserItemDataUpdate) Where(ps ...predicate.UserItemData) *UserItemDataU
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *UserItemDataUpdate) SetCreatedAt(v time.Time) *UserItemDataUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *UserItemDataUpdate) SetNillableCreatedAt(v *time.Time) *UserItemDataUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *UserItemDataUpdate) SetUpdatedAt(v time.Time) *UserItemDataUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *UserItemDataUpdate) SetNillableUpdatedAt(v *time.Time) *UserItemDataUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -245,7 +240,6 @@ func (_u *UserItemDataUpdate) ClearItem() *UserItemDataUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *UserItemDataUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -271,14 +265,6 @@ func (_u *UserItemDataUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *UserItemDataUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := useritemdata.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserItemDataUpdate) check() error {
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
@@ -288,6 +274,12 @@ func (_u *UserItemDataUpdate) check() error {
 		return errors.New(`store: clearing a required unique edge "UserItemData.item"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *UserItemDataUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *UserItemDataUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *UserItemDataUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -301,9 +293,6 @@ func (_u *UserItemDataUpdate) sqlSave(ctx context.Context) (_node int, err error
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(useritemdata.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(useritemdata.FieldUpdatedAt, field.TypeTime, value)
@@ -405,6 +394,7 @@ func (_u *UserItemDataUpdate) sqlSave(ctx context.Context) (_node int, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{useritemdata.Label}
@@ -420,28 +410,23 @@ func (_u *UserItemDataUpdate) sqlSave(ctx context.Context) (_node int, err error
 // UserItemDataUpdateOne is the builder for updating a single UserItemData entity.
 type UserItemDataUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *UserItemDataMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *UserItemDataUpdateOne) SetCreatedAt(v time.Time) *UserItemDataUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *UserItemDataUpdateOne) SetNillableCreatedAt(v *time.Time) *UserItemDataUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *UserItemDataMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *UserItemDataUpdateOne) SetUpdatedAt(v time.Time) *UserItemDataUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *UserItemDataUpdateOne) SetNillableUpdatedAt(v *time.Time) *UserItemDataUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -652,7 +637,6 @@ func (_u *UserItemDataUpdateOne) Select(field string, fields ...string) *UserIte
 
 // Save executes the query and returns the updated UserItemData entity.
 func (_u *UserItemDataUpdateOne) Save(ctx context.Context) (*UserItemData, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -678,14 +662,6 @@ func (_u *UserItemDataUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *UserItemDataUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := useritemdata.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserItemDataUpdateOne) check() error {
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
@@ -695,6 +671,12 @@ func (_u *UserItemDataUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "UserItemData.item"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *UserItemDataUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *UserItemDataUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *UserItemDataUpdateOne) sqlSave(ctx context.Context) (_node *UserItemData, err error) {
@@ -725,9 +707,6 @@ func (_u *UserItemDataUpdateOne) sqlSave(ctx context.Context) (_node *UserItemDa
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(useritemdata.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(useritemdata.FieldUpdatedAt, field.TypeTime, value)
@@ -829,6 +808,7 @@ func (_u *UserItemDataUpdateOne) sqlSave(ctx context.Context) (_node *UserItemDa
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &UserItemData{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

@@ -2,6 +2,8 @@ package entities
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -10,6 +12,14 @@ import (
 
 type PlaylistEntry struct {
 	ent.Schema
+}
+
+func (PlaylistEntry) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entsql.Checks(map[string]string{
+			"playlist_entry_sort_order_not_negative": "sort_order >= 0",
+		}),
+	}
 }
 
 func (PlaylistEntry) Fields() []ent.Field {

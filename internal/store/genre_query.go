@@ -280,8 +280,9 @@ func (_q *GenreQuery) Clone() *GenreQuery {
 		predicates: append([]predicate.Genre{}, _q.predicates...),
 		withItems:  _q.withItems.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -584,6 +585,12 @@ func (_q *GenreQuery) ForShare(opts ...sql.LockOption) *GenreQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *GenreQuery) Modify(modifiers ...func(s *sql.Selector)) *GenreSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // GenreGroupBy is the group-by builder for Genre entities.
 type GenreGroupBy struct {
 	selector
@@ -672,4 +679,10 @@ func (_s *GenreSelect) sqlScan(ctx context.Context, root *GenreQuery, v any) err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *GenreSelect) Modify(modifiers ...func(s *sql.Selector)) *GenreSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

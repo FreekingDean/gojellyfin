@@ -331,18 +331,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *LibrarySourceUpsert) SetCreatedAt(v time.Time) *LibrarySourceUpsert {
-	u.Set(librarysource.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *LibrarySourceUpsert) UpdateCreatedAt() *LibrarySourceUpsert {
-	u.SetExcluded(librarysource.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *LibrarySourceUpsert) SetUpdatedAt(v time.Time) *LibrarySourceUpsert {
 	u.Set(librarysource.FieldUpdatedAt, v)
@@ -450,6 +438,9 @@ func (u *LibrarySourceUpsertOne) UpdateNewValues() *LibrarySourceUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(librarysource.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(librarysource.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -479,20 +470,6 @@ func (u *LibrarySourceUpsertOne) Update(set func(*LibrarySourceUpsert)) *Library
 		set(&LibrarySourceUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *LibrarySourceUpsertOne) SetCreatedAt(v time.Time) *LibrarySourceUpsertOne {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *LibrarySourceUpsertOne) UpdateCreatedAt() *LibrarySourceUpsertOne {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -783,6 +760,9 @@ func (u *LibrarySourceUpsertBulk) UpdateNewValues() *LibrarySourceUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(librarysource.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(librarysource.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -813,20 +793,6 @@ func (u *LibrarySourceUpsertBulk) Update(set func(*LibrarySourceUpsert)) *Librar
 		set(&LibrarySourceUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *LibrarySourceUpsertBulk) SetCreatedAt(v time.Time) *LibrarySourceUpsertBulk {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *LibrarySourceUpsertBulk) UpdateCreatedAt() *LibrarySourceUpsertBulk {
-	return u.Update(func(s *LibrarySourceUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

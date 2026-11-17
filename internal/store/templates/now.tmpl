@@ -1,0 +1,17 @@
+{{ define "now" }}
+
+{{ $pkg := base $.Config.Package }}
+{{ template "header" $ }}
+import (
+	"entgo.io/ent/dialect/sql"
+)
+
+func StampNow(columns ...string) func(*sql.UpdateBuilder) {
+	return func(update *sql.UpdateBuilder) {
+		for _, column := range columns {
+			update.Set(column, sql.Expr("now()"))
+		}
+	}
+}
+
+{{ end }}

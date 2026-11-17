@@ -280,8 +280,9 @@ func (_q *UserConfigurationQuery) Clone() *UserConfigurationQuery {
 		predicates: append([]predicate.UserConfiguration{}, _q.predicates...),
 		withUser:   _q.withUser.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -561,6 +562,12 @@ func (_q *UserConfigurationQuery) ForShare(opts ...sql.LockOption) *UserConfigur
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *UserConfigurationQuery) Modify(modifiers ...func(s *sql.Selector)) *UserConfigurationSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // UserConfigurationGroupBy is the group-by builder for UserConfiguration entities.
 type UserConfigurationGroupBy struct {
 	selector
@@ -649,4 +656,10 @@ func (_s *UserConfigurationSelect) sqlScan(ctx context.Context, root *UserConfig
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *UserConfigurationSelect) Modify(modifiers ...func(s *sql.Selector)) *UserConfigurationSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

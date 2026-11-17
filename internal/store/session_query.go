@@ -454,8 +454,9 @@ func (_q *SessionQuery) Clone() *SessionQuery {
 		withAdditionalUsers:     _q.withAdditionalUsers.Clone(),
 		withSyncPlayMemberships: _q.withSyncPlayMemberships.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -1128,6 +1129,12 @@ func (_q *SessionQuery) ForShare(opts ...sql.LockOption) *SessionQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *SessionQuery) Modify(modifiers ...func(s *sql.Selector)) *SessionSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // SessionGroupBy is the group-by builder for Session entities.
 type SessionGroupBy struct {
 	selector
@@ -1216,4 +1223,10 @@ func (_s *SessionSelect) sqlScan(ctx context.Context, root *SessionQuery, v any)
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *SessionSelect) Modify(modifiers ...func(s *sql.Selector)) *SessionSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

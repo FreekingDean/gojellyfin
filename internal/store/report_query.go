@@ -329,8 +329,9 @@ func (_q *ReportQuery) Clone() *ReportQuery {
 		withFile:   _q.withFile.Clone(),
 		withUser:   _q.withUser.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -709,6 +710,12 @@ func (_q *ReportQuery) ForShare(opts ...sql.LockOption) *ReportQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *ReportQuery) Modify(modifiers ...func(s *sql.Selector)) *ReportSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // ReportGroupBy is the group-by builder for Report entities.
 type ReportGroupBy struct {
 	selector
@@ -797,4 +804,10 @@ func (_s *ReportSelect) sqlScan(ctx context.Context, root *ReportQuery, v any) e
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *ReportSelect) Modify(modifiers ...func(s *sql.Selector)) *ReportSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

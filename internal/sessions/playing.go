@@ -8,7 +8,9 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/store/entities"
+	sessionmodel "github.com/FreekingDean/gojellyfin/internal/store/session"
 )
 
 const PlayingTimeout = 5 * time.Minute
@@ -21,14 +23,12 @@ type Playback struct {
 }
 
 func (s *Service) Playing(ctx context.Context, sessionID uuid.UUID, address string, playback Playback) error {
-	now := time.Now()
 	err := s.store.Session.UpdateOneID(sessionID).
 		SetNowPlayingItemID(playback.ItemID).
 		SetPositionTicks(playback.PositionTicks).
 		SetPlayMethod(playback.PlayMethod).
 		SetIsPaused(playback.IsPaused).
-		SetPlayingAt(now).
-		SetLastActivityAt(now).
+		Modify(store.StampNow(sessionmodel.FieldPlayingAt, sessionmodel.FieldLastActivityAt)).
 		SetRemoteEndpoint(host(address)).
 		Exec(ctx)
 	if err != nil {
@@ -73,7 +73,7 @@ func (s *Service) Stopped(ctx context.Context, sessionID uuid.UUID, address stri
 		ClearPlayMethod().
 		SetIsPaused(false).
 		ClearPlayingAt().
-		SetLastActivityAt(time.Now()).
+		Modify(store.StampNow(sessionmodel.FieldLastActivityAt)).
 		SetRemoteEndpoint(host(address)).
 		Exec(ctx)
 	if err != nil {

@@ -21,8 +21,9 @@ import (
 // LibrarySourceUpdate is the builder for updating LibrarySource entities.
 type LibrarySourceUpdate struct {
 	config
-	hooks    []Hook
-	mutation *LibrarySourceMutation
+	hooks     []Hook
+	mutation  *LibrarySourceMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the LibrarySourceUpdate builder.
@@ -31,23 +32,17 @@ func (_u *LibrarySourceUpdate) Where(ps ...predicate.LibrarySource) *LibrarySour
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *LibrarySourceUpdate) SetCreatedAt(v time.Time) *LibrarySourceUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *LibrarySourceUpdate) SetNillableCreatedAt(v *time.Time) *LibrarySourceUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *LibrarySourceUpdate) SetUpdatedAt(v time.Time) *LibrarySourceUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *LibrarySourceUpdate) SetNillableUpdatedAt(v *time.Time) *LibrarySourceUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -168,7 +163,6 @@ func (_u *LibrarySourceUpdate) ClearSource() *LibrarySourceUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *LibrarySourceUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -194,14 +188,6 @@ func (_u *LibrarySourceUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *LibrarySourceUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := librarysource.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *LibrarySourceUpdate) check() error {
 	if _u.mutation.LibraryCleared() && len(_u.mutation.LibraryIDs()) > 0 {
@@ -211,6 +197,12 @@ func (_u *LibrarySourceUpdate) check() error {
 		return errors.New(`store: clearing a required unique edge "LibrarySource.source"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *LibrarySourceUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *LibrarySourceUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *LibrarySourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -224,9 +216,6 @@ func (_u *LibrarySourceUpdate) sqlSave(ctx context.Context) (_node int, err erro
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(librarysource.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(librarysource.FieldUpdatedAt, field.TypeTime, value)
@@ -307,6 +296,7 @@ func (_u *LibrarySourceUpdate) sqlSave(ctx context.Context) (_node int, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{librarysource.Label}
@@ -322,28 +312,23 @@ func (_u *LibrarySourceUpdate) sqlSave(ctx context.Context) (_node int, err erro
 // LibrarySourceUpdateOne is the builder for updating a single LibrarySource entity.
 type LibrarySourceUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *LibrarySourceMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *LibrarySourceUpdateOne) SetCreatedAt(v time.Time) *LibrarySourceUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *LibrarySourceUpdateOne) SetNillableCreatedAt(v *time.Time) *LibrarySourceUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *LibrarySourceMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *LibrarySourceUpdateOne) SetUpdatedAt(v time.Time) *LibrarySourceUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *LibrarySourceUpdateOne) SetNillableUpdatedAt(v *time.Time) *LibrarySourceUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -477,7 +462,6 @@ func (_u *LibrarySourceUpdateOne) Select(field string, fields ...string) *Librar
 
 // Save executes the query and returns the updated LibrarySource entity.
 func (_u *LibrarySourceUpdateOne) Save(ctx context.Context) (*LibrarySource, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -503,14 +487,6 @@ func (_u *LibrarySourceUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *LibrarySourceUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := librarysource.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *LibrarySourceUpdateOne) check() error {
 	if _u.mutation.LibraryCleared() && len(_u.mutation.LibraryIDs()) > 0 {
@@ -520,6 +496,12 @@ func (_u *LibrarySourceUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "LibrarySource.source"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *LibrarySourceUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *LibrarySourceUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *LibrarySourceUpdateOne) sqlSave(ctx context.Context) (_node *LibrarySource, err error) {
@@ -550,9 +532,6 @@ func (_u *LibrarySourceUpdateOne) sqlSave(ctx context.Context) (_node *LibrarySo
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(librarysource.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(librarysource.FieldUpdatedAt, field.TypeTime, value)
@@ -633,6 +612,7 @@ func (_u *LibrarySourceUpdateOne) sqlSave(ctx context.Context) (_node *LibrarySo
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &LibrarySource{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

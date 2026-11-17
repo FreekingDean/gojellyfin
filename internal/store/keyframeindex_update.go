@@ -21,8 +21,9 @@ import (
 // KeyframeIndexUpdate is the builder for updating KeyframeIndex entities.
 type KeyframeIndexUpdate struct {
 	config
-	hooks    []Hook
-	mutation *KeyframeIndexMutation
+	hooks     []Hook
+	mutation  *KeyframeIndexMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the KeyframeIndexUpdate builder.
@@ -31,23 +32,17 @@ func (_u *KeyframeIndexUpdate) Where(ps ...predicate.KeyframeIndex) *KeyframeInd
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *KeyframeIndexUpdate) SetCreatedAt(v time.Time) *KeyframeIndexUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *KeyframeIndexUpdate) SetNillableCreatedAt(v *time.Time) *KeyframeIndexUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *KeyframeIndexUpdate) SetUpdatedAt(v time.Time) *KeyframeIndexUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *KeyframeIndexUpdate) SetNillableUpdatedAt(v *time.Time) *KeyframeIndexUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -101,7 +96,6 @@ func (_u *KeyframeIndexUpdate) ClearSource() *KeyframeIndexUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *KeyframeIndexUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -127,20 +121,18 @@ func (_u *KeyframeIndexUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *KeyframeIndexUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := keyframeindex.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *KeyframeIndexUpdate) check() error {
 	if _u.mutation.SourceCleared() && len(_u.mutation.SourceIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "KeyframeIndex.source"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *KeyframeIndexUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *KeyframeIndexUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *KeyframeIndexUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -154,9 +146,6 @@ func (_u *KeyframeIndexUpdate) sqlSave(ctx context.Context) (_node int, err erro
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(keyframeindex.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(keyframeindex.FieldUpdatedAt, field.TypeTime, value)
@@ -198,6 +187,7 @@ func (_u *KeyframeIndexUpdate) sqlSave(ctx context.Context) (_node int, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{keyframeindex.Label}
@@ -213,28 +203,23 @@ func (_u *KeyframeIndexUpdate) sqlSave(ctx context.Context) (_node int, err erro
 // KeyframeIndexUpdateOne is the builder for updating a single KeyframeIndex entity.
 type KeyframeIndexUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *KeyframeIndexMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *KeyframeIndexUpdateOne) SetCreatedAt(v time.Time) *KeyframeIndexUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *KeyframeIndexUpdateOne) SetNillableCreatedAt(v *time.Time) *KeyframeIndexUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *KeyframeIndexMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *KeyframeIndexUpdateOne) SetUpdatedAt(v time.Time) *KeyframeIndexUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *KeyframeIndexUpdateOne) SetNillableUpdatedAt(v *time.Time) *KeyframeIndexUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -301,7 +286,6 @@ func (_u *KeyframeIndexUpdateOne) Select(field string, fields ...string) *Keyfra
 
 // Save executes the query and returns the updated KeyframeIndex entity.
 func (_u *KeyframeIndexUpdateOne) Save(ctx context.Context) (*KeyframeIndex, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -327,20 +311,18 @@ func (_u *KeyframeIndexUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *KeyframeIndexUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := keyframeindex.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *KeyframeIndexUpdateOne) check() error {
 	if _u.mutation.SourceCleared() && len(_u.mutation.SourceIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "KeyframeIndex.source"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *KeyframeIndexUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *KeyframeIndexUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *KeyframeIndexUpdateOne) sqlSave(ctx context.Context) (_node *KeyframeIndex, err error) {
@@ -371,9 +353,6 @@ func (_u *KeyframeIndexUpdateOne) sqlSave(ctx context.Context) (_node *KeyframeI
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(keyframeindex.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(keyframeindex.FieldUpdatedAt, field.TypeTime, value)
@@ -415,6 +394,7 @@ func (_u *KeyframeIndexUpdateOne) sqlSave(ctx context.Context) (_node *KeyframeI
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &KeyframeIndex{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

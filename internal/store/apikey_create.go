@@ -320,18 +320,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *ApiKeyUpsert) SetCreatedAt(v time.Time) *ApiKeyUpsert {
-	u.Set(apikey.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ApiKeyUpsert) UpdateCreatedAt() *ApiKeyUpsert {
-	u.SetExcluded(apikey.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *ApiKeyUpsert) SetUpdatedAt(v time.Time) *ApiKeyUpsert {
 	u.Set(apikey.FieldUpdatedAt, v)
@@ -421,6 +409,9 @@ func (u *ApiKeyUpsertOne) UpdateNewValues() *ApiKeyUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(apikey.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(apikey.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -450,20 +441,6 @@ func (u *ApiKeyUpsertOne) Update(set func(*ApiKeyUpsert)) *ApiKeyUpsertOne {
 		set(&ApiKeyUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ApiKeyUpsertOne) SetCreatedAt(v time.Time) *ApiKeyUpsertOne {
-	return u.Update(func(s *ApiKeyUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ApiKeyUpsertOne) UpdateCreatedAt() *ApiKeyUpsertOne {
-	return u.Update(func(s *ApiKeyUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -733,6 +710,9 @@ func (u *ApiKeyUpsertBulk) UpdateNewValues() *ApiKeyUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(apikey.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(apikey.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -763,20 +743,6 @@ func (u *ApiKeyUpsertBulk) Update(set func(*ApiKeyUpsert)) *ApiKeyUpsertBulk {
 		set(&ApiKeyUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ApiKeyUpsertBulk) SetCreatedAt(v time.Time) *ApiKeyUpsertBulk {
-	return u.Update(func(s *ApiKeyUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ApiKeyUpsertBulk) UpdateCreatedAt() *ApiKeyUpsertBulk {
-	return u.Update(func(s *ApiKeyUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

@@ -430,8 +430,9 @@ func (_q *ItemSourceQuery) Clone() *ItemSourceQuery {
 		withReports:          _q.withReports.Clone(),
 		withPlanningSessions: _q.withPlanningSessions.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -1002,6 +1003,12 @@ func (_q *ItemSourceQuery) ForShare(opts ...sql.LockOption) *ItemSourceQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *ItemSourceQuery) Modify(modifiers ...func(s *sql.Selector)) *ItemSourceSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // ItemSourceGroupBy is the group-by builder for ItemSource entities.
 type ItemSourceGroupBy struct {
 	selector
@@ -1090,4 +1097,10 @@ func (_s *ItemSourceSelect) sqlScan(ctx context.Context, root *ItemSourceQuery, 
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *ItemSourceSelect) Modify(modifiers ...func(s *sql.Selector)) *ItemSourceSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

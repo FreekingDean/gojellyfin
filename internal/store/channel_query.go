@@ -280,8 +280,9 @@ func (_q *ChannelQuery) Clone() *ChannelQuery {
 		predicates:  append([]predicate.Channel{}, _q.predicates...),
 		withEntries: _q.withEntries.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -553,6 +554,12 @@ func (_q *ChannelQuery) ForShare(opts ...sql.LockOption) *ChannelQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *ChannelQuery) Modify(modifiers ...func(s *sql.Selector)) *ChannelSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // ChannelGroupBy is the group-by builder for Channel entities.
 type ChannelGroupBy struct {
 	selector
@@ -641,4 +648,10 @@ func (_s *ChannelSelect) sqlScan(ctx context.Context, root *ChannelQuery, v any)
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *ChannelSelect) Modify(modifiers ...func(s *sql.Selector)) *ChannelSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

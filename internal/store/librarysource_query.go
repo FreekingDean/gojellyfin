@@ -304,8 +304,9 @@ func (_q *LibrarySourceQuery) Clone() *LibrarySourceQuery {
 		withLibrary: _q.withLibrary.Clone(),
 		withSource:  _q.withSource.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -628,6 +629,12 @@ func (_q *LibrarySourceQuery) ForShare(opts ...sql.LockOption) *LibrarySourceQue
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *LibrarySourceQuery) Modify(modifiers ...func(s *sql.Selector)) *LibrarySourceSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // LibrarySourceGroupBy is the group-by builder for LibrarySource entities.
 type LibrarySourceGroupBy struct {
 	selector
@@ -716,4 +723,10 @@ func (_s *LibrarySourceSelect) sqlScan(ctx context.Context, root *LibrarySourceQ
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *LibrarySourceSelect) Modify(modifiers ...func(s *sql.Selector)) *LibrarySourceSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

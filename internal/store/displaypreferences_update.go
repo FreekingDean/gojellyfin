@@ -20,8 +20,9 @@ import (
 // DisplayPreferencesUpdate is the builder for updating DisplayPreferences entities.
 type DisplayPreferencesUpdate struct {
 	config
-	hooks    []Hook
-	mutation *DisplayPreferencesMutation
+	hooks     []Hook
+	mutation  *DisplayPreferencesMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the DisplayPreferencesUpdate builder.
@@ -30,23 +31,17 @@ func (_u *DisplayPreferencesUpdate) Where(ps ...predicate.DisplayPreferences) *D
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *DisplayPreferencesUpdate) SetCreatedAt(v time.Time) *DisplayPreferencesUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *DisplayPreferencesUpdate) SetNillableCreatedAt(v *time.Time) *DisplayPreferencesUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *DisplayPreferencesUpdate) SetUpdatedAt(v time.Time) *DisplayPreferencesUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *DisplayPreferencesUpdate) SetNillableUpdatedAt(v *time.Time) *DisplayPreferencesUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -308,7 +303,6 @@ func (_u *DisplayPreferencesUpdate) ClearUser() *DisplayPreferencesUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *DisplayPreferencesUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -334,14 +328,6 @@ func (_u *DisplayPreferencesUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *DisplayPreferencesUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := displaypreferences.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *DisplayPreferencesUpdate) check() error {
 	if v, ok := _u.mutation.SortOrder(); ok {
@@ -360,6 +346,12 @@ func (_u *DisplayPreferencesUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *DisplayPreferencesUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *DisplayPreferencesUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
+}
+
 func (_u *DisplayPreferencesUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
@@ -371,9 +363,6 @@ func (_u *DisplayPreferencesUpdate) sqlSave(ctx context.Context) (_node int, err
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(displaypreferences.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(displaypreferences.FieldUpdatedAt, field.TypeTime, value)
@@ -467,6 +456,7 @@ func (_u *DisplayPreferencesUpdate) sqlSave(ctx context.Context) (_node int, err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{displaypreferences.Label}
@@ -482,28 +472,23 @@ func (_u *DisplayPreferencesUpdate) sqlSave(ctx context.Context) (_node int, err
 // DisplayPreferencesUpdateOne is the builder for updating a single DisplayPreferences entity.
 type DisplayPreferencesUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *DisplayPreferencesMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *DisplayPreferencesUpdateOne) SetCreatedAt(v time.Time) *DisplayPreferencesUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *DisplayPreferencesUpdateOne) SetNillableCreatedAt(v *time.Time) *DisplayPreferencesUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *DisplayPreferencesMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *DisplayPreferencesUpdateOne) SetUpdatedAt(v time.Time) *DisplayPreferencesUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *DisplayPreferencesUpdateOne) SetNillableUpdatedAt(v *time.Time) *DisplayPreferencesUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -778,7 +763,6 @@ func (_u *DisplayPreferencesUpdateOne) Select(field string, fields ...string) *D
 
 // Save executes the query and returns the updated DisplayPreferences entity.
 func (_u *DisplayPreferencesUpdateOne) Save(ctx context.Context) (*DisplayPreferences, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -804,14 +788,6 @@ func (_u *DisplayPreferencesUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *DisplayPreferencesUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := displaypreferences.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *DisplayPreferencesUpdateOne) check() error {
 	if v, ok := _u.mutation.SortOrder(); ok {
@@ -828,6 +804,12 @@ func (_u *DisplayPreferencesUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "DisplayPreferences.user"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *DisplayPreferencesUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *DisplayPreferencesUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *DisplayPreferencesUpdateOne) sqlSave(ctx context.Context) (_node *DisplayPreferences, err error) {
@@ -858,9 +840,6 @@ func (_u *DisplayPreferencesUpdateOne) sqlSave(ctx context.Context) (_node *Disp
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(displaypreferences.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(displaypreferences.FieldUpdatedAt, field.TypeTime, value)
@@ -954,6 +933,7 @@ func (_u *DisplayPreferencesUpdateOne) sqlSave(ctx context.Context) (_node *Disp
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &DisplayPreferences{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

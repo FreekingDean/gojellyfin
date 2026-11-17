@@ -546,18 +546,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *DisplayPreferencesUpsert) SetCreatedAt(v time.Time) *DisplayPreferencesUpsert {
-	u.Set(displaypreferences.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *DisplayPreferencesUpsert) UpdateCreatedAt() *DisplayPreferencesUpsert {
-	u.SetExcluded(displaypreferences.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *DisplayPreferencesUpsert) SetUpdatedAt(v time.Time) *DisplayPreferencesUpsert {
 	u.Set(displaypreferences.FieldUpdatedAt, v)
@@ -803,6 +791,9 @@ func (u *DisplayPreferencesUpsertOne) UpdateNewValues() *DisplayPreferencesUpser
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(displaypreferences.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(displaypreferences.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -832,20 +823,6 @@ func (u *DisplayPreferencesUpsertOne) Update(set func(*DisplayPreferencesUpsert)
 		set(&DisplayPreferencesUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *DisplayPreferencesUpsertOne) SetCreatedAt(v time.Time) *DisplayPreferencesUpsertOne {
-	return u.Update(func(s *DisplayPreferencesUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *DisplayPreferencesUpsertOne) UpdateCreatedAt() *DisplayPreferencesUpsertOne {
-	return u.Update(func(s *DisplayPreferencesUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -1297,6 +1274,9 @@ func (u *DisplayPreferencesUpsertBulk) UpdateNewValues() *DisplayPreferencesUpse
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(displaypreferences.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(displaypreferences.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -1327,20 +1307,6 @@ func (u *DisplayPreferencesUpsertBulk) Update(set func(*DisplayPreferencesUpsert
 		set(&DisplayPreferencesUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *DisplayPreferencesUpsertBulk) SetCreatedAt(v time.Time) *DisplayPreferencesUpsertBulk {
-	return u.Update(func(s *DisplayPreferencesUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *DisplayPreferencesUpsertBulk) UpdateCreatedAt() *DisplayPreferencesUpsertBulk {
-	return u.Update(func(s *DisplayPreferencesUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

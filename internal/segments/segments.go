@@ -189,7 +189,7 @@ func (s *Service) DetectSeason(ctx context.Context, season uuid.UUID) error {
 
 		err = s.store.ItemSource.Update().
 			Where(sourcemodel.IDIn(pending...)).
-			SetSegmentsDetectedAt(time.Now()).
+			Modify(store.StampNow(sourcemodel.FieldSegmentsDetectedAt)).
 			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to stamp the detected files: %w", err)
@@ -334,7 +334,6 @@ func (s *Service) saveIntro(ctx context.Context, fileID uuid.UUID, intro span) e
 		OnConflictColumns(segmentmodel.FieldItemSourceID, segmentmodel.FieldOrigin, segmentmodel.FieldKind).
 		UpdateStartTicks().
 		UpdateEndTicks().
-		UpdateUpdatedAt().
 		Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to save the intro of %s: %w", fileID, err)

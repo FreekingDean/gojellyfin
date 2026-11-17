@@ -384,18 +384,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *PlaylistUpsert) SetCreatedAt(v time.Time) *PlaylistUpsert {
-	u.Set(playlist.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *PlaylistUpsert) UpdateCreatedAt() *PlaylistUpsert {
-	u.SetExcluded(playlist.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *PlaylistUpsert) SetUpdatedAt(v time.Time) *PlaylistUpsert {
 	u.Set(playlist.FieldUpdatedAt, v)
@@ -473,6 +461,9 @@ func (u *PlaylistUpsertOne) UpdateNewValues() *PlaylistUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(playlist.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(playlist.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -502,20 +493,6 @@ func (u *PlaylistUpsertOne) Update(set func(*PlaylistUpsert)) *PlaylistUpsertOne
 		set(&PlaylistUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *PlaylistUpsertOne) SetCreatedAt(v time.Time) *PlaylistUpsertOne {
-	return u.Update(func(s *PlaylistUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *PlaylistUpsertOne) UpdateCreatedAt() *PlaylistUpsertOne {
-	return u.Update(func(s *PlaylistUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -771,6 +748,9 @@ func (u *PlaylistUpsertBulk) UpdateNewValues() *PlaylistUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(playlist.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(playlist.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -801,20 +781,6 @@ func (u *PlaylistUpsertBulk) Update(set func(*PlaylistUpsert)) *PlaylistUpsertBu
 		set(&PlaylistUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *PlaylistUpsertBulk) SetCreatedAt(v time.Time) *PlaylistUpsertBulk {
-	return u.Update(func(s *PlaylistUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *PlaylistUpsertBulk) UpdateCreatedAt() *PlaylistUpsertBulk {
-	return u.Update(func(s *PlaylistUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

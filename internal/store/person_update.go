@@ -20,8 +20,9 @@ import (
 // PersonUpdate is the builder for updating Person entities.
 type PersonUpdate struct {
 	config
-	hooks    []Hook
-	mutation *PersonMutation
+	hooks     []Hook
+	mutation  *PersonMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the PersonUpdate builder.
@@ -30,23 +31,17 @@ func (_u *PersonUpdate) Where(ps ...predicate.Person) *PersonUpdate {
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *PersonUpdate) SetCreatedAt(v time.Time) *PersonUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *PersonUpdate) SetNillableCreatedAt(v *time.Time) *PersonUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *PersonUpdate) SetUpdatedAt(v time.Time) *PersonUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *PersonUpdate) SetNillableUpdatedAt(v *time.Time) *PersonUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -127,7 +122,6 @@ func (_u *PersonUpdate) RemoveCredits(v ...*Credit) *PersonUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *PersonUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -153,12 +147,10 @@ func (_u *PersonUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *PersonUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := person.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *PersonUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *PersonUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *PersonUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -169,9 +161,6 @@ func (_u *PersonUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(person.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(person.FieldUpdatedAt, field.TypeTime, value)
@@ -230,6 +219,7 @@ func (_u *PersonUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{person.Label}
@@ -245,28 +235,23 @@ func (_u *PersonUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 // PersonUpdateOne is the builder for updating a single Person entity.
 type PersonUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *PersonMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *PersonUpdateOne) SetCreatedAt(v time.Time) *PersonUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *PersonUpdateOne) SetNillableCreatedAt(v *time.Time) *PersonUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *PersonMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *PersonUpdateOne) SetUpdatedAt(v time.Time) *PersonUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *PersonUpdateOne) SetNillableUpdatedAt(v *time.Time) *PersonUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -360,7 +345,6 @@ func (_u *PersonUpdateOne) Select(field string, fields ...string) *PersonUpdateO
 
 // Save executes the query and returns the updated Person entity.
 func (_u *PersonUpdateOne) Save(ctx context.Context) (*Person, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -386,12 +370,10 @@ func (_u *PersonUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *PersonUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := person.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *PersonUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *PersonUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *PersonUpdateOne) sqlSave(ctx context.Context) (_node *Person, err error) {
@@ -419,9 +401,6 @@ func (_u *PersonUpdateOne) sqlSave(ctx context.Context) (_node *Person, err erro
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(person.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(person.FieldUpdatedAt, field.TypeTime, value)
@@ -480,6 +459,7 @@ func (_u *PersonUpdateOne) sqlSave(ctx context.Context) (_node *Person, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &Person{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

@@ -691,18 +691,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *SessionUpsert) SetCreatedAt(v time.Time) *SessionUpsert {
-	u.Set(session.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *SessionUpsert) UpdateCreatedAt() *SessionUpsert {
-	u.SetExcluded(session.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *SessionUpsert) SetUpdatedAt(v time.Time) *SessionUpsert {
 	u.Set(session.FieldUpdatedAt, v)
@@ -972,6 +960,9 @@ func (u *SessionUpsertOne) UpdateNewValues() *SessionUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(session.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(session.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -1001,20 +992,6 @@ func (u *SessionUpsertOne) Update(set func(*SessionUpsert)) *SessionUpsertOne {
 		set(&SessionUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *SessionUpsertOne) SetCreatedAt(v time.Time) *SessionUpsertOne {
-	return u.Update(func(s *SessionUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *SessionUpsertOne) UpdateCreatedAt() *SessionUpsertOne {
-	return u.Update(func(s *SessionUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -1494,6 +1471,9 @@ func (u *SessionUpsertBulk) UpdateNewValues() *SessionUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(session.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(session.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -1524,20 +1504,6 @@ func (u *SessionUpsertBulk) Update(set func(*SessionUpsert)) *SessionUpsertBulk 
 		set(&SessionUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *SessionUpsertBulk) SetCreatedAt(v time.Time) *SessionUpsertBulk {
-	return u.Update(func(s *SessionUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *SessionUpsertBulk) UpdateCreatedAt() *SessionUpsertBulk {
-	return u.Update(func(s *SessionUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

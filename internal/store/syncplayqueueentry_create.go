@@ -308,18 +308,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *SyncPlayQueueEntryUpsert) SetCreatedAt(v time.Time) *SyncPlayQueueEntryUpsert {
-	u.Set(syncplayqueueentry.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *SyncPlayQueueEntryUpsert) UpdateCreatedAt() *SyncPlayQueueEntryUpsert {
-	u.SetExcluded(syncplayqueueentry.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *SyncPlayQueueEntryUpsert) SetUpdatedAt(v time.Time) *SyncPlayQueueEntryUpsert {
 	u.Set(syncplayqueueentry.FieldUpdatedAt, v)
@@ -415,6 +403,9 @@ func (u *SyncPlayQueueEntryUpsertOne) UpdateNewValues() *SyncPlayQueueEntryUpser
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(syncplayqueueentry.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(syncplayqueueentry.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -444,20 +435,6 @@ func (u *SyncPlayQueueEntryUpsertOne) Update(set func(*SyncPlayQueueEntryUpsert)
 		set(&SyncPlayQueueEntryUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *SyncPlayQueueEntryUpsertOne) SetCreatedAt(v time.Time) *SyncPlayQueueEntryUpsertOne {
-	return u.Update(func(s *SyncPlayQueueEntryUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *SyncPlayQueueEntryUpsertOne) UpdateCreatedAt() *SyncPlayQueueEntryUpsertOne {
-	return u.Update(func(s *SyncPlayQueueEntryUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -734,6 +711,9 @@ func (u *SyncPlayQueueEntryUpsertBulk) UpdateNewValues() *SyncPlayQueueEntryUpse
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(syncplayqueueentry.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(syncplayqueueentry.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -764,20 +744,6 @@ func (u *SyncPlayQueueEntryUpsertBulk) Update(set func(*SyncPlayQueueEntryUpsert
 		set(&SyncPlayQueueEntryUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *SyncPlayQueueEntryUpsertBulk) SetCreatedAt(v time.Time) *SyncPlayQueueEntryUpsertBulk {
-	return u.Update(func(s *SyncPlayQueueEntryUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *SyncPlayQueueEntryUpsertBulk) UpdateCreatedAt() *SyncPlayQueueEntryUpsertBulk {
-	return u.Update(func(s *SyncPlayQueueEntryUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

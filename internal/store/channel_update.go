@@ -20,8 +20,9 @@ import (
 // ChannelUpdate is the builder for updating Channel entities.
 type ChannelUpdate struct {
 	config
-	hooks    []Hook
-	mutation *ChannelMutation
+	hooks     []Hook
+	mutation  *ChannelMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the ChannelUpdate builder.
@@ -30,23 +31,17 @@ func (_u *ChannelUpdate) Where(ps ...predicate.Channel) *ChannelUpdate {
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *ChannelUpdate) SetCreatedAt(v time.Time) *ChannelUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ChannelUpdate) SetNillableCreatedAt(v *time.Time) *ChannelUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ChannelUpdate) SetUpdatedAt(v time.Time) *ChannelUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ChannelUpdate) SetNillableUpdatedAt(v *time.Time) *ChannelUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -177,7 +172,6 @@ func (_u *ChannelUpdate) RemoveEntries(v ...*ChannelEntry) *ChannelUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *ChannelUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -203,14 +197,6 @@ func (_u *ChannelUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *ChannelUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := channel.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *ChannelUpdate) check() error {
 	if v, ok := _u.mutation.Number(); ok {
@@ -231,6 +217,12 @@ func (_u *ChannelUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ChannelUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ChannelUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
+}
+
 func (_u *ChannelUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
@@ -242,9 +234,6 @@ func (_u *ChannelUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(channel.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(channel.FieldUpdatedAt, field.TypeTime, value)
@@ -315,6 +304,7 @@ func (_u *ChannelUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{channel.Label}
@@ -330,28 +320,23 @@ func (_u *ChannelUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 // ChannelUpdateOne is the builder for updating a single Channel entity.
 type ChannelUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *ChannelMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *ChannelUpdateOne) SetCreatedAt(v time.Time) *ChannelUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ChannelUpdateOne) SetNillableCreatedAt(v *time.Time) *ChannelUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *ChannelMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ChannelUpdateOne) SetUpdatedAt(v time.Time) *ChannelUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ChannelUpdateOne) SetNillableUpdatedAt(v *time.Time) *ChannelUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -495,7 +480,6 @@ func (_u *ChannelUpdateOne) Select(field string, fields ...string) *ChannelUpdat
 
 // Save executes the query and returns the updated Channel entity.
 func (_u *ChannelUpdateOne) Save(ctx context.Context) (*Channel, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -521,14 +505,6 @@ func (_u *ChannelUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *ChannelUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := channel.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *ChannelUpdateOne) check() error {
 	if v, ok := _u.mutation.Number(); ok {
@@ -547,6 +523,12 @@ func (_u *ChannelUpdateOne) check() error {
 		}
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ChannelUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ChannelUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *ChannelUpdateOne) sqlSave(ctx context.Context) (_node *Channel, err error) {
@@ -577,9 +559,6 @@ func (_u *ChannelUpdateOne) sqlSave(ctx context.Context) (_node *Channel, err er
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(channel.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(channel.FieldUpdatedAt, field.TypeTime, value)
@@ -650,6 +629,7 @@ func (_u *ChannelUpdateOne) sqlSave(ctx context.Context) (_node *Channel, err er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &Channel{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

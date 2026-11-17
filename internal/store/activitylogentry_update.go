@@ -21,8 +21,9 @@ import (
 // ActivityLogEntryUpdate is the builder for updating ActivityLogEntry entities.
 type ActivityLogEntryUpdate struct {
 	config
-	hooks    []Hook
-	mutation *ActivityLogEntryMutation
+	hooks     []Hook
+	mutation  *ActivityLogEntryMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the ActivityLogEntryUpdate builder.
@@ -31,23 +32,17 @@ func (_u *ActivityLogEntryUpdate) Where(ps ...predicate.ActivityLogEntry) *Activ
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *ActivityLogEntryUpdate) SetCreatedAt(v time.Time) *ActivityLogEntryUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ActivityLogEntryUpdate) SetNillableCreatedAt(v *time.Time) *ActivityLogEntryUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ActivityLogEntryUpdate) SetUpdatedAt(v time.Time) *ActivityLogEntryUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ActivityLogEntryUpdate) SetNillableUpdatedAt(v *time.Time) *ActivityLogEntryUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -190,7 +185,6 @@ func (_u *ActivityLogEntryUpdate) ClearItem() *ActivityLogEntryUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *ActivityLogEntryUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -216,14 +210,6 @@ func (_u *ActivityLogEntryUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *ActivityLogEntryUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := activitylogentry.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *ActivityLogEntryUpdate) check() error {
 	if v, ok := _u.mutation.Severity(); ok {
@@ -232,6 +218,12 @@ func (_u *ActivityLogEntryUpdate) check() error {
 		}
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ActivityLogEntryUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ActivityLogEntryUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *ActivityLogEntryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -245,9 +237,6 @@ func (_u *ActivityLogEntryUpdate) sqlSave(ctx context.Context) (_node int, err e
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(activitylogentry.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(activitylogentry.FieldUpdatedAt, field.TypeTime, value)
@@ -331,6 +320,7 @@ func (_u *ActivityLogEntryUpdate) sqlSave(ctx context.Context) (_node int, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{activitylogentry.Label}
@@ -346,28 +336,23 @@ func (_u *ActivityLogEntryUpdate) sqlSave(ctx context.Context) (_node int, err e
 // ActivityLogEntryUpdateOne is the builder for updating a single ActivityLogEntry entity.
 type ActivityLogEntryUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *ActivityLogEntryMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *ActivityLogEntryUpdateOne) SetCreatedAt(v time.Time) *ActivityLogEntryUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ActivityLogEntryUpdateOne) SetNillableCreatedAt(v *time.Time) *ActivityLogEntryUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *ActivityLogEntryMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ActivityLogEntryUpdateOne) SetUpdatedAt(v time.Time) *ActivityLogEntryUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ActivityLogEntryUpdateOne) SetNillableUpdatedAt(v *time.Time) *ActivityLogEntryUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -523,7 +508,6 @@ func (_u *ActivityLogEntryUpdateOne) Select(field string, fields ...string) *Act
 
 // Save executes the query and returns the updated ActivityLogEntry entity.
 func (_u *ActivityLogEntryUpdateOne) Save(ctx context.Context) (*ActivityLogEntry, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -549,14 +533,6 @@ func (_u *ActivityLogEntryUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *ActivityLogEntryUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := activitylogentry.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *ActivityLogEntryUpdateOne) check() error {
 	if v, ok := _u.mutation.Severity(); ok {
@@ -565,6 +541,12 @@ func (_u *ActivityLogEntryUpdateOne) check() error {
 		}
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ActivityLogEntryUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ActivityLogEntryUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *ActivityLogEntryUpdateOne) sqlSave(ctx context.Context) (_node *ActivityLogEntry, err error) {
@@ -595,9 +577,6 @@ func (_u *ActivityLogEntryUpdateOne) sqlSave(ctx context.Context) (_node *Activi
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(activitylogentry.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(activitylogentry.FieldUpdatedAt, field.TypeTime, value)
@@ -681,6 +660,7 @@ func (_u *ActivityLogEntryUpdateOne) sqlSave(ctx context.Context) (_node *Activi
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &ActivityLogEntry{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

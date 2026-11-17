@@ -20,8 +20,9 @@ import (
 // MediaStreamUpdate is the builder for updating MediaStream entities.
 type MediaStreamUpdate struct {
 	config
-	hooks    []Hook
-	mutation *MediaStreamMutation
+	hooks     []Hook
+	mutation  *MediaStreamMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the MediaStreamUpdate builder.
@@ -30,23 +31,17 @@ func (_u *MediaStreamUpdate) Where(ps ...predicate.MediaStream) *MediaStreamUpda
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *MediaStreamUpdate) SetCreatedAt(v time.Time) *MediaStreamUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *MediaStreamUpdate) SetNillableCreatedAt(v *time.Time) *MediaStreamUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *MediaStreamUpdate) SetUpdatedAt(v time.Time) *MediaStreamUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *MediaStreamUpdate) SetNillableUpdatedAt(v *time.Time) *MediaStreamUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -461,7 +456,6 @@ func (_u *MediaStreamUpdate) ClearSource() *MediaStreamUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *MediaStreamUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -487,14 +481,6 @@ func (_u *MediaStreamUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *MediaStreamUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := mediastream.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *MediaStreamUpdate) check() error {
 	if v, ok := _u.mutation.Kind(); ok {
@@ -513,6 +499,12 @@ func (_u *MediaStreamUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *MediaStreamUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *MediaStreamUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
+}
+
 func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
@@ -524,9 +516,6 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(mediastream.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(mediastream.FieldUpdatedAt, field.TypeTime, value)
@@ -671,6 +660,7 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{mediastream.Label}
@@ -686,28 +676,23 @@ func (_u *MediaStreamUpdate) sqlSave(ctx context.Context) (_node int, err error)
 // MediaStreamUpdateOne is the builder for updating a single MediaStream entity.
 type MediaStreamUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *MediaStreamMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *MediaStreamUpdateOne) SetCreatedAt(v time.Time) *MediaStreamUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *MediaStreamUpdateOne) SetNillableCreatedAt(v *time.Time) *MediaStreamUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *MediaStreamMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *MediaStreamUpdateOne) SetUpdatedAt(v time.Time) *MediaStreamUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *MediaStreamUpdateOne) SetNillableUpdatedAt(v *time.Time) *MediaStreamUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -1135,7 +1120,6 @@ func (_u *MediaStreamUpdateOne) Select(field string, fields ...string) *MediaStr
 
 // Save executes the query and returns the updated MediaStream entity.
 func (_u *MediaStreamUpdateOne) Save(ctx context.Context) (*MediaStream, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -1161,14 +1145,6 @@ func (_u *MediaStreamUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *MediaStreamUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := mediastream.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *MediaStreamUpdateOne) check() error {
 	if v, ok := _u.mutation.Kind(); ok {
@@ -1185,6 +1161,12 @@ func (_u *MediaStreamUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "MediaStream.source"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *MediaStreamUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *MediaStreamUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream, err error) {
@@ -1215,9 +1197,6 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(mediastream.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(mediastream.FieldUpdatedAt, field.TypeTime, value)
@@ -1362,6 +1341,7 @@ func (_u *MediaStreamUpdateOne) sqlSave(ctx context.Context) (_node *MediaStream
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &MediaStream{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

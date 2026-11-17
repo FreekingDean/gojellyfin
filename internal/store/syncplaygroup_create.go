@@ -615,18 +615,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *SyncPlayGroupUpsert) SetCreatedAt(v time.Time) *SyncPlayGroupUpsert {
-	u.Set(syncplaygroup.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *SyncPlayGroupUpsert) UpdateCreatedAt() *SyncPlayGroupUpsert {
-	u.SetExcluded(syncplaygroup.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *SyncPlayGroupUpsert) SetUpdatedAt(v time.Time) *SyncPlayGroupUpsert {
 	u.Set(syncplaygroup.FieldUpdatedAt, v)
@@ -854,6 +842,9 @@ func (u *SyncPlayGroupUpsertOne) UpdateNewValues() *SyncPlayGroupUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(syncplaygroup.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(syncplaygroup.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -883,20 +874,6 @@ func (u *SyncPlayGroupUpsertOne) Update(set func(*SyncPlayGroupUpsert)) *SyncPla
 		set(&SyncPlayGroupUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *SyncPlayGroupUpsertOne) SetCreatedAt(v time.Time) *SyncPlayGroupUpsertOne {
-	return u.Update(func(s *SyncPlayGroupUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *SyncPlayGroupUpsertOne) UpdateCreatedAt() *SyncPlayGroupUpsertOne {
-	return u.Update(func(s *SyncPlayGroupUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -1327,6 +1304,9 @@ func (u *SyncPlayGroupUpsertBulk) UpdateNewValues() *SyncPlayGroupUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(syncplaygroup.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(syncplaygroup.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -1357,20 +1337,6 @@ func (u *SyncPlayGroupUpsertBulk) Update(set func(*SyncPlayGroupUpsert)) *SyncPl
 		set(&SyncPlayGroupUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *SyncPlayGroupUpsertBulk) SetCreatedAt(v time.Time) *SyncPlayGroupUpsertBulk {
-	return u.Update(func(s *SyncPlayGroupUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *SyncPlayGroupUpsertBulk) UpdateCreatedAt() *SyncPlayGroupUpsertBulk {
-	return u.Update(func(s *SyncPlayGroupUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

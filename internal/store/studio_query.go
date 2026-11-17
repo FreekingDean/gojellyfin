@@ -280,8 +280,9 @@ func (_q *StudioQuery) Clone() *StudioQuery {
 		predicates: append([]predicate.Studio{}, _q.predicates...),
 		withItems:  _q.withItems.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -584,6 +585,12 @@ func (_q *StudioQuery) ForShare(opts ...sql.LockOption) *StudioQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *StudioQuery) Modify(modifiers ...func(s *sql.Selector)) *StudioSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // StudioGroupBy is the group-by builder for Studio entities.
 type StudioGroupBy struct {
 	selector
@@ -672,4 +679,10 @@ func (_s *StudioSelect) sqlScan(ctx context.Context, root *StudioQuery, v any) e
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *StudioSelect) Modify(modifiers ...func(s *sql.Selector)) *StudioSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

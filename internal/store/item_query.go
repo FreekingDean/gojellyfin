@@ -677,8 +677,9 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		withGenres:             _q.withGenres.Clone(),
 		withStudios:            _q.withStudios.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -1809,6 +1810,12 @@ func (_q *ItemQuery) ForShare(opts ...sql.LockOption) *ItemQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *ItemQuery) Modify(modifiers ...func(s *sql.Selector)) *ItemSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // ItemGroupBy is the group-by builder for Item entities.
 type ItemGroupBy struct {
 	selector
@@ -1897,4 +1904,10 @@ func (_s *ItemSelect) sqlScan(ctx context.Context, root *ItemQuery, v any) error
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *ItemSelect) Modify(modifiers ...func(s *sql.Selector)) *ItemSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

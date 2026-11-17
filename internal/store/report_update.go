@@ -23,8 +23,9 @@ import (
 // ReportUpdate is the builder for updating Report entities.
 type ReportUpdate struct {
 	config
-	hooks    []Hook
-	mutation *ReportMutation
+	hooks     []Hook
+	mutation  *ReportMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the ReportUpdate builder.
@@ -33,23 +34,17 @@ func (_u *ReportUpdate) Where(ps ...predicate.Report) *ReportUpdate {
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *ReportUpdate) SetCreatedAt(v time.Time) *ReportUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ReportUpdate) SetNillableCreatedAt(v *time.Time) *ReportUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ReportUpdate) SetUpdatedAt(v time.Time) *ReportUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ReportUpdate) SetNillableUpdatedAt(v *time.Time) *ReportUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -229,7 +224,6 @@ func (_u *ReportUpdate) ClearUser() *ReportUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *ReportUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -252,14 +246,6 @@ func (_u *ReportUpdate) Exec(ctx context.Context) error {
 func (_u *ReportUpdate) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (_u *ReportUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := report.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -286,6 +272,12 @@ func (_u *ReportUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ReportUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ReportUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
+}
+
 func (_u *ReportUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
@@ -297,9 +289,6 @@ func (_u *ReportUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(report.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(report.FieldUpdatedAt, field.TypeTime, value)
@@ -409,6 +398,7 @@ func (_u *ReportUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{report.Label}
@@ -424,28 +414,23 @@ func (_u *ReportUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 // ReportUpdateOne is the builder for updating a single Report entity.
 type ReportUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *ReportMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *ReportUpdateOne) SetCreatedAt(v time.Time) *ReportUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ReportUpdateOne) SetNillableCreatedAt(v *time.Time) *ReportUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *ReportMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ReportUpdateOne) SetUpdatedAt(v time.Time) *ReportUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ReportUpdateOne) SetNillableUpdatedAt(v *time.Time) *ReportUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -638,7 +623,6 @@ func (_u *ReportUpdateOne) Select(field string, fields ...string) *ReportUpdateO
 
 // Save executes the query and returns the updated Report entity.
 func (_u *ReportUpdateOne) Save(ctx context.Context) (*Report, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -664,14 +648,6 @@ func (_u *ReportUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *ReportUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := report.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *ReportUpdateOne) check() error {
 	if v, ok := _u.mutation.Kind(); ok {
@@ -693,6 +669,12 @@ func (_u *ReportUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "Report.item"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ReportUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ReportUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *ReportUpdateOne) sqlSave(ctx context.Context) (_node *Report, err error) {
@@ -723,9 +705,6 @@ func (_u *ReportUpdateOne) sqlSave(ctx context.Context) (_node *Report, err erro
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(report.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(report.FieldUpdatedAt, field.TypeTime, value)
@@ -835,6 +814,7 @@ func (_u *ReportUpdateOne) sqlSave(ctx context.Context) (_node *Report, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &Report{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

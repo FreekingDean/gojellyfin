@@ -24,8 +24,9 @@ import (
 // SourceUpdate is the builder for updating Source entities.
 type SourceUpdate struct {
 	config
-	hooks    []Hook
-	mutation *SourceMutation
+	hooks     []Hook
+	mutation  *SourceMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the SourceUpdate builder.
@@ -34,23 +35,17 @@ func (_u *SourceUpdate) Where(ps ...predicate.Source) *SourceUpdate {
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *SourceUpdate) SetCreatedAt(v time.Time) *SourceUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *SourceUpdate) SetNillableCreatedAt(v *time.Time) *SourceUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *SourceUpdate) SetUpdatedAt(v time.Time) *SourceUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableUpdatedAt(v *time.Time) *SourceUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -478,7 +473,6 @@ func (_u *SourceUpdate) RemoveSubmissions(v ...*RequestSubmission) *SourceUpdate
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *SourceUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -504,14 +498,6 @@ func (_u *SourceUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *SourceUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := source.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *SourceUpdate) check() error {
 	if v, ok := _u.mutation.Kind(); ok {
@@ -520,6 +506,12 @@ func (_u *SourceUpdate) check() error {
 		}
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *SourceUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *SourceUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -533,9 +525,6 @@ func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(source.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(source.FieldUpdatedAt, field.TypeTime, value)
@@ -831,6 +820,7 @@ func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{source.Label}
@@ -846,28 +836,23 @@ func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 // SourceUpdateOne is the builder for updating a single Source entity.
 type SourceUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *SourceMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *SourceUpdateOne) SetCreatedAt(v time.Time) *SourceUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *SourceUpdateOne) SetNillableCreatedAt(v *time.Time) *SourceUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *SourceMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *SourceUpdateOne) SetUpdatedAt(v time.Time) *SourceUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableUpdatedAt(v *time.Time) *SourceUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -1308,7 +1293,6 @@ func (_u *SourceUpdateOne) Select(field string, fields ...string) *SourceUpdateO
 
 // Save executes the query and returns the updated Source entity.
 func (_u *SourceUpdateOne) Save(ctx context.Context) (*Source, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -1334,14 +1318,6 @@ func (_u *SourceUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *SourceUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := source.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *SourceUpdateOne) check() error {
 	if v, ok := _u.mutation.Kind(); ok {
@@ -1350,6 +1326,12 @@ func (_u *SourceUpdateOne) check() error {
 		}
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *SourceUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *SourceUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *SourceUpdateOne) sqlSave(ctx context.Context) (_node *Source, err error) {
@@ -1380,9 +1362,6 @@ func (_u *SourceUpdateOne) sqlSave(ctx context.Context) (_node *Source, err erro
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(source.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(source.FieldUpdatedAt, field.TypeTime, value)
@@ -1678,6 +1657,7 @@ func (_u *SourceUpdateOne) sqlSave(ctx context.Context) (_node *Source, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &Source{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

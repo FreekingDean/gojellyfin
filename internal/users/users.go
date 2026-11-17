@@ -3,7 +3,6 @@ package users
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -171,10 +170,8 @@ func (s *Service) UpdatePolicy(id uuid.UUID) *store.UserPolicyUpdate {
 }
 
 func (s *Service) TouchLogin(ctx context.Context, id uuid.UUID) error {
-	now := time.Now()
 	err := s.store.User.UpdateOneID(id).
-		SetLastLoginAt(now).
-		SetLastActivityAt(now).
+		Modify(store.StampNow(usermodel.FieldLastLoginAt, usermodel.FieldLastActivityAt)).
 		Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to touch user login: %w", err)

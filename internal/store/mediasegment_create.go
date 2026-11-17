@@ -310,18 +310,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *MediaSegmentUpsert) SetCreatedAt(v time.Time) *MediaSegmentUpsert {
-	u.Set(mediasegment.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *MediaSegmentUpsert) UpdateCreatedAt() *MediaSegmentUpsert {
-	u.SetExcluded(mediasegment.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *MediaSegmentUpsert) SetUpdatedAt(v time.Time) *MediaSegmentUpsert {
 	u.Set(mediasegment.FieldUpdatedAt, v)
@@ -423,6 +411,9 @@ func (u *MediaSegmentUpsertOne) UpdateNewValues() *MediaSegmentUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(mediasegment.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(mediasegment.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -452,20 +443,6 @@ func (u *MediaSegmentUpsertOne) Update(set func(*MediaSegmentUpsert)) *MediaSegm
 		set(&MediaSegmentUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *MediaSegmentUpsertOne) SetCreatedAt(v time.Time) *MediaSegmentUpsertOne {
-	return u.Update(func(s *MediaSegmentUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *MediaSegmentUpsertOne) UpdateCreatedAt() *MediaSegmentUpsertOne {
-	return u.Update(func(s *MediaSegmentUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -749,6 +726,9 @@ func (u *MediaSegmentUpsertBulk) UpdateNewValues() *MediaSegmentUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(mediasegment.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(mediasegment.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -779,20 +759,6 @@ func (u *MediaSegmentUpsertBulk) Update(set func(*MediaSegmentUpsert)) *MediaSeg
 		set(&MediaSegmentUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *MediaSegmentUpsertBulk) SetCreatedAt(v time.Time) *MediaSegmentUpsertBulk {
-	return u.Update(func(s *MediaSegmentUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *MediaSegmentUpsertBulk) UpdateCreatedAt() *MediaSegmentUpsertBulk {
-	return u.Update(func(s *MediaSegmentUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
