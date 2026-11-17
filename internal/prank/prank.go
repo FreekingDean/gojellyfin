@@ -22,11 +22,12 @@ var ErrInvalid = errors.New("invalid playback override")
 var disguisable = []items.Kind{itemmodel.KindMovie, itemmodel.KindEpisode}
 
 type Override struct {
-	Enabled bool        `json:"enabled"`
-	ItemID  *uuid.UUID  `json:"item_id,omitempty"`
-	From    *time.Time  `json:"from,omitempty"`
-	Until   *time.Time  `json:"until,omitempty"`
-	UserIDs []uuid.UUID `json:"user_ids,omitempty"`
+	Enabled    bool        `json:"enabled"`
+	ItemID     *uuid.UUID  `json:"item_id,omitempty"`
+	From       *time.Time  `json:"from,omitempty"`
+	Until      *time.Time  `json:"until,omitempty"`
+	UserIDs    []uuid.UUID `json:"user_ids,omitempty"`
+	StartTicks int64       `json:"start_ticks,omitempty"`
 }
 
 type Catalogue interface {
@@ -84,6 +85,9 @@ func (s *Service) Save(ctx context.Context, override Override) error {
 	if override.From != nil && override.Until != nil && !override.Until.After(*override.From) {
 		return fmt.Errorf("%w: the window ends before it starts", ErrInvalid)
 	}
+	if override.StartTicks < 0 {
+		return fmt.Errorf("%w: the start time is before the beginning", ErrInvalid)
+	}
 	if override.ItemID != nil {
 		item, err := s.catalogue.ItemByID(ctx, items.Everyone, *override.ItemID)
 		if store.IsNotFound(err) {
@@ -94,6 +98,9 @@ func (s *Service) Save(ctx context.Context, override Override) error {
 		}
 		if !slices.Contains(disguisable, item.Kind) {
 			return fmt.Errorf("%w: only a movie or an episode can stand in", ErrInvalid)
+		}
+		if item.RunTimeTicks != nil && override.StartTicks >= *item.RunTimeTicks {
+			return fmt.Errorf("%w: the start time is after the title ends", ErrInvalid)
 		}
 	}
 
@@ -135,6 +142,15 @@ func (s *Service) Swap(ctx context.Context, userID uuid.UUID, item *items.Item) 
 	}
 
 	return standIn, true, nil
+}
+
+func (s *Service) Start(ctx context.Context) (int64, error) {
+	override, err := s.Override(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return override.StartTicks, nil
 }
 
 func (s *Service) Disguises(ctx context.Context, userID, itemID uuid.UUID) (bool, error) {

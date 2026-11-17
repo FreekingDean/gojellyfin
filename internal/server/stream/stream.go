@@ -379,6 +379,15 @@ func startTicks(r *http.Request) int64 {
 	return ticks
 }
 
+func fromTicks(r *http.Request) int64 {
+	ticks, err := strconv.ParseInt(r.URL.Query().Get("fromTicks"), 10, 64)
+	if err != nil || ticks < 0 {
+		return 0
+	}
+
+	return ticks
+}
+
 func busy(w http.ResponseWriter) {
 	w.Header().Set("Retry-After", strconv.Itoa(retryAfterSeconds))
 	http.Error(w, "every transcoder is busy", http.StatusServiceUnavailable)

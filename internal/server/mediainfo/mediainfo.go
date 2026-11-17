@@ -21,6 +21,7 @@ import (
 
 type Pranks interface {
 	Swap(ctx context.Context, userID uuid.UUID, item *items.Item) (*items.Item, bool, error)
+	Start(ctx context.Context) (int64, error)
 }
 
 type Server struct {
@@ -134,8 +135,13 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 	}
 
 	playback := plan.Playback()
+	from := int64(0)
 	if standsIn {
 		playback.StandsInFor = &item.ID
+		if from, err = s.pranks.Start(ctx); err != nil {
+			return api.PlaybackInfoResponse{}, err
+		}
+		question.startTicks = offset(from, question.startTicks, plan.Source)
 	}
 
 	token := auth.AuthorizationFrom(ctx).Token
@@ -143,7 +149,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 	switch {
 	case items.IsAudio(item):
 		served(&source, plan, streamURL("Audio", itemID, plan, token, session, question.startTicks))
-	case plan.Change == items.ChangeNone:
+	case plan.Change == items.ChangeNone && from == 0:
 		served(&source, plan, streamURL("Videos", itemID, plan, token, session, question.startTicks))
 		source.SupportsDirectPlay = apiutil.Ptr(!question.noDirect)
 		if caller := auth.SessionFrom(ctx); caller != nil {
@@ -159,7 +165,7 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 			served(&source, plan, streamURL("Videos", itemID, plan, token, session, question.startTicks))
 			break
 		}
-		served(&source, plan, playlistURL(itemID, plan, token, session, question.startTicks))
+		served(&source, plan, playlistURL(itemID, plan, token, session, question.startTicks, from))
 		source.TranscodingSubProtocol = apiutil.Ptr(api.MediaStreamProtocolHls)
 		source.TranscodingContainer = apiutil.Ptr(transcode.VideoContainer)
 	}
@@ -177,6 +183,15 @@ func (s *Server) standIn(ctx context.Context, item *items.Item) (*items.Item, bo
 	}
 
 	return s.pranks.Swap(ctx, *session.UserID, item)
+}
+
+func offset(from, asked int64, source *items.MediaSource) int64 {
+	start := from + asked
+	if source.RunTimeTicks != nil && start >= *source.RunTimeTicks {
+		return from
+	}
+
+	return start
 }
 
 func (s *Server) record(ctx context.Context, plan items.Plan, playback items.Playback) {

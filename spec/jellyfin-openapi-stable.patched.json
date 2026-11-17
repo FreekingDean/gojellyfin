@@ -48580,6 +48580,11 @@
               "format": "uuid"
             },
             "description": "Who it applies to, administrators included; empty means everyone."
+          },
+          "StartTicks": {
+            "type": "integer",
+            "format": "int64",
+            "description": "How far into the title it starts playing, in ticks; none or zero means from the beginning."
           }
         }
       }, "Report": {

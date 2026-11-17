@@ -221,6 +221,18 @@ func TestHandler_HLS(t *testing.T) {
 		}
 	})
 
+	t.Run("a start cuts the playlists from the window holding it", func(t *testing.T) {
+		id := fixture.addFilm(t, "ac3", false)
+		from := query + "&videoCodec=h264&audioCodec=aac&fromTicks=" + strconv.Itoa(7*10_000_000)
+
+		if frames := count(t, fixture.play(t, id, mainPlaylist, from), "h264"); frames != (filmSeconds-6)*filmRate {
+			t.Errorf("%d frames, want the %d from the window at six seconds", frames, (filmSeconds-6)*filmRate)
+		}
+		if frames := count(t, fixture.play(t, id, audioPlaylist, from), "aac"); frames >= filmSeconds*48000/1024-2 {
+			t.Errorf("%d audio frames, want fewer than the whole film's", frames)
+		}
+	})
+
 	t.Run("a copied picture without a keyframe index has no playlist", func(t *testing.T) {
 		id := fixture.addFilm(t, "aac", false)
 		listed := fixture.hls(t, fixture.handler.ServeMediaPlaylist, "/Videos/"+id.String()+"/main.m3u8?"+query, map[string]string{"itemId": id.String()})

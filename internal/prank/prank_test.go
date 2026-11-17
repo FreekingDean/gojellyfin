@@ -47,12 +47,14 @@ type world struct {
 	admin   uuid.UUID
 }
 
+var runtime = int64(60 * 60 * 10_000_000)
+
 var now = time.Date(2027, time.April, 1, 12, 0, 0, 0, time.UTC)
 
 func newWorld(t *testing.T) *world {
 	t.Helper()
 	w := &world{
-		standIn: &items.Item{ID: uuid.New(), Kind: itemmodel.KindMovie},
+		standIn: &items.Item{ID: uuid.New(), Kind: itemmodel.KindMovie, RunTimeTicks: &runtime},
 		episode: &items.Item{ID: uuid.New(), Kind: itemmodel.KindEpisode},
 		song:    &items.Item{ID: uuid.New(), Kind: itemmodel.KindAudio},
 		viewer:  uuid.New(),
@@ -197,6 +199,8 @@ func TestService_Save(t *testing.T) {
 		{name: "a window that ends before it starts", override: Override{ItemID: &w.standIn.ID, From: at(1), Until: at(-1)}},
 		{name: "a title nobody holds", override: Override{ItemID: &missing}},
 		{name: "a song", override: Override{ItemID: &w.song.ID}},
+		{name: "a start before the beginning", override: Override{ItemID: &w.standIn.ID, StartTicks: -1}},
+		{name: "a start after the title ends", override: Override{ItemID: &w.standIn.ID, StartTicks: runtime}},
 	}
 
 	for _, tc := range cases {
@@ -205,6 +209,16 @@ func TestService_Save(t *testing.T) {
 				t.Fatalf("save = %v, want ErrInvalid", err)
 			}
 		})
+	}
+}
+
+func TestService_Start(t *testing.T) {
+	w := newWorld(t)
+	w.save(t, Override{Enabled: true, ItemID: &w.standIn.ID, StartTicks: 30_000_000})
+
+	start, err := w.service.Start(context.Background())
+	if err != nil || start != 30_000_000 {
+		t.Fatalf("start = %d, %v, want the saved start", start, err)
 	}
 }
 

@@ -259,6 +259,32 @@ func TestSnappedWindows(t *testing.T) {
 	}
 }
 
+func TestTrim(t *testing.T) {
+	windows := []Window{{0, 6}, {6, 12}, {12, 15}}
+	tests := []struct {
+		name string
+		from int64
+		want []Window
+	}{
+		{name: "nothing cut from the beginning", from: 0, want: windows},
+		{name: "the window holding the start is kept", from: 7, want: windows[1:]},
+		{name: "a start on a boundary drops the window ending there", from: 6, want: windows[1:]},
+		{name: "a start past the end keeps the last window", from: 20, want: windows[2:]},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := Trim(windows, test.from); !slices.Equal(got, test.want) {
+				t.Errorf("Trim(%d) = %+v, want %+v", test.from, got, test.want)
+			}
+		})
+	}
+
+	if got := Trim(nil, 7); len(got) != 0 {
+		t.Errorf("Trim(nil) = %+v, want nothing", got)
+	}
+}
+
 func TestSegments_EncodedPictureJoinsBackToBack(t *testing.T) {
 	source := seamSource(t, 10*seamRate, "-c:a", "ac3")
 
