@@ -123,7 +123,8 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	plan, err := s.items.SourceFor(ctx, played, capabilities(question.profile))
+	can := capabilities(question.profile)
+	plan, err := s.items.SourceFor(ctx, played, can)
 	if errors.Is(err, items.ErrNoSource) || errors.Is(err, items.ErrNoPlayable) {
 		log.Printf("nothing to play for %s: %v", item.Name, err)
 		response.ErrorCode = apiutil.Ptr(api.NoCompatibleStream)
@@ -134,14 +135,16 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	playback := plan.Playback()
 	from := int64(0)
 	if standsIn {
-		playback.StandsInFor = &item.ID
-		if from, err = s.pranks.Start(ctx); err != nil {
+		if from, plan, err = s.startPartWay(ctx, plan, can); err != nil {
 			return api.PlaybackInfoResponse{}, err
 		}
 		question.startTicks = offset(from, question.startTicks, plan.Source)
+	}
+	playback := plan.Playback()
+	if standsIn {
+		playback.StandsInFor = &item.ID
 	}
 
 	token := auth.AuthorizationFrom(ctx).Token
@@ -183,6 +186,20 @@ func (s *Server) standIn(ctx context.Context, item *items.Item) (*items.Item, bo
 	}
 
 	return s.pranks.Swap(ctx, *session.UserID, item)
+}
+
+func (s *Server) startPartWay(ctx context.Context, plan items.Plan, can items.Capabilities) (int64, items.Plan, error) {
+	from, err := s.pranks.Start(ctx)
+	if err != nil || from == 0 {
+		return from, plan, err
+	}
+
+	segmented, err := s.segmented(ctx, plan)
+	if err != nil || segmented {
+		return from, plan, err
+	}
+
+	return from, s.items.Encoded(plan, can), nil
 }
 
 func offset(from, asked int64, source *items.MediaSource) int64 {

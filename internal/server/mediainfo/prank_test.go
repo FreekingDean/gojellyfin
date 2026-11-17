@@ -71,10 +71,13 @@ func TestServer_GetPostedPlaybackInfo_StartsTheStandInAtItsStart(t *testing.T) {
 	session := &sessions.Session{ID: uuid.New(), UserID: &user}
 	ctx := auth.ContextWithSession(auth.ContextWithAuthorization(context.Background(), auth.Authorization{Token: "the-token"}), session)
 
-	plan := func(t *testing.T, container, codec string, start int64) api.MediaSourceInfo {
+	plan := func(t *testing.T, container, codec string, start int64, indexed bool) api.MediaSourceInfo {
 		t.Helper()
 
 		fixture := newFixture(t)
+		if !indexed {
+			fixture.keyframes = nil
+		}
 		picked := fixture.addRip(t, itemmodel.KindEpisode, "mkv", "aac")
 		played := fixture.addRip(t, itemmodel.KindMovie, container, codec)
 		fixture.server.pranks = standIn{catalogue: fixture.server.items, id: played, start: start}
@@ -89,14 +92,14 @@ func TestServer_GetPostedPlaybackInfo_StartsTheStandInAtItsStart(t *testing.T) {
 	}
 
 	t.Run("a converted stand-in's playlist starts at the start", func(t *testing.T) {
-		source := plan(t, "mkv", "ac3", 30_000_000)
+		source := plan(t, "mkv", "ac3", 30_000_000, true)
 		if url := apiutil.Deref(source.TranscodingUrl); !strings.Contains(url, "fromTicks=30000000") {
 			t.Errorf("transcoding url = %q, want the playlist cut from the start", url)
 		}
 	})
 
 	t.Run("a stand-in the client plays untouched is segmented so it can start part way", func(t *testing.T) {
-		source := plan(t, "mp4", "aac", 30_000_000)
+		source := plan(t, "mp4", "aac", 30_000_000, true)
 		if got := apiutil.Deref(source.TranscodingSubProtocol); got != api.MediaStreamProtocolHls {
 			t.Errorf("transcoding protocol = %q, want hls so the start can be cut", got)
 		}
@@ -108,8 +111,22 @@ func TestServer_GetPostedPlaybackInfo_StartsTheStandInAtItsStart(t *testing.T) {
 		}
 	})
 
+	t.Run("a stand-in with no keyframes yet is encoded so it can start part way", func(t *testing.T) {
+		source := plan(t, "mp4", "aac", 30_000_000, false)
+		if got := apiutil.Deref(source.TranscodingSubProtocol); got != api.MediaStreamProtocolHls {
+			t.Errorf("transcoding protocol = %q, want hls so the start can be cut", got)
+		}
+		url := apiutil.Deref(source.TranscodingUrl)
+		if !strings.Contains(url, "videoCodec=h264") {
+			t.Errorf("transcoding url = %q, want the picture encoded since no keyframe says where to cut", url)
+		}
+		if !strings.Contains(url, "fromTicks=30000000") {
+			t.Errorf("transcoding url = %q, want the playlist cut from the start", url)
+		}
+	})
+
 	t.Run("no start leaves an untouched stand-in to direct play", func(t *testing.T) {
-		source := plan(t, "mp4", "aac", 0)
+		source := plan(t, "mp4", "aac", 0, true)
 		if !apiutil.Deref(source.SupportsDirectPlay) {
 			t.Error("direct play refused, want the file played whole when nothing is cut")
 		}
