@@ -1,6 +1,6 @@
 module github.com/FreekingDean/gojellyfin
 
-go 1.26.0
+go 1.26.4
 
 tool (
 	github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
@@ -8,7 +8,7 @@ tool (
 )
 
 require (
-	ariga.io/atlas v0.36.2-0.20250730182955-2c6300d0a3e1
+	ariga.io/atlas v1.3.0
 	entgo.io/ent v0.14.6
 	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/cyruzin/golang-tmdb v1.9.4
