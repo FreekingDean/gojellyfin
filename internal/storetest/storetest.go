@@ -17,7 +17,7 @@ import (
 	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 )
 
-func Open(t testing.TB) *store.Store {
+func Open(t *testing.T) *store.Store {
 	t.Helper()
 
 	config, err := env.Load()
@@ -37,13 +37,13 @@ func Open(t testing.TB) *store.Store {
 	return connection
 }
 
-func Client(t testing.TB) *store.Client {
+func Client(t *testing.T) *store.Client {
 	t.Helper()
 
 	return Open(t).Client()
 }
 
-func Library(t testing.TB, client *store.Client, collectionType library.CollectionType) *store.LibraryModel {
+func Library(t *testing.T, client *store.Client, collectionType library.CollectionType) *store.LibraryModel {
 	t.Helper()
 
 	ctx := context.Background()
@@ -67,7 +67,7 @@ func Library(t testing.TB, client *store.Client, collectionType library.Collecti
 	return created
 }
 
-func Scratch(t testing.TB) *store.Store {
+func Scratch(t *testing.T) *store.Store {
 	t.Helper()
 
 	config, err := env.Load()
