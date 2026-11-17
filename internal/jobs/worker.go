@@ -12,6 +12,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 const bootTimeout = 30 * time.Second
@@ -88,6 +89,12 @@ func (w *Worker) Start() error {
 
 func (w *Worker) activity(job Job) func(context.Context, Params) error {
 	return func(ctx context.Context, params Params) error {
+		info := activity.GetInfo(ctx)
+		tracing.Current(ctx).Set(
+			tracing.Int("job.queued_ms", int(info.StartedTime.Sub(info.ScheduledTime).Milliseconds())),
+			tracing.Int("job.attempt", int(info.Attempt)),
+		)
+
 		return job.Run(withJob(ctx, params, w.service))
 	}
 }
