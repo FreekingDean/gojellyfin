@@ -193,18 +193,20 @@ func (h *Handler) rendition(w http.ResponseWriter, r *http.Request, playlist str
 	case mainPlaylist:
 		chosen.track = transcode.TrackVideo
 		chosen.codec = codecOf(items.Picture(source))
-		chosen.encode = encodesVideo(r)
-		if chosen.encode {
-			chosen.windows = transcode.EncodedWindows(runtime)
-			break
+		var keyframes []int64
+		if !encodesVideo(r) {
+			found, err := h.items.Keyframes(r.Context(), source.ID)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return rendition{}, false
+			}
+			keyframes = found
 		}
-
-		keyframes, err := h.items.Keyframes(r.Context(), source.ID)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return rendition{}, false
+		chosen.encode = len(keyframes) == 0
+		chosen.windows = transcode.EncodedWindows(runtime)
+		if !chosen.encode {
+			chosen.windows = transcode.CopiedWindows(keyframes, runtime)
 		}
-		chosen.windows = transcode.CopiedWindows(keyframes, runtime)
 	case audioPlaylist:
 		chosen.track = transcode.TrackAudio
 		chosen.codec = codecOf(items.Sound(source))
