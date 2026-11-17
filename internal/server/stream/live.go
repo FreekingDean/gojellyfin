@@ -147,7 +147,7 @@ func (h *Handler) serveLiveSegment(w http.ResponseWriter, r *http.Request, sched
 	if playlist == mainPlaylist {
 		segment.Track = transcode.TrackVideo
 		segment.Codec = codecOf(items.Picture(source))
-		copied := false
+		var copied bool
 		windows, copied = h.pictureWindows(r, source, runtime)
 		if copied {
 			segment.Encode = false
