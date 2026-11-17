@@ -137,6 +137,12 @@ func TestService_DetectSeason(t *testing.T) {
 		t.Fatalf("failed to detect: %v", err)
 	}
 
+	serviceDetectSeasonRest(t, episodes, f, ctx, starts, err, files, needing)
+}
+
+func serviceDetectSeasonRest(t *testing.T, episodes []uuid.UUID, f *fixture, ctx context.Context, starts []float64, err error, files []uuid.UUID, needing []uuid.UUID) {
+	t.Helper()
+
 	for i, episode := range episodes[:2] {
 		_, found, err := f.service.ForItem(ctx, episode, nil)
 		if err != nil {

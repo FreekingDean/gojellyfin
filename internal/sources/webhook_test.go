@@ -44,70 +44,86 @@ func (i *downloader) serve(w http.ResponseWriter, r *http.Request) {
 
 	switch {
 	case strings.HasPrefix(r.URL.Path, "/api/v3/movie/"):
-		id, _ := strconv.ParseInt(path.Base(r.URL.Path), 10, 64)
-		for _, held := range *i.reported {
-			if held.ID == id {
-				_ = json.NewEncoder(w).Encode(held)
-
-				return
-			}
-		}
-		w.WriteHeader(http.StatusNotFound)
+		i.movie(w, r)
 	case r.URL.Path == "/api/v3/notification/schema":
-		_ = json.NewEncoder(w).Encode([]map[string]any{
-			{"implementation": "Email", "fields": []any{}},
-			{
-				"implementation":              "Webhook",
-				"onGrab":                      false,
-				"onDownload":                  false,
-				"onUpgrade":                   false,
-				"onRename":                    false,
-				"onMovieDelete":               false,
-				"onMovieFileDelete":           false,
-				"onMovieFileDeleteForUpgrade": false,
-				"onHealthIssue":               false,
-				"supportsOnMovieFileDelete":   false,
-				"supportsOnDownload":          true,
-				"includeHealthWarnings":       false,
-				"fields": []any{
-					map[string]any{"name": "url"},
-					map[string]any{"name": "method", "value": 1},
-					map[string]any{"name": "username"},
-					map[string]any{"name": "password"},
-				},
-			},
-		})
+		i.schema(w, r)
 	case r.URL.Path == "/api/v3/notification" && r.Method == http.MethodPost:
-		i.methods = append(i.methods, r.Method)
-		var created map[string]any
-		_ = json.NewDecoder(r.Body).Decode(&created)
-		i.nextID++
-		created["id"] = float64(i.nextID)
-		i.notifications = append(i.notifications, created)
-		_ = json.NewEncoder(w).Encode(created)
+		i.createNotification(w, r)
 	case strings.HasPrefix(r.URL.Path, "/api/v3/notification/"):
-		i.methods = append(i.methods, r.Method)
-		id, _ := strconv.Atoi(path.Base(r.URL.Path))
-		for n, held := range i.notifications {
-			if int(held["id"].(float64)) != id {
-				continue
-			}
-			if r.Method == http.MethodDelete {
-				i.notifications = append(i.notifications[:n], i.notifications[n+1:]...)
-
-				return
-			}
-			var replaced map[string]any
-			_ = json.NewDecoder(r.Body).Decode(&replaced)
-			i.notifications[n] = replaced
-			_ = json.NewEncoder(w).Encode(replaced)
-
-			return
-		}
-		w.WriteHeader(http.StatusNotFound)
+		i.notification(w, r)
 	default:
 		w.WriteHeader(http.StatusNotFound)
 	}
+}
+
+func (i *downloader) movie(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.ParseInt(path.Base(r.URL.Path), 10, 64)
+	for _, held := range *i.reported {
+		if held.ID == id {
+			_ = json.NewEncoder(w).Encode(held)
+
+			return
+		}
+	}
+	w.WriteHeader(http.StatusNotFound)
+}
+
+func (i *downloader) schema(w http.ResponseWriter, r *http.Request) {
+	_ = json.NewEncoder(w).Encode([]map[string]any{
+		{"implementation": "Email", "fields": []any{}},
+		{
+			"implementation":              "Webhook",
+			"onGrab":                      false,
+			"onDownload":                  false,
+			"onUpgrade":                   false,
+			"onRename":                    false,
+			"onMovieDelete":               false,
+			"onMovieFileDelete":           false,
+			"onMovieFileDeleteForUpgrade": false,
+			"onHealthIssue":               false,
+			"supportsOnMovieFileDelete":   false,
+			"supportsOnDownload":          true,
+			"includeHealthWarnings":       false,
+			"fields": []any{
+				map[string]any{"name": "url"},
+				map[string]any{"name": "method", "value": 1},
+				map[string]any{"name": "username"},
+				map[string]any{"name": "password"},
+			},
+		},
+	})
+}
+
+func (i *downloader) createNotification(w http.ResponseWriter, r *http.Request) {
+	i.methods = append(i.methods, r.Method)
+	var created map[string]any
+	_ = json.NewDecoder(r.Body).Decode(&created)
+	i.nextID++
+	created["id"] = float64(i.nextID)
+	i.notifications = append(i.notifications, created)
+	_ = json.NewEncoder(w).Encode(created)
+}
+
+func (i *downloader) notification(w http.ResponseWriter, r *http.Request) {
+	i.methods = append(i.methods, r.Method)
+	id, _ := strconv.Atoi(path.Base(r.URL.Path))
+	for n, held := range i.notifications {
+		if int(held["id"].(float64)) != id {
+			continue
+		}
+		if r.Method == http.MethodDelete {
+			i.notifications = append(i.notifications[:n], i.notifications[n+1:]...)
+
+			return
+		}
+		var replaced map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&replaced)
+		i.notifications[n] = replaced
+		_ = json.NewEncoder(w).Encode(replaced)
+
+		return
+	}
+	w.WriteHeader(http.StatusNotFound)
 }
 
 func (i *downloader) held() []map[string]any {

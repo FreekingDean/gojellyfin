@@ -79,6 +79,12 @@ func TestServer_GetPersons(t *testing.T) {
 	term := "director"
 	otherItem := uuid.New()
 
+	serverGetPersonsRest(t, movie, director, writer, writerOnly, unknownKind, term, otherItem, server)
+}
+
+func serverGetPersonsRest(t *testing.T, movie *items.Item, director string, writer string, writerOnly []string, unknownKind []string, term string, otherItem uuid.UUID, server *Server) {
+	t.Helper()
+
 	tests := []serverGetPersonsCase{
 		{
 			name:   "returns the credited people",

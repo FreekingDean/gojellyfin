@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/storetest"
 
 	"github.com/google/uuid"
@@ -88,17 +89,17 @@ func TestProber_ReadsChapterSegments(t *testing.T) {
 		t.Fatalf("failed to create the source: %v", err)
 	}
 	episode, err := client.Item.Create().SetKind(itemmodel.KindEpisode).SetKey(name).SetName(name).SetSortName(name).Save(ctx)
+
+	proberReadsChapterSegmentsRest(t, err, client, episode, downloader, name, path, ctx)
+}
+
+func proberReadsChapterSegmentsRest(t *testing.T, err error, client *store.Client, episode *store.Item, downloader *store.Source, name string, path string, ctx context.Context) {
+	t.Helper()
+
 	if err != nil {
 		t.Fatalf("failed to create the episode: %v", err)
 	}
-	t.Cleanup(func() {
-		if err := client.Item.DeleteOne(episode).Exec(context.Background()); err != nil {
-			t.Errorf("failed to delete the episode: %v", err)
-		}
-		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
-			t.Errorf("failed to delete the source: %v", err)
-		}
-	})
+	t.Cleanup(proberReadsChapterSegmentsCleanup(t, client, episode, downloader))
 	file, err := client.ItemSource.Create().SetItemID(episode.ID).SetSourceID(downloader.ID).SetName(name).SetPath(path).Save(ctx)
 	if err != nil {
 		t.Fatalf("failed to create the file: %v", err)
@@ -137,6 +138,19 @@ func TestProber_ReadsChapterSegments(t *testing.T) {
 			t.Errorf("segment %d = %s %s %d-%d, want %s from a chapter %d-%d", i,
 				segment.Kind, segment.Origin, segment.StartTicks, segment.EndTicks,
 				want[i].kind, want[i].start, want[i].end)
+		}
+	}
+}
+
+func proberReadsChapterSegmentsCleanup(t *testing.T, client *store.Client, episode *store.Item, downloader *store.Source) func() {
+	t.Helper()
+
+	return func() {
+		if err := client.Item.DeleteOne(episode).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the episode: %v", err)
+		}
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
 		}
 	}
 }

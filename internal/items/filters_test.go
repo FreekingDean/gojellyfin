@@ -51,6 +51,13 @@ func TestQueryItems_UserDataFilters(t *testing.T) {
 	}
 
 	yes, no := true, false
+
+	queryItemsUserDataFiltersRest(t, user, yes, no, fixture)
+}
+
+func queryItemsUserDataFiltersRest(t *testing.T, user uuid.UUID, yes bool, no bool, fixture *fixture) {
+	t.Helper()
+
 	for _, test := range []queryItemsUserDataFiltersCase{
 		{
 			name:  "played takes what this user finished",

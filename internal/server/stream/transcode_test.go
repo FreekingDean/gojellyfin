@@ -371,6 +371,12 @@ func TestHandler_relay(t *testing.T) {
 		}
 	})
 
+	handlerrelayRest(t)
+}
+
+func handlerrelayRest(t *testing.T) {
+	t.Helper()
+
 	t.Run("reports nothing when the stall timer kills the encode", reportsNothingWhenTheStallTimerKillsTheEncode())
 
 	t.Run("reports nothing when the client goes away", func(t *testing.T) {

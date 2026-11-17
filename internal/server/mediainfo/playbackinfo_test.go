@@ -311,6 +311,12 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		}
 	})
 
+	serverGetPostedPlaybackInfoRest3(t, chrome)
+}
+
+func serverGetPostedPlaybackInfoRest3(t *testing.T, chrome api.DeviceProfile) {
+	t.Helper()
+
 	t.Run("a copy needs the file's keyframes to be cut into segments", func(t *testing.T) {
 		fixture := newFixture(t)
 		fixture.keyframes = nil
@@ -357,6 +363,12 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		}
 	})
 
+	serverGetPostedPlaybackInfoRest2(t, chrome)
+}
+
+func serverGetPostedPlaybackInfoRest2(t *testing.T, chrome api.DeviceProfile) {
+	t.Helper()
+
 	t.Run("an item with several files answers with one of them", func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindMovie, "mkv", "aac")
@@ -394,6 +406,12 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 			t.Errorf("answered the path %q, want the file's name and no directory above it", got)
 		}
 	})
+
+	serverGetPostedPlaybackInfoRest2Rest(t, chrome)
+}
+
+func serverGetPostedPlaybackInfoRest2Rest(t *testing.T, chrome api.DeviceProfile) {
+	t.Helper()
 
 	t.Run("nothing is answered as a stream that has to be opened, looped or probed", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -435,6 +453,12 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		}
 	})
 
+	serverGetPostedPlaybackInfoRest(t, chrome)
+}
+
+func serverGetPostedPlaybackInfoRest(t *testing.T, chrome api.DeviceProfile) {
+	t.Helper()
+
 	t.Run("a song the client cannot decode is encoded into a container it can", func(t *testing.T) {
 		fixture := newFixture(t)
 		id := fixture.addRip(t, itemmodel.KindAudio, "flac", "flac")
@@ -468,6 +492,12 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 	t.Run("a song is encoded into what the client asked a transcode to be", aSongIsEncodedIntoWhatTheClientAskedATranscodeToBe())
 
 	t.Run("a song nothing the client takes can carry is no compatible stream", aSongNothingTheClientTakesCanCarryIsNoCompatibleStream())
+
+	serverGetPostedPlaybackInfoRestRest2(t, chrome)
+}
+
+func serverGetPostedPlaybackInfoRestRest2(t *testing.T, chrome api.DeviceProfile) {
+	t.Helper()
 
 	t.Run("audio the client cannot decode is answered in a container it can", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -522,6 +552,12 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 		}
 	})
 
+	serverGetPostedPlaybackInfoRestRest(t, chrome)
+}
+
+func serverGetPostedPlaybackInfoRestRest(t *testing.T, chrome api.DeviceProfile) {
+	t.Helper()
+
 	t.Run("a client that declared nothing is handed the source", aClientThatDeclaredNothingIsHandedTheSource())
 
 	t.Run("a seek is asked for by position", func(t *testing.T) {
@@ -566,6 +602,12 @@ func TestServer_GetPostedPlaybackInfo(t *testing.T) {
 			t.Errorf("error code = %q, want %q", got, api.NoCompatibleStream)
 		}
 	})
+
+	serverGetPostedPlaybackInfoRestRestRest(t, chrome)
+}
+
+func serverGetPostedPlaybackInfoRestRestRest(t *testing.T, chrome api.DeviceProfile) {
+	t.Helper()
 
 	t.Run("a playable source is not refused for one it has beside it", func(t *testing.T) {
 		fixture := newFixture(t)

@@ -162,6 +162,12 @@ func TestServer_AuthorizeQuickConnect(t *testing.T) {
 		},
 	}
 
+	serverAuthorizeQuickConnectRest(t, tests, caller, target)
+}
+
+func serverAuthorizeQuickConnectRest(t *testing.T, tests []serverAuthorizeQuickConnectCase, caller uuid.UUID, target uuid.UUID) {
+	t.Helper()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)

@@ -393,6 +393,12 @@ func TestService_IdentifyItems(t *testing.T) {
 
 	t.Run("walks a series to its episode", walksASeriesToItsEpisode())
 
+	serviceIdentifyItemsRest(t)
+}
+
+func serviceIdentifyItemsRest(t *testing.T) {
+	t.Helper()
+
 	t.Run("identifies specials as season zero", identifiesSpecialsAsSeasonZero())
 
 	t.Run("keeps an unmatched season out of its episode", keepsAnUnmatchedSeasonOutOfItsEpisode())
@@ -780,6 +786,12 @@ func TestService_IdentifyItems_Force(t *testing.T) {
 			t.Errorf("OfficialRating = %q, want an unlocked field refreshed", refreshed.OfficialRating)
 		}
 	})
+
+	serviceIdentifyItemsForceRest(t)
+}
+
+func serviceIdentifyItemsForceRest(t *testing.T) {
+	t.Helper()
 
 	t.Run("carries on past an item the provider cannot reach", func(t *testing.T) {
 		fixed := newFixture(t)

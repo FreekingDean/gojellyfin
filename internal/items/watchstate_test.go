@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
+
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
 
@@ -18,15 +20,7 @@ func TestService_WatchState(t *testing.T) {
 		t.Fatalf("failed to give the movie a runtime: %v", err)
 	}
 
-	read := func() *Datum {
-		t.Helper()
-		datum, err := fixture.service.UserItemDatum(ctx, user, movie)
-		if err != nil {
-			t.Fatalf("failed to read the user data: %v", err)
-		}
-
-		return datum
-	}
+	read := serviceWatchStateRead(t, fixture, ctx, user, movie)
 
 	if err := fixture.service.RecordProgress(ctx, user, movie, 300); err != nil {
 		t.Fatalf("RecordProgress: %v", err)
@@ -71,5 +65,19 @@ func TestService_WatchState(t *testing.T) {
 	}
 	if !favourite.IsFavorite || !read().IsFavorite {
 		t.Errorf("favourite = %+v, want it stored", favourite)
+	}
+}
+
+func serviceWatchStateRead(t *testing.T, fixture *fixture, ctx context.Context, user uuid.UUID, movie uuid.UUID) func() *Datum {
+	t.Helper()
+
+	return func() *Datum {
+		t.Helper()
+		datum, err := fixture.service.UserItemDatum(ctx, user, movie)
+		if err != nil {
+			t.Fatalf("failed to read the user data: %v", err)
+		}
+
+		return datum
 	}
 }

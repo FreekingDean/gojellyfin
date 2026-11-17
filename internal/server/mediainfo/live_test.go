@@ -82,6 +82,12 @@ func TestServer_PlaybackInfoForAChannel(t *testing.T) {
 		}
 	})
 
+	serverPlaybackInfoForAChannelRest(t, tune, chrome)
+}
+
+func serverPlaybackInfoForAChannelRest(t *testing.T, tune func(t *testing.T, fixture *fixture, slots []channels.Slot) uuid.UUID, chrome api.DeviceProfile) {
+	t.Helper()
+
 	t.Run("a channel with nothing to air is no compatible stream", func(t *testing.T) {
 		fixture := newFixture(t)
 		id := tune(t, fixture, nil)

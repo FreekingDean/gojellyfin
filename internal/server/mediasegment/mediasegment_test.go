@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/storetest"
 
 	"github.com/google/uuid"
@@ -44,18 +45,7 @@ func TestServer_GetItemSegments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to save the episode: %v", err)
 	}
-	t.Cleanup(func() {
-		ctx := context.Background()
-		if err := client.Item.DeleteOneID(episode.ID).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the episode: %v", err)
-		}
-		if err := client.Source.DeleteOne(downloader).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the source: %v", err)
-		}
-		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the library: %v", err)
-		}
-	})
+	t.Cleanup(serverGetItemSegmentsCleanup(t, client, episode, downloader, library))
 	if err := catalogue.SaveMembership(ctx, library.ID, downloader.ID, []uuid.UUID{episode.ID}); err != nil {
 		t.Fatalf("failed to place the episode in the library: %v", err)
 	}
@@ -75,6 +65,12 @@ func TestServer_GetItemSegments(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+
+	serverGetItemSegmentsRest(t, client, err, catalogue, ctx, episode, file)
+}
+
+func serverGetItemSegmentsRest(t *testing.T, client *store.Client, err error, catalogue *items.Service, ctx context.Context, episode *items.Item, file *store.ItemSource) {
+	t.Helper()
 
 	found := segments.New(client, ffmpeg.New())
 
@@ -114,6 +110,23 @@ func TestServer_GetItemSegments(t *testing.T) {
 	}
 	if listed := response.(api.GetItemSegments200JSONResponse); len(*listed.Items) != 1 || *(*listed.Items)[0].Type != api.MediaSegmentTypeOutro {
 		t.Errorf("segments = %v, want only the outro", *listed.Items)
+	}
+}
+
+func serverGetItemSegmentsCleanup(t *testing.T, client *store.Client, episode *items.Item, downloader *store.Source, library *store.Library) func() {
+	t.Helper()
+
+	return func() {
+		ctx := context.Background()
+		if err := client.Item.DeleteOneID(episode.ID).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the episode: %v", err)
+		}
+		if err := client.Source.DeleteOne(downloader).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the library: %v", err)
+		}
 	}
 }
 

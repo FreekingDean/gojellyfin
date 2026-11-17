@@ -21,6 +21,12 @@ func TestServer_GetLogEntries(t *testing.T) {
 	itemID := uuid.New()
 	failed := errors.New("the database is gone")
 
+	serverGetLogEntriesRest(t, at, itemID, userID, failed)
+}
+
+func serverGetLogEntriesRest(t *testing.T, at time.Time, itemID uuid.UUID, userID uuid.UUID, failed error) {
+	t.Helper()
+
 	tests := []serverGetLogEntriesCase{
 		{
 			name:    "empty result",

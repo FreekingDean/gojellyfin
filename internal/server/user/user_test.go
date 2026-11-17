@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/FreekingDean/gojellyfin/internal/store"
 	"github.com/FreekingDean/gojellyfin/internal/storetest"
 
 	"github.com/google/uuid"
@@ -98,20 +99,7 @@ func recordsAnAuthenticationThatLeaksNoSecret() func(*testing.T) {
 			t.Fatalf("failed to create the user: %v", err)
 		}
 
-		t.Cleanup(func() {
-			if _, err := client.ActivityLogEntry.Delete().Where(entrymodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
-				t.Errorf("failed to delete the entries: %v", err)
-			}
-			if _, err := client.Session.Delete().Where(sessionmodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
-				t.Errorf("failed to delete the sessions: %v", err)
-			}
-			if _, err := client.Device.Delete().Where(devicemodel.ClientID(deviceID)).Exec(ctx); err != nil {
-				t.Errorf("failed to delete the device: %v", err)
-			}
-			if err := client.User.DeleteOne(user).Exec(ctx); err != nil {
-				t.Errorf("failed to delete the user: %v", err)
-			}
-		})
+		t.Cleanup(recordsAnAuthenticationThatLeaksNoSecretCleanup(t, client, user, ctx, deviceID))
 
 		ctx = auth.ContextWithAuthorization(ctx, auth.Authorization{
 			Client:   "Jellyfin Web",
@@ -174,6 +162,25 @@ func recordsAnAuthenticationThatLeaksNoSecret() func(*testing.T) {
 	}
 }
 
+func recordsAnAuthenticationThatLeaksNoSecretCleanup(t *testing.T, client *store.Client, user *store.User, ctx context.Context, deviceID string) func() {
+	t.Helper()
+
+	return func() {
+		if _, err := client.ActivityLogEntry.Delete().Where(entrymodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the entries: %v", err)
+		}
+		if _, err := client.Session.Delete().Where(sessionmodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the sessions: %v", err)
+		}
+		if _, err := client.Device.Delete().Where(devicemodel.ClientID(deviceID)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the device: %v", err)
+		}
+		if err := client.User.DeleteOne(user).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the user: %v", err)
+		}
+	}
+}
+
 func TestServer_AuthenticateWithQuickConnect(t *testing.T) {
 
 	connection := storetest.Open(t)
@@ -191,20 +198,7 @@ func TestServer_AuthenticateWithQuickConnect(t *testing.T) {
 		t.Fatalf("failed to create the user: %v", err)
 	}
 
-	t.Cleanup(func() {
-		if _, err := client.ActivityLogEntry.Delete().Where(entrymodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the entries: %v", err)
-		}
-		if _, err := client.Session.Delete().Where(sessionmodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the sessions: %v", err)
-		}
-		if _, err := client.Device.Delete().Where(devicemodel.ClientID(deviceID)).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the device: %v", err)
-		}
-		if err := client.User.DeleteOne(user).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the user: %v", err)
-		}
-	})
+	t.Cleanup(serverAuthenticateWithQuickConnectCleanup(t, client, user, ctx, deviceID))
 
 	ctx = auth.ContextWithAuthorization(ctx, auth.Authorization{Client: "Jellyfin Web", Device: "tv", DeviceID: deviceID})
 	redeem := serverAuthenticateWithQuickConnectRedeem(t, server, ctx)
@@ -237,6 +231,25 @@ func TestServer_AuthenticateWithQuickConnect(t *testing.T) {
 
 	if _, ok := redeem(request.Secret).(api.AuthenticateWithQuickConnect400Response); !ok {
 		t.Error("the secret was redeemed twice, want 400")
+	}
+}
+
+func serverAuthenticateWithQuickConnectCleanup(t *testing.T, client *store.Client, user *store.User, ctx context.Context, deviceID string) func() {
+	t.Helper()
+
+	return func() {
+		if _, err := client.ActivityLogEntry.Delete().Where(entrymodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the entries: %v", err)
+		}
+		if _, err := client.Session.Delete().Where(sessionmodel.HasUserWith(usermodel.ID(user.ID))).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the sessions: %v", err)
+		}
+		if _, err := client.Device.Delete().Where(devicemodel.ClientID(deviceID)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the device: %v", err)
+		}
+		if err := client.User.DeleteOne(user).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the user: %v", err)
+		}
 	}
 }
 

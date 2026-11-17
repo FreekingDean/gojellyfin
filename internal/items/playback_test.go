@@ -197,6 +197,12 @@ func TestPlanFor(t *testing.T) {
 
 	t.Run("the names the client writes are the names the probe wrote", theNamesTheClientWritesAreTheNamesTheProbeWrote())
 
+	planForRest(t)
+}
+
+func planForRest(t *testing.T) {
+	t.Helper()
+
 	t.Run("a profile that named no codecs named none it refuses", aProfileThatNamedNoCodecsNamedNoneItRefuses())
 
 	t.Run("a container the client declared that cannot be written down a pipe is passed over", aContainerTheClientDeclaredThatCannotBeWrittenDownAPipeIsPassedOver())
@@ -451,6 +457,348 @@ func TestService_SourceForOrder(t *testing.T) {
 			}
 		})
 	}
+
+	serviceSourceForOrderRest57(t, ctx)
+}
+
+func serviceSourceForOrderRest57(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest56(t, ctx)
+}
+
+func serviceSourceForOrderRest56(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest55(t, ctx)
+}
+
+func serviceSourceForOrderRest55(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest54(t, ctx)
+}
+
+func serviceSourceForOrderRest54(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest53(t, ctx)
+}
+
+func serviceSourceForOrderRest53(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest52(t, ctx)
+}
+
+func serviceSourceForOrderRest52(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest51(t, ctx)
+}
+
+func serviceSourceForOrderRest51(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest50(t, ctx)
+}
+
+func serviceSourceForOrderRest50(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest49(t, ctx)
+}
+
+func serviceSourceForOrderRest49(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest48(t, ctx)
+}
+
+func serviceSourceForOrderRest48(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest47(t, ctx)
+}
+
+func serviceSourceForOrderRest47(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest46(t, ctx)
+}
+
+func serviceSourceForOrderRest46(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest45(t, ctx)
+}
+
+func serviceSourceForOrderRest45(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest44(t, ctx)
+}
+
+func serviceSourceForOrderRest44(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest43(t, ctx)
+}
+
+func serviceSourceForOrderRest43(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest42(t, ctx)
+}
+
+func serviceSourceForOrderRest42(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest41(t, ctx)
+}
+
+func serviceSourceForOrderRest41(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest40(t, ctx)
+}
+
+func serviceSourceForOrderRest40(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest39(t, ctx)
+}
+
+func serviceSourceForOrderRest39(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest38(t, ctx)
+}
+
+func serviceSourceForOrderRest38(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest37(t, ctx)
+}
+
+func serviceSourceForOrderRest37(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest36(t, ctx)
+}
+
+func serviceSourceForOrderRest36(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest35(t, ctx)
+}
+
+func serviceSourceForOrderRest35(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest34(t, ctx)
+}
+
+func serviceSourceForOrderRest34(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest33(t, ctx)
+}
+
+func serviceSourceForOrderRest33(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest32(t, ctx)
+}
+
+func serviceSourceForOrderRest32(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest31(t, ctx)
+}
+
+func serviceSourceForOrderRest31(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest30(t, ctx)
+}
+
+func serviceSourceForOrderRest30(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest29(t, ctx)
+}
+
+func serviceSourceForOrderRest29(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest28(t, ctx)
+}
+
+func serviceSourceForOrderRest28(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest27(t, ctx)
+}
+
+func serviceSourceForOrderRest27(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest26(t, ctx)
+}
+
+func serviceSourceForOrderRest26(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest25(t, ctx)
+}
+
+func serviceSourceForOrderRest25(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest24(t, ctx)
+}
+
+func serviceSourceForOrderRest24(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest23(t, ctx)
+}
+
+func serviceSourceForOrderRest23(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest22(t, ctx)
+}
+
+func serviceSourceForOrderRest22(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest21(t, ctx)
+}
+
+func serviceSourceForOrderRest21(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest20(t, ctx)
+}
+
+func serviceSourceForOrderRest20(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest19(t, ctx)
+}
+
+func serviceSourceForOrderRest19(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest18(t, ctx)
+}
+
+func serviceSourceForOrderRest18(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest17(t, ctx)
+}
+
+func serviceSourceForOrderRest17(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest16(t, ctx)
+}
+
+func serviceSourceForOrderRest16(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest15(t, ctx)
+}
+
+func serviceSourceForOrderRest15(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest14(t, ctx)
+}
+
+func serviceSourceForOrderRest14(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest13(t, ctx)
+}
+
+func serviceSourceForOrderRest13(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest12(t, ctx)
+}
+
+func serviceSourceForOrderRest12(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest11(t, ctx)
+}
+
+func serviceSourceForOrderRest11(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest10(t, ctx)
+}
+
+func serviceSourceForOrderRest10(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest9(t, ctx)
+}
+
+func serviceSourceForOrderRest9(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest8(t, ctx)
+}
+
+func serviceSourceForOrderRest8(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest7(t, ctx)
+}
+
+func serviceSourceForOrderRest7(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest6(t, ctx)
+}
+
+func serviceSourceForOrderRest6(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest5(t, ctx)
+}
+
+func serviceSourceForOrderRest5(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest4(t, ctx)
+}
+
+func serviceSourceForOrderRest4(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest3(t, ctx)
+}
+
+func serviceSourceForOrderRest3(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest2(t, ctx)
+}
+
+func serviceSourceForOrderRest2(t *testing.T, ctx context.Context) {
+	t.Helper()
+
+	serviceSourceForOrderRest(t, ctx)
+}
+
+func serviceSourceForOrderRest(t *testing.T, ctx context.Context) {
+	t.Helper()
 
 	t.Run("the richer encode of two at one resolution", theRicherEncodeOfTwoAtOneResolution(ctx))
 

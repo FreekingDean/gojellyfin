@@ -204,6 +204,12 @@ func TestServer_UpdateItem(t *testing.T) {
 
 	t.Run("keeps a foreign rating", keepsAForeignRating())
 
+	serverUpdateItemRest(t)
+}
+
+func serverUpdateItemRest(t *testing.T) {
+	t.Helper()
+
 	t.Run("keeps the probed columns", keepsTheProbedColumns())
 
 	t.Run("claims the title it retitles", claimsTheTitleItRetitles())
