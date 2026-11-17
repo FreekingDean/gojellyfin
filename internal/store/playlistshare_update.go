@@ -21,8 +21,9 @@ import (
 // PlaylistShareUpdate is the builder for updating PlaylistShare entities.
 type PlaylistShareUpdate struct {
 	config
-	hooks    []Hook
-	mutation *PlaylistShareMutation
+	hooks     []Hook
+	mutation  *PlaylistShareMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the PlaylistShareUpdate builder.
@@ -31,23 +32,17 @@ func (_u *PlaylistShareUpdate) Where(ps ...predicate.PlaylistShare) *PlaylistSha
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *PlaylistShareUpdate) SetCreatedAt(v time.Time) *PlaylistShareUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *PlaylistShareUpdate) SetNillableCreatedAt(v *time.Time) *PlaylistShareUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *PlaylistShareUpdate) SetUpdatedAt(v time.Time) *PlaylistShareUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *PlaylistShareUpdate) SetNillableUpdatedAt(v *time.Time) *PlaylistShareUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -122,7 +117,6 @@ func (_u *PlaylistShareUpdate) ClearUser() *PlaylistShareUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *PlaylistShareUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -148,14 +142,6 @@ func (_u *PlaylistShareUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *PlaylistShareUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := playlistshare.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *PlaylistShareUpdate) check() error {
 	if _u.mutation.PlaylistCleared() && len(_u.mutation.PlaylistIDs()) > 0 {
@@ -165,6 +151,12 @@ func (_u *PlaylistShareUpdate) check() error {
 		return errors.New(`store: clearing a required unique edge "PlaylistShare.user"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *PlaylistShareUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *PlaylistShareUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *PlaylistShareUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -178,9 +170,6 @@ func (_u *PlaylistShareUpdate) sqlSave(ctx context.Context) (_node int, err erro
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(playlistshare.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(playlistshare.FieldUpdatedAt, field.TypeTime, value)
@@ -246,6 +235,7 @@ func (_u *PlaylistShareUpdate) sqlSave(ctx context.Context) (_node int, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{playlistshare.Label}
@@ -261,28 +251,23 @@ func (_u *PlaylistShareUpdate) sqlSave(ctx context.Context) (_node int, err erro
 // PlaylistShareUpdateOne is the builder for updating a single PlaylistShare entity.
 type PlaylistShareUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *PlaylistShareMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *PlaylistShareUpdateOne) SetCreatedAt(v time.Time) *PlaylistShareUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *PlaylistShareUpdateOne) SetNillableCreatedAt(v *time.Time) *PlaylistShareUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *PlaylistShareMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *PlaylistShareUpdateOne) SetUpdatedAt(v time.Time) *PlaylistShareUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *PlaylistShareUpdateOne) SetNillableUpdatedAt(v *time.Time) *PlaylistShareUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -370,7 +355,6 @@ func (_u *PlaylistShareUpdateOne) Select(field string, fields ...string) *Playli
 
 // Save executes the query and returns the updated PlaylistShare entity.
 func (_u *PlaylistShareUpdateOne) Save(ctx context.Context) (*PlaylistShare, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -396,14 +380,6 @@ func (_u *PlaylistShareUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *PlaylistShareUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := playlistshare.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *PlaylistShareUpdateOne) check() error {
 	if _u.mutation.PlaylistCleared() && len(_u.mutation.PlaylistIDs()) > 0 {
@@ -413,6 +389,12 @@ func (_u *PlaylistShareUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "PlaylistShare.user"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *PlaylistShareUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *PlaylistShareUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *PlaylistShareUpdateOne) sqlSave(ctx context.Context) (_node *PlaylistShare, err error) {
@@ -443,9 +425,6 @@ func (_u *PlaylistShareUpdateOne) sqlSave(ctx context.Context) (_node *PlaylistS
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(playlistshare.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(playlistshare.FieldUpdatedAt, field.TypeTime, value)
@@ -511,6 +490,7 @@ func (_u *PlaylistShareUpdateOne) sqlSave(ctx context.Context) (_node *PlaylistS
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &PlaylistShare{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

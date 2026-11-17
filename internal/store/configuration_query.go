@@ -254,8 +254,9 @@ func (_q *ConfigurationQuery) Clone() *ConfigurationQuery {
 		inters:     append([]Interceptor{}, _q.inters...),
 		predicates: append([]predicate.Configuration{}, _q.predicates...),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -474,6 +475,12 @@ func (_q *ConfigurationQuery) ForShare(opts ...sql.LockOption) *ConfigurationQue
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *ConfigurationQuery) Modify(modifiers ...func(s *sql.Selector)) *ConfigurationSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // ConfigurationGroupBy is the group-by builder for Configuration entities.
 type ConfigurationGroupBy struct {
 	selector
@@ -562,4 +569,10 @@ func (_s *ConfigurationSelect) sqlScan(ctx context.Context, root *ConfigurationQ
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *ConfigurationSelect) Modify(modifiers ...func(s *sql.Selector)) *ConfigurationSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

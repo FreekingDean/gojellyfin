@@ -64,7 +64,7 @@ func (s *Service) recordSync(ctx context.Context, bindingID uuid.UUID, readErr e
 		return update.SetLastError(readErr.Error()).Exec(ctx)
 	}
 
-	return update.SetLastSyncedAt(time.Now()).SetLastError("").Exec(ctx)
+	return update.Modify(store.StampNow(librarysourcemodel.FieldLastSyncedAt)).SetLastError("").Exec(ctx)
 }
 
 func (s *Service) read(ctx context.Context, binding Binding) error {

@@ -305,8 +305,9 @@ func (_q *ActivityLogEntryQuery) Clone() *ActivityLogEntryQuery {
 		withUser:   _q.withUser.Clone(),
 		withItem:   _q.withItem.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -636,6 +637,12 @@ func (_q *ActivityLogEntryQuery) ForShare(opts ...sql.LockOption) *ActivityLogEn
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *ActivityLogEntryQuery) Modify(modifiers ...func(s *sql.Selector)) *ActivityLogEntrySelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // ActivityLogEntryGroupBy is the group-by builder for ActivityLogEntry entities.
 type ActivityLogEntryGroupBy struct {
 	selector
@@ -724,4 +731,10 @@ func (_s *ActivityLogEntrySelect) sqlScan(ctx context.Context, root *ActivityLog
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *ActivityLogEntrySelect) Modify(modifiers ...func(s *sql.Selector)) *ActivityLogEntrySelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

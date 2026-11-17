@@ -20,8 +20,9 @@ import (
 // MediaSegmentUpdate is the builder for updating MediaSegment entities.
 type MediaSegmentUpdate struct {
 	config
-	hooks    []Hook
-	mutation *MediaSegmentMutation
+	hooks     []Hook
+	mutation  *MediaSegmentMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the MediaSegmentUpdate builder.
@@ -30,23 +31,17 @@ func (_u *MediaSegmentUpdate) Where(ps ...predicate.MediaSegment) *MediaSegmentU
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *MediaSegmentUpdate) SetCreatedAt(v time.Time) *MediaSegmentUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *MediaSegmentUpdate) SetNillableCreatedAt(v *time.Time) *MediaSegmentUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *MediaSegmentUpdate) SetUpdatedAt(v time.Time) *MediaSegmentUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *MediaSegmentUpdate) SetNillableUpdatedAt(v *time.Time) *MediaSegmentUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -158,7 +153,6 @@ func (_u *MediaSegmentUpdate) ClearSource() *MediaSegmentUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *MediaSegmentUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -184,14 +178,6 @@ func (_u *MediaSegmentUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *MediaSegmentUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := mediasegment.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *MediaSegmentUpdate) check() error {
 	if v, ok := _u.mutation.Kind(); ok {
@@ -210,6 +196,12 @@ func (_u *MediaSegmentUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *MediaSegmentUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *MediaSegmentUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
+}
+
 func (_u *MediaSegmentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
@@ -221,9 +213,6 @@ func (_u *MediaSegmentUpdate) sqlSave(ctx context.Context) (_node int, err error
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(mediasegment.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(mediasegment.FieldUpdatedAt, field.TypeTime, value)
@@ -275,6 +264,7 @@ func (_u *MediaSegmentUpdate) sqlSave(ctx context.Context) (_node int, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{mediasegment.Label}
@@ -290,28 +280,23 @@ func (_u *MediaSegmentUpdate) sqlSave(ctx context.Context) (_node int, err error
 // MediaSegmentUpdateOne is the builder for updating a single MediaSegment entity.
 type MediaSegmentUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *MediaSegmentMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *MediaSegmentUpdateOne) SetCreatedAt(v time.Time) *MediaSegmentUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *MediaSegmentUpdateOne) SetNillableCreatedAt(v *time.Time) *MediaSegmentUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *MediaSegmentMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *MediaSegmentUpdateOne) SetUpdatedAt(v time.Time) *MediaSegmentUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *MediaSegmentUpdateOne) SetNillableUpdatedAt(v *time.Time) *MediaSegmentUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -436,7 +421,6 @@ func (_u *MediaSegmentUpdateOne) Select(field string, fields ...string) *MediaSe
 
 // Save executes the query and returns the updated MediaSegment entity.
 func (_u *MediaSegmentUpdateOne) Save(ctx context.Context) (*MediaSegment, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -462,14 +446,6 @@ func (_u *MediaSegmentUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *MediaSegmentUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := mediasegment.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *MediaSegmentUpdateOne) check() error {
 	if v, ok := _u.mutation.Kind(); ok {
@@ -486,6 +462,12 @@ func (_u *MediaSegmentUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "MediaSegment.source"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *MediaSegmentUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *MediaSegmentUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *MediaSegmentUpdateOne) sqlSave(ctx context.Context) (_node *MediaSegment, err error) {
@@ -516,9 +498,6 @@ func (_u *MediaSegmentUpdateOne) sqlSave(ctx context.Context) (_node *MediaSegme
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(mediasegment.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(mediasegment.FieldUpdatedAt, field.TypeTime, value)
@@ -570,6 +549,7 @@ func (_u *MediaSegmentUpdateOne) sqlSave(ctx context.Context) (_node *MediaSegme
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &MediaSegment{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

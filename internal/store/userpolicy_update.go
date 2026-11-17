@@ -22,8 +22,9 @@ import (
 // UserPolicyUpdate is the builder for updating UserPolicy entities.
 type UserPolicyUpdate struct {
 	config
-	hooks    []Hook
-	mutation *UserPolicyMutation
+	hooks     []Hook
+	mutation  *UserPolicyMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the UserPolicyUpdate builder.
@@ -32,23 +33,17 @@ func (_u *UserPolicyUpdate) Where(ps ...predicate.UserPolicy) *UserPolicyUpdate 
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *UserPolicyUpdate) SetCreatedAt(v time.Time) *UserPolicyUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *UserPolicyUpdate) SetNillableCreatedAt(v *time.Time) *UserPolicyUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *UserPolicyUpdate) SetUpdatedAt(v time.Time) *UserPolicyUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *UserPolicyUpdate) SetNillableUpdatedAt(v *time.Time) *UserPolicyUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -794,7 +789,6 @@ func (_u *UserPolicyUpdate) ClearUser() *UserPolicyUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *UserPolicyUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -820,14 +814,6 @@ func (_u *UserPolicyUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *UserPolicyUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := userpolicy.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserPolicyUpdate) check() error {
 	if v, ok := _u.mutation.AuthenticationProviderID(); ok {
@@ -848,6 +834,12 @@ func (_u *UserPolicyUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *UserPolicyUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *UserPolicyUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
+}
+
 func (_u *UserPolicyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
@@ -859,9 +851,6 @@ func (_u *UserPolicyUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(userpolicy.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(userpolicy.FieldUpdatedAt, field.TypeTime, value)
@@ -1131,6 +1120,7 @@ func (_u *UserPolicyUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{userpolicy.Label}
@@ -1146,28 +1136,23 @@ func (_u *UserPolicyUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 // UserPolicyUpdateOne is the builder for updating a single UserPolicy entity.
 type UserPolicyUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *UserPolicyMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *UserPolicyUpdateOne) SetCreatedAt(v time.Time) *UserPolicyUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *UserPolicyUpdateOne) SetNillableCreatedAt(v *time.Time) *UserPolicyUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *UserPolicyMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *UserPolicyUpdateOne) SetUpdatedAt(v time.Time) *UserPolicyUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *UserPolicyUpdateOne) SetNillableUpdatedAt(v *time.Time) *UserPolicyUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -1926,7 +1911,6 @@ func (_u *UserPolicyUpdateOne) Select(field string, fields ...string) *UserPolic
 
 // Save executes the query and returns the updated UserPolicy entity.
 func (_u *UserPolicyUpdateOne) Save(ctx context.Context) (*UserPolicy, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -1952,14 +1936,6 @@ func (_u *UserPolicyUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *UserPolicyUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := userpolicy.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserPolicyUpdateOne) check() error {
 	if v, ok := _u.mutation.AuthenticationProviderID(); ok {
@@ -1978,6 +1954,12 @@ func (_u *UserPolicyUpdateOne) check() error {
 		}
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *UserPolicyUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *UserPolicyUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *UserPolicyUpdateOne) sqlSave(ctx context.Context) (_node *UserPolicy, err error) {
@@ -2008,9 +1990,6 @@ func (_u *UserPolicyUpdateOne) sqlSave(ctx context.Context) (_node *UserPolicy, 
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(userpolicy.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(userpolicy.FieldUpdatedAt, field.TypeTime, value)
@@ -2280,6 +2259,7 @@ func (_u *UserPolicyUpdateOne) sqlSave(ctx context.Context) (_node *UserPolicy, 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &UserPolicy{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

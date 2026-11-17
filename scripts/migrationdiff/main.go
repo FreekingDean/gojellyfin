@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"slices"
+	"strings"
 	"text/template"
 
 	"ariga.io/atlas/sql/migrate"
@@ -136,8 +137,8 @@ func diff(ctx context.Context, scratch *sql.DB, target, name string) error {
 		template.Must(template.New("name").Funcs(template.FuncMap{"now": migrate.NewVersion}).Parse(
 			"{{ with .Version }}{{ . }}{{ else }}{{ now }}{{ end }}{{ with .Name }}_{{ . }}{{ end }}.sql",
 		)),
-		template.Must(template.New("content").Parse(
-			header+`{{ range .Changes }}{{ printf "%s;\n" .Cmd }}{{ end }}`,
+		template.Must(template.New("content").Funcs(template.FuncMap{"stamp": stampTrigger}).Parse(
+			header+`{{ range .Changes }}{{ printf "%s;\n" .Cmd }}{{ stamp .Cmd }}{{ end }}`,
 		)),
 	)
 	if err != nil {
@@ -158,6 +159,16 @@ func diff(ctx context.Context, scratch *sql.DB, target, name string) error {
 	}
 
 	return nil
+}
+
+func stampTrigger(cmd string) string {
+	rest, created := strings.CutPrefix(cmd, `CREATE TABLE "`)
+	if !created || !strings.Contains(rest, `"updated_at"`) {
+		return ""
+	}
+	table, _, _ := strings.Cut(rest, `"`)
+
+	return fmt.Sprintf("CREATE TRIGGER stamp_updated_at BEFORE UPDATE ON %q FOR EACH ROW EXECUTE FUNCTION stamp_updated_at();\n", table)
 }
 
 func replay(ctx context.Context, scratch *sql.DB, dir migrate.Dir) error {

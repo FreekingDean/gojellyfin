@@ -20,8 +20,9 @@ import (
 // ImageUpdate is the builder for updating Image entities.
 type ImageUpdate struct {
 	config
-	hooks    []Hook
-	mutation *ImageMutation
+	hooks     []Hook
+	mutation  *ImageMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the ImageUpdate builder.
@@ -30,23 +31,17 @@ func (_u *ImageUpdate) Where(ps ...predicate.Image) *ImageUpdate {
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *ImageUpdate) SetCreatedAt(v time.Time) *ImageUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ImageUpdate) SetNillableCreatedAt(v *time.Time) *ImageUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ImageUpdate) SetUpdatedAt(v time.Time) *ImageUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ImageUpdate) SetNillableUpdatedAt(v *time.Time) *ImageUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -145,7 +140,6 @@ func (_u *ImageUpdate) ClearItem() *ImageUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *ImageUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -171,14 +165,6 @@ func (_u *ImageUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *ImageUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := image.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *ImageUpdate) check() error {
 	if v, ok := _u.mutation.Kind(); ok {
@@ -192,6 +178,12 @@ func (_u *ImageUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ImageUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ImageUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
+}
+
 func (_u *ImageUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
@@ -203,9 +195,6 @@ func (_u *ImageUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(image.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(image.FieldUpdatedAt, field.TypeTime, value)
@@ -254,6 +243,7 @@ func (_u *ImageUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{image.Label}
@@ -269,28 +259,23 @@ func (_u *ImageUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 // ImageUpdateOne is the builder for updating a single Image entity.
 type ImageUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *ImageMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *ImageUpdateOne) SetCreatedAt(v time.Time) *ImageUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ImageUpdateOne) SetNillableCreatedAt(v *time.Time) *ImageUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *ImageMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ImageUpdateOne) SetUpdatedAt(v time.Time) *ImageUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ImageUpdateOne) SetNillableUpdatedAt(v *time.Time) *ImageUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -402,7 +387,6 @@ func (_u *ImageUpdateOne) Select(field string, fields ...string) *ImageUpdateOne
 
 // Save executes the query and returns the updated Image entity.
 func (_u *ImageUpdateOne) Save(ctx context.Context) (*Image, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -428,14 +412,6 @@ func (_u *ImageUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *ImageUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := image.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *ImageUpdateOne) check() error {
 	if v, ok := _u.mutation.Kind(); ok {
@@ -447,6 +423,12 @@ func (_u *ImageUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "Image.item"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ImageUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ImageUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *ImageUpdateOne) sqlSave(ctx context.Context) (_node *Image, err error) {
@@ -477,9 +459,6 @@ func (_u *ImageUpdateOne) sqlSave(ctx context.Context) (_node *Image, err error)
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(image.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(image.FieldUpdatedAt, field.TypeTime, value)
@@ -528,6 +507,7 @@ func (_u *ImageUpdateOne) sqlSave(ctx context.Context) (_node *Image, err error)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &Image{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

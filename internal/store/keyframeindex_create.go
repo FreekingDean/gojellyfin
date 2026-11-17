@@ -261,18 +261,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *KeyframeIndexUpsert) SetCreatedAt(v time.Time) *KeyframeIndexUpsert {
-	u.Set(keyframeindex.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *KeyframeIndexUpsert) UpdateCreatedAt() *KeyframeIndexUpsert {
-	u.SetExcluded(keyframeindex.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *KeyframeIndexUpsert) SetUpdatedAt(v time.Time) *KeyframeIndexUpsert {
 	u.Set(keyframeindex.FieldUpdatedAt, v)
@@ -326,6 +314,9 @@ func (u *KeyframeIndexUpsertOne) UpdateNewValues() *KeyframeIndexUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(keyframeindex.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(keyframeindex.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -355,20 +346,6 @@ func (u *KeyframeIndexUpsertOne) Update(set func(*KeyframeIndexUpsert)) *Keyfram
 		set(&KeyframeIndexUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *KeyframeIndexUpsertOne) SetCreatedAt(v time.Time) *KeyframeIndexUpsertOne {
-	return u.Update(func(s *KeyframeIndexUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *KeyframeIndexUpsertOne) UpdateCreatedAt() *KeyframeIndexUpsertOne {
-	return u.Update(func(s *KeyframeIndexUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -596,6 +573,9 @@ func (u *KeyframeIndexUpsertBulk) UpdateNewValues() *KeyframeIndexUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(keyframeindex.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(keyframeindex.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -626,20 +606,6 @@ func (u *KeyframeIndexUpsertBulk) Update(set func(*KeyframeIndexUpsert)) *Keyfra
 		set(&KeyframeIndexUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *KeyframeIndexUpsertBulk) SetCreatedAt(v time.Time) *KeyframeIndexUpsertBulk {
-	return u.Update(func(s *KeyframeIndexUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *KeyframeIndexUpsertBulk) UpdateCreatedAt() *KeyframeIndexUpsertBulk {
-	return u.Update(func(s *KeyframeIndexUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

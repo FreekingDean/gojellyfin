@@ -509,7 +509,6 @@ func upsertShare(ctx context.Context, client *store.PlaylistShareClient, playlis
 		SetCanEdit(permission.CanEdit).
 		OnConflictColumns(sharemodel.FieldPlaylistID, sharemodel.FieldUserID).
 		UpdateCanEdit().
-		UpdateUpdatedAt().
 		Exec(ctx))
 }
 

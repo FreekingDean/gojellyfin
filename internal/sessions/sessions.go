@@ -228,7 +228,7 @@ func (s *Service) RevokeForUser(ctx context.Context, userID uuid.UUID) error {
 
 	s.end(ctx, ids)
 
-	if _, err := s.store.Session.Update().Where(live...).SetRevokedAt(time.Now()).Save(ctx); err != nil {
+	if _, err := s.store.Session.Update().Where(live...).Modify(store.StampNow(sessionmodel.FieldRevokedAt)).Save(ctx); err != nil {
 		return fmt.Errorf("failed to revoke sessions for user: %w", err)
 	}
 

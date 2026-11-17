@@ -1123,18 +1123,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *ItemUpsert) SetCreatedAt(v time.Time) *ItemUpsert {
-	u.Set(item.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ItemUpsert) UpdateCreatedAt() *ItemUpsert {
-	u.SetExcluded(item.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *ItemUpsert) SetUpdatedAt(v time.Time) *ItemUpsert {
 	u.Set(item.FieldUpdatedAt, v)
@@ -1596,6 +1584,9 @@ func (u *ItemUpsertOne) UpdateNewValues() *ItemUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(item.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(item.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -1625,20 +1616,6 @@ func (u *ItemUpsertOne) Update(set func(*ItemUpsert)) *ItemUpsertOne {
 		set(&ItemUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ItemUpsertOne) SetCreatedAt(v time.Time) *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ItemUpsertOne) UpdateCreatedAt() *ItemUpsertOne {
-	return u.Update(func(s *ItemUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -2342,6 +2319,9 @@ func (u *ItemUpsertBulk) UpdateNewValues() *ItemUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(item.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(item.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -2372,20 +2352,6 @@ func (u *ItemUpsertBulk) Update(set func(*ItemUpsert)) *ItemUpsertBulk {
 		set(&ItemUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ItemUpsertBulk) SetCreatedAt(v time.Time) *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ItemUpsertBulk) UpdateCreatedAt() *ItemUpsertBulk {
-	return u.Update(func(s *ItemUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

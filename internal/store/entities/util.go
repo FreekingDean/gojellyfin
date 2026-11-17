@@ -11,12 +11,14 @@ import (
 
 var cascadeOnDelete = entsql.OnDelete(entsql.Cascade)
 
+var stampedByTheDatabase = entsql.Default("now()")
+
 func withDefaultFields(fields ...ent.Field) []ent.Field {
 	return append([]ent.Field{
 		field.UUID("id", uuid.UUID{}).Annotations(
 			entsql.Default("gen_random_uuid()"),
 		),
-		field.Time("created_at").Default(time.Now),
-		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
+		field.Time("created_at").Immutable().Default(time.Now).Annotations(stampedByTheDatabase),
+		field.Time("updated_at").Default(time.Now).Annotations(stampedByTheDatabase),
 	}, fields...)
 }

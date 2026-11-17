@@ -279,8 +279,9 @@ func (_q *RequestSubmissionQuery) Clone() *RequestSubmissionQuery {
 		predicates: append([]predicate.RequestSubmission{}, _q.predicates...),
 		withSource: _q.withSource.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -553,6 +554,12 @@ func (_q *RequestSubmissionQuery) ForShare(opts ...sql.LockOption) *RequestSubmi
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *RequestSubmissionQuery) Modify(modifiers ...func(s *sql.Selector)) *RequestSubmissionSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // RequestSubmissionGroupBy is the group-by builder for RequestSubmission entities.
 type RequestSubmissionGroupBy struct {
 	selector
@@ -641,4 +648,10 @@ func (_s *RequestSubmissionSelect) sqlScan(ctx context.Context, root *RequestSub
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *RequestSubmissionSelect) Modify(modifiers ...func(s *sql.Selector)) *RequestSubmissionSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

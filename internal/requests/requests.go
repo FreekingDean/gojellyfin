@@ -238,22 +238,33 @@ func (s *Service) submit(ctx context.Context, target sources.Source, key string,
 		return nil
 	}
 
-	submission := s.store.RequestSubmission.Create().SetSourceID(target.ID).SetKey(key)
-	if refused := s.downloaders.Submit(ctx, target, wanted); refused != nil {
+	refused := s.downloaders.Submit(ctx, target, wanted)
+	answer := ""
+	if refused != nil {
 		log.Printf("requests: a downloader did not take %s, and the queue says why", key)
-		submission.SetLastError(refused.Error())
-	} else {
-		submission.SetAcceptedAt(time.Now()).SetLastError("")
+		answer = refused.Error()
 	}
 
-	err = submission.
+	id, err := s.store.RequestSubmission.Create().
+		SetSourceID(target.ID).
+		SetKey(key).
+		SetLastError(answer).
 		OnConflictColumns(submissionmodel.FieldSourceID, submissionmodel.FieldKey).
-		UpdateAcceptedAt().
+		ClearAcceptedAt().
 		UpdateLastError().
-		UpdateUpdatedAt().
-		Exec(ctx)
+		ID(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to record what %s answered for %s: %w", target.Name, key, err)
+	}
+	if refused != nil {
+		return nil
+	}
+
+	err = s.store.RequestSubmission.UpdateOneID(id).
+		Modify(store.StampNow(submissionmodel.FieldAcceptedAt)).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to record that %s took %s: %w", target.Name, key, err)
 	}
 
 	return nil

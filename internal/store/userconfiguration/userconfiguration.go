@@ -114,8 +114,6 @@ var (
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
-	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
-	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultPlayDefaultAudioTrack holds the default value on creation for the "play_default_audio_track" field.
 	DefaultPlayDefaultAudioTrack bool
 	// DefaultGroupedFolders holds the default value on creation for the "grouped_folders" field.

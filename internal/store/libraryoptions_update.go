@@ -22,8 +22,9 @@ import (
 // LibraryOptionsUpdate is the builder for updating LibraryOptions entities.
 type LibraryOptionsUpdate struct {
 	config
-	hooks    []Hook
-	mutation *LibraryOptionsMutation
+	hooks     []Hook
+	mutation  *LibraryOptionsMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the LibraryOptionsUpdate builder.
@@ -32,23 +33,17 @@ func (_u *LibraryOptionsUpdate) Where(ps ...predicate.LibraryOptions) *LibraryOp
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *LibraryOptionsUpdate) SetCreatedAt(v time.Time) *LibraryOptionsUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *LibraryOptionsUpdate) SetNillableCreatedAt(v *time.Time) *LibraryOptionsUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *LibraryOptionsUpdate) SetUpdatedAt(v time.Time) *LibraryOptionsUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *LibraryOptionsUpdate) SetNillableUpdatedAt(v *time.Time) *LibraryOptionsUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -717,7 +712,6 @@ func (_u *LibraryOptionsUpdate) ClearLibrary() *LibraryOptionsUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *LibraryOptionsUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -743,14 +737,6 @@ func (_u *LibraryOptionsUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *LibraryOptionsUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := libraryoptions.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *LibraryOptionsUpdate) check() error {
 	if v, ok := _u.mutation.AllowEmbeddedSubtitles(); ok {
@@ -759,6 +745,12 @@ func (_u *LibraryOptionsUpdate) check() error {
 		}
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *LibraryOptionsUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *LibraryOptionsUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *LibraryOptionsUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -772,9 +764,6 @@ func (_u *LibraryOptionsUpdate) sqlSave(ctx context.Context) (_node int, err err
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(libraryoptions.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(libraryoptions.FieldUpdatedAt, field.TypeTime, value)
@@ -1038,6 +1027,7 @@ func (_u *LibraryOptionsUpdate) sqlSave(ctx context.Context) (_node int, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{libraryoptions.Label}
@@ -1053,28 +1043,23 @@ func (_u *LibraryOptionsUpdate) sqlSave(ctx context.Context) (_node int, err err
 // LibraryOptionsUpdateOne is the builder for updating a single LibraryOptions entity.
 type LibraryOptionsUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *LibraryOptionsMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *LibraryOptionsUpdateOne) SetCreatedAt(v time.Time) *LibraryOptionsUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *LibraryOptionsUpdateOne) SetNillableCreatedAt(v *time.Time) *LibraryOptionsUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *LibraryOptionsMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *LibraryOptionsUpdateOne) SetUpdatedAt(v time.Time) *LibraryOptionsUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *LibraryOptionsUpdateOne) SetNillableUpdatedAt(v *time.Time) *LibraryOptionsUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -1756,7 +1741,6 @@ func (_u *LibraryOptionsUpdateOne) Select(field string, fields ...string) *Libra
 
 // Save executes the query and returns the updated LibraryOptions entity.
 func (_u *LibraryOptionsUpdateOne) Save(ctx context.Context) (*LibraryOptions, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -1782,14 +1766,6 @@ func (_u *LibraryOptionsUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *LibraryOptionsUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := libraryoptions.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *LibraryOptionsUpdateOne) check() error {
 	if v, ok := _u.mutation.AllowEmbeddedSubtitles(); ok {
@@ -1798,6 +1774,12 @@ func (_u *LibraryOptionsUpdateOne) check() error {
 		}
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *LibraryOptionsUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *LibraryOptionsUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *LibraryOptionsUpdateOne) sqlSave(ctx context.Context) (_node *LibraryOptions, err error) {
@@ -1828,9 +1810,6 @@ func (_u *LibraryOptionsUpdateOne) sqlSave(ctx context.Context) (_node *LibraryO
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(libraryoptions.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(libraryoptions.FieldUpdatedAt, field.TypeTime, value)
@@ -2094,6 +2073,7 @@ func (_u *LibraryOptionsUpdateOne) sqlSave(ctx context.Context) (_node *LibraryO
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &LibraryOptions{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

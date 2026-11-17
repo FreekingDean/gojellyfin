@@ -279,8 +279,9 @@ func (_q *MediaStreamQuery) Clone() *MediaStreamQuery {
 		predicates: append([]predicate.MediaStream{}, _q.predicates...),
 		withSource: _q.withSource.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -553,6 +554,12 @@ func (_q *MediaStreamQuery) ForShare(opts ...sql.LockOption) *MediaStreamQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *MediaStreamQuery) Modify(modifiers ...func(s *sql.Selector)) *MediaStreamSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // MediaStreamGroupBy is the group-by builder for MediaStream entities.
 type MediaStreamGroupBy struct {
 	selector
@@ -641,4 +648,10 @@ func (_s *MediaStreamSelect) sqlScan(ctx context.Context, root *MediaStreamQuery
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *MediaStreamSelect) Modify(modifiers ...func(s *sql.Selector)) *MediaStreamSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

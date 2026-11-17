@@ -252,18 +252,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *GenreUpsert) SetCreatedAt(v time.Time) *GenreUpsert {
-	u.Set(genre.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *GenreUpsert) UpdateCreatedAt() *GenreUpsert {
-	u.SetExcluded(genre.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *GenreUpsert) SetUpdatedAt(v time.Time) *GenreUpsert {
 	u.Set(genre.FieldUpdatedAt, v)
@@ -305,6 +293,9 @@ func (u *GenreUpsertOne) UpdateNewValues() *GenreUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(genre.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(genre.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -334,20 +325,6 @@ func (u *GenreUpsertOne) Update(set func(*GenreUpsert)) *GenreUpsertOne {
 		set(&GenreUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *GenreUpsertOne) SetCreatedAt(v time.Time) *GenreUpsertOne {
-	return u.Update(func(s *GenreUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *GenreUpsertOne) UpdateCreatedAt() *GenreUpsertOne {
-	return u.Update(func(s *GenreUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -561,6 +538,9 @@ func (u *GenreUpsertBulk) UpdateNewValues() *GenreUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(genre.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(genre.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -591,20 +571,6 @@ func (u *GenreUpsertBulk) Update(set func(*GenreUpsert)) *GenreUpsertBulk {
 		set(&GenreUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *GenreUpsertBulk) SetCreatedAt(v time.Time) *GenreUpsertBulk {
-	return u.Update(func(s *GenreUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *GenreUpsertBulk) UpdateCreatedAt() *GenreUpsertBulk {
-	return u.Update(func(s *GenreUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

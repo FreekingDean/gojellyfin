@@ -21,8 +21,9 @@ import (
 // UserConfigurationUpdate is the builder for updating UserConfiguration entities.
 type UserConfigurationUpdate struct {
 	config
-	hooks    []Hook
-	mutation *UserConfigurationMutation
+	hooks     []Hook
+	mutation  *UserConfigurationMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the UserConfigurationUpdate builder.
@@ -31,23 +32,17 @@ func (_u *UserConfigurationUpdate) Where(ps ...predicate.UserConfiguration) *Use
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *UserConfigurationUpdate) SetCreatedAt(v time.Time) *UserConfigurationUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *UserConfigurationUpdate) SetNillableCreatedAt(v *time.Time) *UserConfigurationUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *UserConfigurationUpdate) SetUpdatedAt(v time.Time) *UserConfigurationUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *UserConfigurationUpdate) SetNillableUpdatedAt(v *time.Time) *UserConfigurationUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -341,7 +336,6 @@ func (_u *UserConfigurationUpdate) ClearUser() *UserConfigurationUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *UserConfigurationUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -367,14 +361,6 @@ func (_u *UserConfigurationUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *UserConfigurationUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := userconfiguration.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserConfigurationUpdate) check() error {
 	if v, ok := _u.mutation.SubtitleMode(); ok {
@@ -383,6 +369,12 @@ func (_u *UserConfigurationUpdate) check() error {
 		}
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *UserConfigurationUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *UserConfigurationUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *UserConfigurationUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -396,9 +388,6 @@ func (_u *UserConfigurationUpdate) sqlSave(ctx context.Context) (_node int, err 
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(userconfiguration.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(userconfiguration.FieldUpdatedAt, field.TypeTime, value)
@@ -521,6 +510,7 @@ func (_u *UserConfigurationUpdate) sqlSave(ctx context.Context) (_node int, err 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{userconfiguration.Label}
@@ -536,28 +526,23 @@ func (_u *UserConfigurationUpdate) sqlSave(ctx context.Context) (_node int, err 
 // UserConfigurationUpdateOne is the builder for updating a single UserConfiguration entity.
 type UserConfigurationUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *UserConfigurationMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *UserConfigurationUpdateOne) SetCreatedAt(v time.Time) *UserConfigurationUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *UserConfigurationUpdateOne) SetNillableCreatedAt(v *time.Time) *UserConfigurationUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *UserConfigurationMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *UserConfigurationUpdateOne) SetUpdatedAt(v time.Time) *UserConfigurationUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *UserConfigurationUpdateOne) SetNillableUpdatedAt(v *time.Time) *UserConfigurationUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -864,7 +849,6 @@ func (_u *UserConfigurationUpdateOne) Select(field string, fields ...string) *Us
 
 // Save executes the query and returns the updated UserConfiguration entity.
 func (_u *UserConfigurationUpdateOne) Save(ctx context.Context) (*UserConfiguration, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -890,14 +874,6 @@ func (_u *UserConfigurationUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *UserConfigurationUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := userconfiguration.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserConfigurationUpdateOne) check() error {
 	if v, ok := _u.mutation.SubtitleMode(); ok {
@@ -906,6 +882,12 @@ func (_u *UserConfigurationUpdateOne) check() error {
 		}
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *UserConfigurationUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *UserConfigurationUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *UserConfigurationUpdateOne) sqlSave(ctx context.Context) (_node *UserConfiguration, err error) {
@@ -936,9 +918,6 @@ func (_u *UserConfigurationUpdateOne) sqlSave(ctx context.Context) (_node *UserC
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(userconfiguration.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(userconfiguration.FieldUpdatedAt, field.TypeTime, value)
@@ -1061,6 +1040,7 @@ func (_u *UserConfigurationUpdateOne) sqlSave(ctx context.Context) (_node *UserC
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &UserConfiguration{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

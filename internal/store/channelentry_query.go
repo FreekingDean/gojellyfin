@@ -304,8 +304,9 @@ func (_q *ChannelEntryQuery) Clone() *ChannelEntryQuery {
 		withChannel: _q.withChannel.Clone(),
 		withItem:    _q.withItem.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -628,6 +629,12 @@ func (_q *ChannelEntryQuery) ForShare(opts ...sql.LockOption) *ChannelEntryQuery
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *ChannelEntryQuery) Modify(modifiers ...func(s *sql.Selector)) *ChannelEntrySelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // ChannelEntryGroupBy is the group-by builder for ChannelEntry entities.
 type ChannelEntryGroupBy struct {
 	selector
@@ -716,4 +723,10 @@ func (_s *ChannelEntrySelect) sqlScan(ctx context.Context, root *ChannelEntryQue
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *ChannelEntrySelect) Modify(modifiers ...func(s *sql.Selector)) *ChannelEntrySelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

@@ -26,8 +26,9 @@ import (
 // ItemSourceUpdate is the builder for updating ItemSource entities.
 type ItemSourceUpdate struct {
 	config
-	hooks    []Hook
-	mutation *ItemSourceMutation
+	hooks     []Hook
+	mutation  *ItemSourceMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the ItemSourceUpdate builder.
@@ -36,23 +37,17 @@ func (_u *ItemSourceUpdate) Where(ps ...predicate.ItemSource) *ItemSourceUpdate 
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *ItemSourceUpdate) SetCreatedAt(v time.Time) *ItemSourceUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ItemSourceUpdate) SetNillableCreatedAt(v *time.Time) *ItemSourceUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ItemSourceUpdate) SetUpdatedAt(v time.Time) *ItemSourceUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ItemSourceUpdate) SetNillableUpdatedAt(v *time.Time) *ItemSourceUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -545,7 +540,6 @@ func (_u *ItemSourceUpdate) RemovePlanningSessions(v ...*Session) *ItemSourceUpd
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *ItemSourceUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -571,14 +565,6 @@ func (_u *ItemSourceUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *ItemSourceUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := itemsource.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *ItemSourceUpdate) check() error {
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
@@ -588,6 +574,12 @@ func (_u *ItemSourceUpdate) check() error {
 		return errors.New(`store: clearing a required unique edge "ItemSource.source"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ItemSourceUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ItemSourceUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *ItemSourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -601,9 +593,6 @@ func (_u *ItemSourceUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(itemsource.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(itemsource.FieldUpdatedAt, field.TypeTime, value)
@@ -956,6 +945,7 @@ func (_u *ItemSourceUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{itemsource.Label}
@@ -971,28 +961,23 @@ func (_u *ItemSourceUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 // ItemSourceUpdateOne is the builder for updating a single ItemSource entity.
 type ItemSourceUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *ItemSourceMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *ItemSourceUpdateOne) SetCreatedAt(v time.Time) *ItemSourceUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *ItemSourceUpdateOne) SetNillableCreatedAt(v *time.Time) *ItemSourceUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *ItemSourceMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ItemSourceUpdateOne) SetUpdatedAt(v time.Time) *ItemSourceUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *ItemSourceUpdateOne) SetNillableUpdatedAt(v *time.Time) *ItemSourceUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -1498,7 +1483,6 @@ func (_u *ItemSourceUpdateOne) Select(field string, fields ...string) *ItemSourc
 
 // Save executes the query and returns the updated ItemSource entity.
 func (_u *ItemSourceUpdateOne) Save(ctx context.Context) (*ItemSource, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -1524,14 +1508,6 @@ func (_u *ItemSourceUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *ItemSourceUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := itemsource.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *ItemSourceUpdateOne) check() error {
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
@@ -1541,6 +1517,12 @@ func (_u *ItemSourceUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "ItemSource.source"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *ItemSourceUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ItemSourceUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *ItemSourceUpdateOne) sqlSave(ctx context.Context) (_node *ItemSource, err error) {
@@ -1571,9 +1553,6 @@ func (_u *ItemSourceUpdateOne) sqlSave(ctx context.Context) (_node *ItemSource, 
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(itemsource.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(itemsource.FieldUpdatedAt, field.TypeTime, value)
@@ -1926,6 +1905,7 @@ func (_u *ItemSourceUpdateOne) sqlSave(ctx context.Context) (_node *ItemSource, 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &ItemSource{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

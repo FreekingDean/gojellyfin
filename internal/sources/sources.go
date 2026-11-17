@@ -412,7 +412,6 @@ func children(ctx context.Context, tx *store.Tx, id uuid.UUID, entry Configured)
 			SetTagFilter(bound.TagFilter).
 			OnConflictColumns(librarysourcemodel.FieldLibraryID, librarysourcemodel.FieldSourceID).
 			UpdateTagFilter().
-			UpdateUpdatedAt().
 			Exec(ctx); err != nil {
 			return conflict(err)
 		}
@@ -648,7 +647,7 @@ func (s *Service) contact(ctx context.Context, source Source) error {
 	if err != nil {
 		update.SetLastError(err.Error())
 	} else {
-		update.SetVersion(status.Version).SetContactedAt(time.Now()).SetLastError("")
+		update.SetVersion(status.Version).Modify(store.StampNow(sourcemodel.FieldContactedAt)).SetLastError("")
 	}
 
 	if saveErr := update.Exec(ctx); saveErr != nil {

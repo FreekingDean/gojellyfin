@@ -23,8 +23,9 @@ import (
 // LibraryUpdate is the builder for updating Library entities.
 type LibraryUpdate struct {
 	config
-	hooks    []Hook
-	mutation *LibraryMutation
+	hooks     []Hook
+	mutation  *LibraryMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the LibraryUpdate builder.
@@ -33,23 +34,17 @@ func (_u *LibraryUpdate) Where(ps ...predicate.Library) *LibraryUpdate {
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *LibraryUpdate) SetCreatedAt(v time.Time) *LibraryUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *LibraryUpdate) SetNillableCreatedAt(v *time.Time) *LibraryUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *LibraryUpdate) SetUpdatedAt(v time.Time) *LibraryUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *LibraryUpdate) SetNillableUpdatedAt(v *time.Time) *LibraryUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -197,7 +192,6 @@ func (_u *LibraryUpdate) RemoveSources(v ...*LibrarySource) *LibraryUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *LibraryUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -223,14 +217,6 @@ func (_u *LibraryUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *LibraryUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := library.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *LibraryUpdate) check() error {
 	if v, ok := _u.mutation.CollectionType(); ok {
@@ -239,6 +225,12 @@ func (_u *LibraryUpdate) check() error {
 		}
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *LibraryUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *LibraryUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *LibraryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -252,9 +244,6 @@ func (_u *LibraryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(library.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(library.FieldUpdatedAt, field.TypeTime, value)
@@ -392,6 +381,7 @@ func (_u *LibraryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{library.Label}
@@ -407,28 +397,23 @@ func (_u *LibraryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 // LibraryUpdateOne is the builder for updating a single Library entity.
 type LibraryUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *LibraryMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *LibraryUpdateOne) SetCreatedAt(v time.Time) *LibraryUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *LibraryUpdateOne) SetNillableCreatedAt(v *time.Time) *LibraryUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *LibraryMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *LibraryUpdateOne) SetUpdatedAt(v time.Time) *LibraryUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *LibraryUpdateOne) SetNillableUpdatedAt(v *time.Time) *LibraryUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -589,7 +574,6 @@ func (_u *LibraryUpdateOne) Select(field string, fields ...string) *LibraryUpdat
 
 // Save executes the query and returns the updated Library entity.
 func (_u *LibraryUpdateOne) Save(ctx context.Context) (*Library, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -615,14 +599,6 @@ func (_u *LibraryUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *LibraryUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := library.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *LibraryUpdateOne) check() error {
 	if v, ok := _u.mutation.CollectionType(); ok {
@@ -631,6 +607,12 @@ func (_u *LibraryUpdateOne) check() error {
 		}
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *LibraryUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *LibraryUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *LibraryUpdateOne) sqlSave(ctx context.Context) (_node *Library, err error) {
@@ -661,9 +643,6 @@ func (_u *LibraryUpdateOne) sqlSave(ctx context.Context) (_node *Library, err er
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(library.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(library.FieldUpdatedAt, field.TypeTime, value)
@@ -801,6 +780,7 @@ func (_u *LibraryUpdateOne) sqlSave(ctx context.Context) (_node *Library, err er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &Library{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

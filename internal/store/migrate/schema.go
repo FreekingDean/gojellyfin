@@ -12,8 +12,8 @@ var (
 	// ActivityLogEntriesColumns holds the columns for the "activity_log_entries" table.
 	ActivityLogEntriesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "name", Type: field.TypeString},
 		{Name: "kind", Type: field.TypeString},
 		{Name: "overview", Type: field.TypeString, Nullable: true, Size: 2147483647},
@@ -52,8 +52,8 @@ var (
 	// APIKeysColumns holds the columns for the "api_keys" table.
 	APIKeysColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "access_token", Type: field.TypeString, Unique: true},
 		{Name: "app_name", Type: field.TypeString},
 		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
@@ -83,8 +83,8 @@ var (
 	// ChannelsColumns holds the columns for the "channels" table.
 	ChannelsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "number", Type: field.TypeInt32, Unique: true},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "order", Type: field.TypeEnum, Enums: []string{"Shuffle", "Sequential", "Interleave"}, Default: "Shuffle"},
@@ -100,8 +100,8 @@ var (
 	// ChannelEntriesColumns holds the columns for the "channel_entries" table.
 	ChannelEntriesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "position", Type: field.TypeInt32},
 		{Name: "channel_id", Type: field.TypeUUID},
 		{Name: "item_id", Type: field.TypeUUID},
@@ -141,8 +141,8 @@ var (
 	// ConfigurationsColumns holds the columns for the "configurations" table.
 	ConfigurationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "key", Type: field.TypeString, Unique: true},
 		{Name: "value", Type: field.TypeJSON},
 	}
@@ -155,8 +155,8 @@ var (
 	// CreditsColumns holds the columns for the "credits" table.
 	CreditsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Unknown", "Actor", "Director", "Composer", "Writer", "GuestStar", "Producer", "Conductor", "Lyricist", "Arranger", "Engineer", "Mixer", "Remixer", "Creator", "Artist", "AlbumArtist", "Author", "Illustrator", "Penciller", "Inker", "Colorist", "Letterer", "CoverArtist", "Editor", "Translator"}},
 		{Name: "role", Type: field.TypeString, Nullable: true},
 		{Name: "sort_order", Type: field.TypeInt32, Nullable: true},
@@ -198,8 +198,8 @@ var (
 	// DevicesColumns holds the columns for the "devices" table.
 	DevicesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "client_id", Type: field.TypeString, Unique: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "custom_name", Type: field.TypeString, Nullable: true},
@@ -222,8 +222,8 @@ var (
 	// DisplayPreferencesColumns holds the columns for the "display_preferences" table.
 	DisplayPreferencesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "reference_id", Type: field.TypeString},
 		{Name: "client", Type: field.TypeString},
 		{Name: "view_type", Type: field.TypeString, Nullable: true},
@@ -264,8 +264,8 @@ var (
 	// GenresColumns holds the columns for the "genres" table.
 	GenresColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "name", Type: field.TypeString, Unique: true},
 	}
 	// GenresTable holds the schema information for the "genres" table.
@@ -277,8 +277,8 @@ var (
 	// ImagesColumns holds the columns for the "images" table.
 	ImagesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Primary", "Art", "Backdrop", "Banner", "Logo", "Thumb", "Disc", "Box", "Screenshot", "Menu", "Chapter", "BoxRear", "Profile"}},
 		{Name: "index", Type: field.TypeInt32, Default: 0},
 		{Name: "url", Type: field.TypeString},
@@ -309,8 +309,8 @@ var (
 	// ItemsColumns holds the columns for the "items" table.
 	ItemsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series", "Season", "Episode", "Playlist", "MusicArtist", "MusicAlbum", "Audio"}},
 		{Name: "key", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString},
@@ -374,8 +374,8 @@ var (
 	// ItemSourcesColumns holds the columns for the "item_sources" table.
 	ItemSourcesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "name", Type: field.TypeString},
 		{Name: "path", Type: field.TypeString},
 		{Name: "container", Type: field.TypeString, Nullable: true},
@@ -431,8 +431,8 @@ var (
 	// KeyframeIndexesColumns holds the columns for the "keyframe_indexes" table.
 	KeyframeIndexesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "ticks", Type: field.TypeJSON},
 		{Name: "item_source_id", Type: field.TypeUUID, Unique: true},
 	}
@@ -453,8 +453,8 @@ var (
 	// LibrariesColumns holds the columns for the "libraries" table.
 	LibrariesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "collection_type", Type: field.TypeEnum, Enums: []string{"movies", "tvshows", "music", "musicvideos", "homevideos", "boxsets", "books", "mixed"}, Default: "mixed"},
 		{Name: "locations", Type: field.TypeJSON},
@@ -468,8 +468,8 @@ var (
 	// LibraryItemsColumns holds the columns for the "library_items" table.
 	LibraryItemsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "library_id", Type: field.TypeUUID},
 		{Name: "source_id", Type: field.TypeUUID},
@@ -515,8 +515,8 @@ var (
 	// LibraryOptionsColumns holds the columns for the "library_options" table.
 	LibraryOptionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "enabled", Type: field.TypeBool, Default: true},
 		{Name: "enable_photos", Type: field.TypeBool, Default: true},
 		{Name: "enable_realtime_monitor", Type: field.TypeBool, Default: true},
@@ -577,8 +577,8 @@ var (
 	// LibrarySourcesColumns holds the columns for the "library_sources" table.
 	LibrarySourcesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "tag_filter", Type: field.TypeString, Nullable: true},
 		{Name: "last_synced_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_error", Type: field.TypeString, Nullable: true},
@@ -620,8 +620,8 @@ var (
 	// MediaSegmentsColumns holds the columns for the "media_segments" table.
 	MediaSegmentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Unknown", "Commercial", "Preview", "Recap", "Outro", "Intro"}},
 		{Name: "origin", Type: field.TypeEnum, Enums: []string{"Chapter", "Fingerprint"}},
 		{Name: "start_ticks", Type: field.TypeInt64},
@@ -652,8 +652,8 @@ var (
 	// MediaStreamsColumns holds the columns for the "media_streams" table.
 	MediaStreamsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Audio", "Video", "Subtitle", "EmbeddedImage", "Data", "Lyric"}},
 		{Name: "video_range_type", Type: field.TypeEnum, Nullable: true, Enums: []string{"Unknown", "SDR", "HDR10", "HLG", "DOVI", "DOVIWithHDR10", "DOVIWithHLG", "DOVIWithSDR", "HDR10Plus"}},
 		{Name: "index", Type: field.TypeInt32, Default: 0},
@@ -698,8 +698,8 @@ var (
 	// PersonsColumns holds the columns for the "persons" table.
 	PersonsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "image_url", Type: field.TypeString, Nullable: true},
 	}
@@ -712,8 +712,8 @@ var (
 	// PlaylistsColumns holds the columns for the "playlists" table.
 	PlaylistsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "media_type", Type: field.TypeEnum, Enums: []string{"Unknown", "Video", "Audio", "Photo", "Book"}, Default: "Unknown"},
 		{Name: "open_access", Type: field.TypeBool},
 		{Name: "item_id", Type: field.TypeUUID, Unique: true},
@@ -742,8 +742,8 @@ var (
 	// PlaylistEntriesColumns holds the columns for the "playlist_entries" table.
 	PlaylistEntriesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "sort_order", Type: field.TypeInt32},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "playlist_id", Type: field.TypeUUID},
@@ -783,8 +783,8 @@ var (
 	// PlaylistSharesColumns holds the columns for the "playlist_shares" table.
 	PlaylistSharesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "can_edit", Type: field.TypeBool},
 		{Name: "playlist_id", Type: field.TypeUUID},
 		{Name: "user_id", Type: field.TypeUUID},
@@ -819,8 +819,8 @@ var (
 	// QuickConnectRequestsColumns holds the columns for the "quick_connect_requests" table.
 	QuickConnectRequestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "secret", Type: field.TypeString, Unique: true},
 		{Name: "code", Type: field.TypeString, Unique: true},
 		{Name: "device_id", Type: field.TypeString},
@@ -848,8 +848,8 @@ var (
 	// ReportsColumns holds the columns for the "reports" table.
 	ReportsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Unplayable", "Video", "Audio", "Subtitles", "Other"}},
 		{Name: "origin", Type: field.TypeEnum, Enums: []string{"User", "Delete", "Probe", "Playback"}},
 		{Name: "note", Type: field.TypeString, Default: ""},
@@ -900,8 +900,8 @@ var (
 	// RequestsColumns holds the columns for the "requests" table.
 	RequestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "key", Type: field.TypeString},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"Movie", "Series"}},
 		{Name: "tmdb_id", Type: field.TypeInt},
@@ -939,8 +939,8 @@ var (
 	// RequestSubmissionsColumns holds the columns for the "request_submissions" table.
 	RequestSubmissionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "key", Type: field.TypeString},
 		{Name: "accepted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_error", Type: field.TypeString, Nullable: true},
@@ -975,8 +975,8 @@ var (
 	// SessionsColumns holds the columns for the "sessions" table.
 	SessionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "access_token", Type: field.TypeString, Unique: true},
 		{Name: "remote_endpoint", Type: field.TypeString, Nullable: true},
 		{Name: "last_activity_at", Type: field.TypeTime, Nullable: true},
@@ -1063,8 +1063,8 @@ var (
 	// SourcesColumns holds the columns for the "sources" table.
 	SourcesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "url", Type: field.TypeString, Unique: true},
 		{Name: "api_key_variable", Type: field.TypeString},
@@ -1088,8 +1088,8 @@ var (
 	// SourcePathsColumns holds the columns for the "source_paths" table.
 	SourcePathsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "remote_path", Type: field.TypeString},
 		{Name: "local_path", Type: field.TypeString, Unique: true},
 		{Name: "source_id", Type: field.TypeUUID},
@@ -1118,8 +1118,8 @@ var (
 	// StudiosColumns holds the columns for the "studios" table.
 	StudiosColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "name", Type: field.TypeString, Unique: true},
 	}
 	// StudiosTable holds the schema information for the "studios" table.
@@ -1131,8 +1131,8 @@ var (
 	// SyncPlayGroupsColumns holds the columns for the "sync_play_groups" table.
 	SyncPlayGroupsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "name", Type: field.TypeString},
 		{Name: "state", Type: field.TypeEnum, Enums: []string{"Idle", "Waiting", "Paused", "Playing"}, Default: "Idle"},
 		{Name: "position_ticks", Type: field.TypeInt64, Default: 0},
@@ -1164,8 +1164,8 @@ var (
 	// SyncPlayGroupMembersColumns holds the columns for the "sync_play_group_members" table.
 	SyncPlayGroupMembersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "ping", Type: field.TypeInt64, Default: 500},
 		{Name: "is_buffering", Type: field.TypeBool, Default: false},
 		{Name: "ignore_wait", Type: field.TypeBool, Default: false},
@@ -1202,8 +1202,8 @@ var (
 	// SyncPlayQueueEntriesColumns holds the columns for the "sync_play_queue_entries" table.
 	SyncPlayQueueEntriesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "sorted_index", Type: field.TypeInt},
 		{Name: "shuffled_index", Type: field.TypeInt, Nullable: true},
 		{Name: "item_id", Type: field.TypeUUID},
@@ -1244,8 +1244,8 @@ var (
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "name", Type: field.TypeString},
 		{Name: "username", Type: field.TypeString, Unique: true},
 		{Name: "password_hash", Type: field.TypeString},
@@ -1273,8 +1273,8 @@ var (
 	// UserConfigurationsColumns holds the columns for the "user_configurations" table.
 	UserConfigurationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "cast_receiver_id", Type: field.TypeString, Nullable: true},
 		{Name: "audio_language_preference", Type: field.TypeString, Nullable: true},
 		{Name: "subtitle_language_preference", Type: field.TypeString, Nullable: true},
@@ -1310,8 +1310,8 @@ var (
 	// UserItemDataColumns holds the columns for the "user_item_data" table.
 	UserItemDataColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "played", Type: field.TypeBool, Default: false},
 		{Name: "is_favorite", Type: field.TypeBool, Default: false},
 		{Name: "play_count", Type: field.TypeInt32, Default: 0},
@@ -1357,8 +1357,8 @@ var (
 	// UserPoliciesColumns holds the columns for the "user_policies" table.
 	UserPoliciesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Default: "gen_random_uuid()"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, Default: "now()"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "now()"},
 		{Name: "is_administrator", Type: field.TypeBool, Default: false},
 		{Name: "is_hidden", Type: field.TypeBool, Default: false},
 		{Name: "is_disabled", Type: field.TypeBool, Default: false},
@@ -1571,6 +1571,10 @@ func init() {
 	PlaylistsTable.ForeignKeys[1].RefTable = UsersTable
 	PlaylistEntriesTable.ForeignKeys[0].RefTable = ItemsTable
 	PlaylistEntriesTable.ForeignKeys[1].RefTable = PlaylistsTable
+	PlaylistEntriesTable.Annotation = &entsql.Annotation{}
+	PlaylistEntriesTable.Annotation.Checks = map[string]string{
+		"playlist_entry_sort_order_not_negative": "sort_order >= 0",
+	}
 	PlaylistSharesTable.ForeignKeys[0].RefTable = PlaylistsTable
 	PlaylistSharesTable.ForeignKeys[1].RefTable = UsersTable
 	QuickConnectRequestsTable.ForeignKeys[0].RefTable = UsersTable

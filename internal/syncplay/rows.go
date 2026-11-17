@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -103,8 +102,7 @@ func saveRoom(ctx context.Context, tx *store.Tx, room *Room) error {
 		SetResumePlaying(room.ResumePlaying).
 		SetPositionJumped(room.PositionJumped).
 		SetIgnoreBuffering(room.IgnoreBuffering).
-		SetNillableWaitDeadline(room.WaitDeadline).
-		SetUpdatedAt(time.Now())
+		SetNillableWaitDeadline(room.WaitDeadline)
 	if room.WaitDeadline == nil {
 		update.ClearWaitDeadline()
 	}

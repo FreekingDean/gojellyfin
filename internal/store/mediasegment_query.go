@@ -279,8 +279,9 @@ func (_q *MediaSegmentQuery) Clone() *MediaSegmentQuery {
 		predicates: append([]predicate.MediaSegment{}, _q.predicates...),
 		withSource: _q.withSource.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -553,6 +554,12 @@ func (_q *MediaSegmentQuery) ForShare(opts ...sql.LockOption) *MediaSegmentQuery
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *MediaSegmentQuery) Modify(modifiers ...func(s *sql.Selector)) *MediaSegmentSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // MediaSegmentGroupBy is the group-by builder for MediaSegment entities.
 type MediaSegmentGroupBy struct {
 	selector
@@ -641,4 +648,10 @@ func (_s *MediaSegmentSelect) sqlScan(ctx context.Context, root *MediaSegmentQue
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *MediaSegmentSelect) Modify(modifiers ...func(s *sql.Selector)) *MediaSegmentSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

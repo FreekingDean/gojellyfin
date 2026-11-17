@@ -1,3 +1,3 @@
 package store
 
-//go:generate go run -mod=mod entgo.io/ent/cmd/ent generate --feature sql/versioned-migration,sql/upsert,sql/execquery,sql/lock --template ./templates ./entities
+//go:generate go run -mod=mod entgo.io/ent/cmd/ent generate --feature sql/versioned-migration,sql/upsert,sql/execquery,sql/lock,sql/modifier --template ./templates ./entities

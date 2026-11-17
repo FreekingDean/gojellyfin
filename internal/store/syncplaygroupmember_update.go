@@ -21,8 +21,9 @@ import (
 // SyncPlayGroupMemberUpdate is the builder for updating SyncPlayGroupMember entities.
 type SyncPlayGroupMemberUpdate struct {
 	config
-	hooks    []Hook
-	mutation *SyncPlayGroupMemberMutation
+	hooks     []Hook
+	mutation  *SyncPlayGroupMemberMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the SyncPlayGroupMemberUpdate builder.
@@ -31,23 +32,17 @@ func (_u *SyncPlayGroupMemberUpdate) Where(ps ...predicate.SyncPlayGroupMember) 
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *SyncPlayGroupMemberUpdate) SetCreatedAt(v time.Time) *SyncPlayGroupMemberUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *SyncPlayGroupMemberUpdate) SetNillableCreatedAt(v *time.Time) *SyncPlayGroupMemberUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *SyncPlayGroupMemberUpdate) SetUpdatedAt(v time.Time) *SyncPlayGroupMemberUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *SyncPlayGroupMemberUpdate) SetNillableUpdatedAt(v *time.Time) *SyncPlayGroupMemberUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -157,7 +152,6 @@ func (_u *SyncPlayGroupMemberUpdate) ClearSession() *SyncPlayGroupMemberUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *SyncPlayGroupMemberUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -183,14 +177,6 @@ func (_u *SyncPlayGroupMemberUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *SyncPlayGroupMemberUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := syncplaygroupmember.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *SyncPlayGroupMemberUpdate) check() error {
 	if _u.mutation.GroupCleared() && len(_u.mutation.GroupIDs()) > 0 {
@@ -200,6 +186,12 @@ func (_u *SyncPlayGroupMemberUpdate) check() error {
 		return errors.New(`store: clearing a required unique edge "SyncPlayGroupMember.session"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *SyncPlayGroupMemberUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *SyncPlayGroupMemberUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *SyncPlayGroupMemberUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -213,9 +205,6 @@ func (_u *SyncPlayGroupMemberUpdate) sqlSave(ctx context.Context) (_node int, er
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(syncplaygroupmember.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(syncplaygroupmember.FieldUpdatedAt, field.TypeTime, value)
@@ -290,6 +279,7 @@ func (_u *SyncPlayGroupMemberUpdate) sqlSave(ctx context.Context) (_node int, er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{syncplaygroupmember.Label}
@@ -305,28 +295,23 @@ func (_u *SyncPlayGroupMemberUpdate) sqlSave(ctx context.Context) (_node int, er
 // SyncPlayGroupMemberUpdateOne is the builder for updating a single SyncPlayGroupMember entity.
 type SyncPlayGroupMemberUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *SyncPlayGroupMemberMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *SyncPlayGroupMemberUpdateOne) SetCreatedAt(v time.Time) *SyncPlayGroupMemberUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *SyncPlayGroupMemberUpdateOne) SetNillableCreatedAt(v *time.Time) *SyncPlayGroupMemberUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *SyncPlayGroupMemberMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *SyncPlayGroupMemberUpdateOne) SetUpdatedAt(v time.Time) *SyncPlayGroupMemberUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *SyncPlayGroupMemberUpdateOne) SetNillableUpdatedAt(v *time.Time) *SyncPlayGroupMemberUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -449,7 +434,6 @@ func (_u *SyncPlayGroupMemberUpdateOne) Select(field string, fields ...string) *
 
 // Save executes the query and returns the updated SyncPlayGroupMember entity.
 func (_u *SyncPlayGroupMemberUpdateOne) Save(ctx context.Context) (*SyncPlayGroupMember, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -475,14 +459,6 @@ func (_u *SyncPlayGroupMemberUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *SyncPlayGroupMemberUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := syncplaygroupmember.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *SyncPlayGroupMemberUpdateOne) check() error {
 	if _u.mutation.GroupCleared() && len(_u.mutation.GroupIDs()) > 0 {
@@ -492,6 +468,12 @@ func (_u *SyncPlayGroupMemberUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "SyncPlayGroupMember.session"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *SyncPlayGroupMemberUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *SyncPlayGroupMemberUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *SyncPlayGroupMemberUpdateOne) sqlSave(ctx context.Context) (_node *SyncPlayGroupMember, err error) {
@@ -522,9 +504,6 @@ func (_u *SyncPlayGroupMemberUpdateOne) sqlSave(ctx context.Context) (_node *Syn
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(syncplaygroupmember.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(syncplaygroupmember.FieldUpdatedAt, field.TypeTime, value)
@@ -599,6 +578,7 @@ func (_u *SyncPlayGroupMemberUpdateOne) sqlSave(ctx context.Context) (_node *Syn
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &SyncPlayGroupMember{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

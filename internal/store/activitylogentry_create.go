@@ -361,18 +361,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *ActivityLogEntryUpsert) SetCreatedAt(v time.Time) *ActivityLogEntryUpsert {
-	u.Set(activitylogentry.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ActivityLogEntryUpsert) UpdateCreatedAt() *ActivityLogEntryUpsert {
-	u.SetExcluded(activitylogentry.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *ActivityLogEntryUpsert) SetUpdatedAt(v time.Time) *ActivityLogEntryUpsert {
 	u.Set(activitylogentry.FieldUpdatedAt, v)
@@ -474,6 +462,9 @@ func (u *ActivityLogEntryUpsertOne) UpdateNewValues() *ActivityLogEntryUpsertOne
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(activitylogentry.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(activitylogentry.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -503,20 +494,6 @@ func (u *ActivityLogEntryUpsertOne) Update(set func(*ActivityLogEntryUpsert)) *A
 		set(&ActivityLogEntryUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ActivityLogEntryUpsertOne) SetCreatedAt(v time.Time) *ActivityLogEntryUpsertOne {
-	return u.Update(func(s *ActivityLogEntryUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ActivityLogEntryUpsertOne) UpdateCreatedAt() *ActivityLogEntryUpsertOne {
-	return u.Update(func(s *ActivityLogEntryUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -800,6 +777,9 @@ func (u *ActivityLogEntryUpsertBulk) UpdateNewValues() *ActivityLogEntryUpsertBu
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(activitylogentry.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(activitylogentry.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -830,20 +810,6 @@ func (u *ActivityLogEntryUpsertBulk) Update(set func(*ActivityLogEntryUpsert)) *
 		set(&ActivityLogEntryUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ActivityLogEntryUpsertBulk) SetCreatedAt(v time.Time) *ActivityLogEntryUpsertBulk {
-	return u.Update(func(s *ActivityLogEntryUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ActivityLogEntryUpsertBulk) UpdateCreatedAt() *ActivityLogEntryUpsertBulk {
-	return u.Update(func(s *ActivityLogEntryUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

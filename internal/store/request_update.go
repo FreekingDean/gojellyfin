@@ -20,8 +20,9 @@ import (
 // RequestUpdate is the builder for updating Request entities.
 type RequestUpdate struct {
 	config
-	hooks    []Hook
-	mutation *RequestMutation
+	hooks     []Hook
+	mutation  *RequestMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the RequestUpdate builder.
@@ -30,23 +31,17 @@ func (_u *RequestUpdate) Where(ps ...predicate.Request) *RequestUpdate {
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *RequestUpdate) SetCreatedAt(v time.Time) *RequestUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *RequestUpdate) SetNillableCreatedAt(v *time.Time) *RequestUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *RequestUpdate) SetUpdatedAt(v time.Time) *RequestUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *RequestUpdate) SetNillableUpdatedAt(v *time.Time) *RequestUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -180,7 +175,6 @@ func (_u *RequestUpdate) ClearUser() *RequestUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *RequestUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -206,14 +200,6 @@ func (_u *RequestUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *RequestUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := request.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *RequestUpdate) check() error {
 	if v, ok := _u.mutation.Kind(); ok {
@@ -232,6 +218,12 @@ func (_u *RequestUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *RequestUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *RequestUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
+}
+
 func (_u *RequestUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
@@ -243,9 +235,6 @@ func (_u *RequestUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(request.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(request.FieldUpdatedAt, field.TypeTime, value)
@@ -303,6 +292,7 @@ func (_u *RequestUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{request.Label}
@@ -318,28 +308,23 @@ func (_u *RequestUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 // RequestUpdateOne is the builder for updating a single Request entity.
 type RequestUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *RequestMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *RequestUpdateOne) SetCreatedAt(v time.Time) *RequestUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *RequestUpdateOne) SetNillableCreatedAt(v *time.Time) *RequestUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *RequestMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *RequestUpdateOne) SetUpdatedAt(v time.Time) *RequestUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *RequestUpdateOne) SetNillableUpdatedAt(v *time.Time) *RequestUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -486,7 +471,6 @@ func (_u *RequestUpdateOne) Select(field string, fields ...string) *RequestUpdat
 
 // Save executes the query and returns the updated Request entity.
 func (_u *RequestUpdateOne) Save(ctx context.Context) (*Request, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -512,14 +496,6 @@ func (_u *RequestUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *RequestUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := request.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *RequestUpdateOne) check() error {
 	if v, ok := _u.mutation.Kind(); ok {
@@ -536,6 +512,12 @@ func (_u *RequestUpdateOne) check() error {
 		return errors.New(`store: clearing a required unique edge "Request.user"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *RequestUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *RequestUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *RequestUpdateOne) sqlSave(ctx context.Context) (_node *Request, err error) {
@@ -566,9 +548,6 @@ func (_u *RequestUpdateOne) sqlSave(ctx context.Context) (_node *Request, err er
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(request.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(request.FieldUpdatedAt, field.TypeTime, value)
@@ -626,6 +605,7 @@ func (_u *RequestUpdateOne) sqlSave(ctx context.Context) (_node *Request, err er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &Request{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

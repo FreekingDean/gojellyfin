@@ -252,18 +252,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *StudioUpsert) SetCreatedAt(v time.Time) *StudioUpsert {
-	u.Set(studio.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *StudioUpsert) UpdateCreatedAt() *StudioUpsert {
-	u.SetExcluded(studio.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *StudioUpsert) SetUpdatedAt(v time.Time) *StudioUpsert {
 	u.Set(studio.FieldUpdatedAt, v)
@@ -305,6 +293,9 @@ func (u *StudioUpsertOne) UpdateNewValues() *StudioUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(studio.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(studio.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -334,20 +325,6 @@ func (u *StudioUpsertOne) Update(set func(*StudioUpsert)) *StudioUpsertOne {
 		set(&StudioUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *StudioUpsertOne) SetCreatedAt(v time.Time) *StudioUpsertOne {
-	return u.Update(func(s *StudioUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *StudioUpsertOne) UpdateCreatedAt() *StudioUpsertOne {
-	return u.Update(func(s *StudioUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -561,6 +538,9 @@ func (u *StudioUpsertBulk) UpdateNewValues() *StudioUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(studio.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(studio.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -591,20 +571,6 @@ func (u *StudioUpsertBulk) Update(set func(*StudioUpsert)) *StudioUpsertBulk {
 		set(&StudioUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *StudioUpsertBulk) SetCreatedAt(v time.Time) *StudioUpsertBulk {
-	return u.Update(func(s *StudioUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *StudioUpsertBulk) UpdateCreatedAt() *StudioUpsertBulk {
-	return u.Update(func(s *StudioUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

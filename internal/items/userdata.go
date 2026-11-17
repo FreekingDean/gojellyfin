@@ -64,7 +64,6 @@ func (s *Service) SaveUserItemDatum(ctx context.Context, datum *Datum) error {
 		UpdateIsFavorite().
 		UpdatePlaybackPositionTicks().
 		UpdateLastPlayedAt().
-		UpdateUpdatedAt().
 		Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to save user item data: %w", err)

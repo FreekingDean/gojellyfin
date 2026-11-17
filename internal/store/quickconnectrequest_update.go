@@ -20,8 +20,9 @@ import (
 // QuickConnectRequestUpdate is the builder for updating QuickConnectRequest entities.
 type QuickConnectRequestUpdate struct {
 	config
-	hooks    []Hook
-	mutation *QuickConnectRequestMutation
+	hooks     []Hook
+	mutation  *QuickConnectRequestMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the QuickConnectRequestUpdate builder.
@@ -30,23 +31,17 @@ func (_u *QuickConnectRequestUpdate) Where(ps ...predicate.QuickConnectRequest) 
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *QuickConnectRequestUpdate) SetCreatedAt(v time.Time) *QuickConnectRequestUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *QuickConnectRequestUpdate) SetNillableCreatedAt(v *time.Time) *QuickConnectRequestUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *QuickConnectRequestUpdate) SetUpdatedAt(v time.Time) *QuickConnectRequestUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *QuickConnectRequestUpdate) SetNillableUpdatedAt(v *time.Time) *QuickConnectRequestUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -200,7 +195,6 @@ func (_u *QuickConnectRequestUpdate) ClearAuthorizedBy() *QuickConnectRequestUpd
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *QuickConnectRequestUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -226,12 +220,10 @@ func (_u *QuickConnectRequestUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *QuickConnectRequestUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := quickconnectrequest.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *QuickConnectRequestUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *QuickConnectRequestUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *QuickConnectRequestUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -242,9 +234,6 @@ func (_u *QuickConnectRequestUpdate) sqlSave(ctx context.Context) (_node int, er
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(quickconnectrequest.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(quickconnectrequest.FieldUpdatedAt, field.TypeTime, value)
@@ -302,6 +291,7 @@ func (_u *QuickConnectRequestUpdate) sqlSave(ctx context.Context) (_node int, er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{quickconnectrequest.Label}
@@ -317,28 +307,23 @@ func (_u *QuickConnectRequestUpdate) sqlSave(ctx context.Context) (_node int, er
 // QuickConnectRequestUpdateOne is the builder for updating a single QuickConnectRequest entity.
 type QuickConnectRequestUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *QuickConnectRequestMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *QuickConnectRequestUpdateOne) SetCreatedAt(v time.Time) *QuickConnectRequestUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *QuickConnectRequestUpdateOne) SetNillableCreatedAt(v *time.Time) *QuickConnectRequestUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *QuickConnectRequestMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *QuickConnectRequestUpdateOne) SetUpdatedAt(v time.Time) *QuickConnectRequestUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *QuickConnectRequestUpdateOne) SetNillableUpdatedAt(v *time.Time) *QuickConnectRequestUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -505,7 +490,6 @@ func (_u *QuickConnectRequestUpdateOne) Select(field string, fields ...string) *
 
 // Save executes the query and returns the updated QuickConnectRequest entity.
 func (_u *QuickConnectRequestUpdateOne) Save(ctx context.Context) (*QuickConnectRequest, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -531,12 +515,10 @@ func (_u *QuickConnectRequestUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *QuickConnectRequestUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := quickconnectrequest.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *QuickConnectRequestUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *QuickConnectRequestUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *QuickConnectRequestUpdateOne) sqlSave(ctx context.Context) (_node *QuickConnectRequest, err error) {
@@ -564,9 +546,6 @@ func (_u *QuickConnectRequestUpdateOne) sqlSave(ctx context.Context) (_node *Qui
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(quickconnectrequest.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(quickconnectrequest.FieldUpdatedAt, field.TypeTime, value)
@@ -624,6 +603,7 @@ func (_u *QuickConnectRequestUpdateOne) sqlSave(ctx context.Context) (_node *Qui
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &QuickConnectRequest{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

@@ -360,18 +360,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *QuickConnectRequestUpsert) SetCreatedAt(v time.Time) *QuickConnectRequestUpsert {
-	u.Set(quickconnectrequest.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *QuickConnectRequestUpsert) UpdateCreatedAt() *QuickConnectRequestUpsert {
-	u.SetExcluded(quickconnectrequest.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *QuickConnectRequestUpsert) SetUpdatedAt(v time.Time) *QuickConnectRequestUpsert {
 	u.Set(quickconnectrequest.FieldUpdatedAt, v)
@@ -515,6 +503,9 @@ func (u *QuickConnectRequestUpsertOne) UpdateNewValues() *QuickConnectRequestUps
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(quickconnectrequest.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(quickconnectrequest.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -544,20 +535,6 @@ func (u *QuickConnectRequestUpsertOne) Update(set func(*QuickConnectRequestUpser
 		set(&QuickConnectRequestUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *QuickConnectRequestUpsertOne) SetCreatedAt(v time.Time) *QuickConnectRequestUpsertOne {
-	return u.Update(func(s *QuickConnectRequestUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *QuickConnectRequestUpsertOne) UpdateCreatedAt() *QuickConnectRequestUpsertOne {
-	return u.Update(func(s *QuickConnectRequestUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -890,6 +867,9 @@ func (u *QuickConnectRequestUpsertBulk) UpdateNewValues() *QuickConnectRequestUp
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(quickconnectrequest.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(quickconnectrequest.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -920,20 +900,6 @@ func (u *QuickConnectRequestUpsertBulk) Update(set func(*QuickConnectRequestUpse
 		set(&QuickConnectRequestUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *QuickConnectRequestUpsertBulk) SetCreatedAt(v time.Time) *QuickConnectRequestUpsertBulk {
-	return u.Update(func(s *QuickConnectRequestUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *QuickConnectRequestUpsertBulk) UpdateCreatedAt() *QuickConnectRequestUpsertBulk {
-	return u.Update(func(s *QuickConnectRequestUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

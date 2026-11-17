@@ -174,8 +174,6 @@ var (
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
-	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
-	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultPositionTicks holds the default value on creation for the "position_ticks" field.
 	DefaultPositionTicks int64
 	// DefaultIsPaused holds the default value on creation for the "is_paused" field.

@@ -311,18 +311,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *ImageUpsert) SetCreatedAt(v time.Time) *ImageUpsert {
-	u.Set(image.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ImageUpsert) UpdateCreatedAt() *ImageUpsert {
-	u.SetExcluded(image.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *ImageUpsert) SetUpdatedAt(v time.Time) *ImageUpsert {
 	u.Set(image.FieldUpdatedAt, v)
@@ -418,6 +406,9 @@ func (u *ImageUpsertOne) UpdateNewValues() *ImageUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(image.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(image.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -447,20 +438,6 @@ func (u *ImageUpsertOne) Update(set func(*ImageUpsert)) *ImageUpsertOne {
 		set(&ImageUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ImageUpsertOne) SetCreatedAt(v time.Time) *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ImageUpsertOne) UpdateCreatedAt() *ImageUpsertOne {
-	return u.Update(func(s *ImageUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -737,6 +714,9 @@ func (u *ImageUpsertBulk) UpdateNewValues() *ImageUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(image.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(image.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -767,20 +747,6 @@ func (u *ImageUpsertBulk) Update(set func(*ImageUpsert)) *ImageUpsertBulk {
 		set(&ImageUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ImageUpsertBulk) SetCreatedAt(v time.Time) *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ImageUpsertBulk) UpdateCreatedAt() *ImageUpsertBulk {
-	return u.Update(func(s *ImageUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

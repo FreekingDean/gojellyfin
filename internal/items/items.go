@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
@@ -112,7 +111,6 @@ func (s *Service) SaveScanned(ctx context.Context, scanned Item) (*Item, error) 
 		UpdateIndexNumber().
 		UpdateParentIndexNumber().
 		UpdateDateModified().
-		UpdateUpdatedAt().
 		ClearDeletedAt().
 		Update(unclaimedTitle).
 		ID(ctx)
@@ -636,7 +634,7 @@ func (s *Service) SweepUnreachable(ctx context.Context, disturbed []uuid.UUID) e
 			itemmodel.KindIn(playableKinds...),
 			itemmodel.Not(itemmodel.HasItemSources()),
 		).
-		SetDeletedAt(time.Now()).
+		Modify(store.StampNow(itemmodel.FieldDeletedAt)).
 		Exec(ctx); err != nil {
 		return fmt.Errorf("failed to mark fileless items deleted: %w", err)
 	}
@@ -649,7 +647,7 @@ func (s *Service) SweepUnreachable(ctx context.Context, disturbed []uuid.UUID) e
 				itemmodel.HasChildren(),
 				itemmodel.Not(itemmodel.HasChildrenWith(itemmodel.DeletedAtIsNil())),
 			).
-			SetDeletedAt(time.Now()).
+			Modify(store.StampNow(itemmodel.FieldDeletedAt)).
 			Save(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to mark childless folders deleted: %w", err)

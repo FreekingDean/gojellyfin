@@ -354,18 +354,6 @@ type (
 	}
 )
 
-// SetCreatedAt sets the "created_at" field.
-func (u *RequestUpsert) SetCreatedAt(v time.Time) *RequestUpsert {
-	u.Set(request.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *RequestUpsert) UpdateCreatedAt() *RequestUpsert {
-	u.SetExcluded(request.FieldCreatedAt)
-	return u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (u *RequestUpsert) SetUpdatedAt(v time.Time) *RequestUpsert {
 	u.Set(request.FieldUpdatedAt, v)
@@ -491,6 +479,9 @@ func (u *RequestUpsertOne) UpdateNewValues() *RequestUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(request.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(request.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -520,20 +511,6 @@ func (u *RequestUpsertOne) Update(set func(*RequestUpsert)) *RequestUpsertOne {
 		set(&RequestUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *RequestUpsertOne) SetCreatedAt(v time.Time) *RequestUpsertOne {
-	return u.Update(func(s *RequestUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *RequestUpsertOne) UpdateCreatedAt() *RequestUpsertOne {
-	return u.Update(func(s *RequestUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.
@@ -845,6 +822,9 @@ func (u *RequestUpsertBulk) UpdateNewValues() *RequestUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(request.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(request.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -875,20 +855,6 @@ func (u *RequestUpsertBulk) Update(set func(*RequestUpsert)) *RequestUpsertBulk 
 		set(&RequestUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *RequestUpsertBulk) SetCreatedAt(v time.Time) *RequestUpsertBulk {
-	return u.Update(func(s *RequestUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *RequestUpsertBulk) UpdateCreatedAt() *RequestUpsertBulk {
-	return u.Update(func(s *RequestUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // SetUpdatedAt sets the "updated_at" field.

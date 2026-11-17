@@ -304,8 +304,9 @@ func (_q *UserItemDataQuery) Clone() *UserItemDataQuery {
 		withUser:   _q.withUser.Clone(),
 		withItem:   _q.withItem.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -628,6 +629,12 @@ func (_q *UserItemDataQuery) ForShare(opts ...sql.LockOption) *UserItemDataQuery
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *UserItemDataQuery) Modify(modifiers ...func(s *sql.Selector)) *UserItemDataSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // UserItemDataGroupBy is the group-by builder for UserItemData entities.
 type UserItemDataGroupBy struct {
 	selector
@@ -716,4 +723,10 @@ func (_s *UserItemDataSelect) sqlScan(ctx context.Context, root *UserItemDataQue
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *UserItemDataSelect) Modify(modifiers ...func(s *sql.Selector)) *UserItemDataSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

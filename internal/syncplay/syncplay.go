@@ -356,7 +356,6 @@ func (s *Service) seat(ctx context.Context, tx *store.Tx, groupID, sessionID uui
 			UpdatePing().
 			UpdateIsBuffering().
 			UpdateIgnoreWait().
-			UpdateUpdatedAt().
 			Exec(ctx); err != nil {
 			return nil, fmt.Errorf("failed to join syncplay group: %w", err)
 		}

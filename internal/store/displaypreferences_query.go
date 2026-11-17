@@ -279,8 +279,9 @@ func (_q *DisplayPreferencesQuery) Clone() *DisplayPreferencesQuery {
 		predicates: append([]predicate.DisplayPreferences{}, _q.predicates...),
 		withUser:   _q.withUser.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -553,6 +554,12 @@ func (_q *DisplayPreferencesQuery) ForShare(opts ...sql.LockOption) *DisplayPref
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *DisplayPreferencesQuery) Modify(modifiers ...func(s *sql.Selector)) *DisplayPreferencesSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // DisplayPreferencesGroupBy is the group-by builder for DisplayPreferences entities.
 type DisplayPreferencesGroupBy struct {
 	selector
@@ -641,4 +648,10 @@ func (_s *DisplayPreferencesSelect) sqlScan(ctx context.Context, root *DisplayPr
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *DisplayPreferencesSelect) Modify(modifiers ...func(s *sql.Selector)) *DisplayPreferencesSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

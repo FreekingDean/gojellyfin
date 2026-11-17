@@ -280,8 +280,9 @@ func (_q *DeviceQuery) Clone() *DeviceQuery {
 		predicates:   append([]predicate.Device{}, _q.predicates...),
 		withSessions: _q.withSessions.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -554,6 +555,12 @@ func (_q *DeviceQuery) ForShare(opts ...sql.LockOption) *DeviceQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *DeviceQuery) Modify(modifiers ...func(s *sql.Selector)) *DeviceSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // DeviceGroupBy is the group-by builder for Device entities.
 type DeviceGroupBy struct {
 	selector
@@ -642,4 +649,10 @@ func (_s *DeviceSelect) sqlScan(ctx context.Context, root *DeviceQuery, v any) e
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *DeviceSelect) Modify(modifiers ...func(s *sql.Selector)) *DeviceSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

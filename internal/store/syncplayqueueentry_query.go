@@ -304,8 +304,9 @@ func (_q *SyncPlayQueueEntryQuery) Clone() *SyncPlayQueueEntryQuery {
 		withGroup:  _q.withGroup.Clone(),
 		withItem:   _q.withItem.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -628,6 +629,12 @@ func (_q *SyncPlayQueueEntryQuery) ForShare(opts ...sql.LockOption) *SyncPlayQue
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *SyncPlayQueueEntryQuery) Modify(modifiers ...func(s *sql.Selector)) *SyncPlayQueueEntrySelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // SyncPlayQueueEntryGroupBy is the group-by builder for SyncPlayQueueEntry entities.
 type SyncPlayQueueEntryGroupBy struct {
 	selector
@@ -716,4 +723,10 @@ func (_s *SyncPlayQueueEntrySelect) sqlScan(ctx context.Context, root *SyncPlayQ
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *SyncPlayQueueEntrySelect) Modify(modifiers ...func(s *sql.Selector)) *SyncPlayQueueEntrySelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }

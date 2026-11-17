@@ -3,7 +3,6 @@ package items
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
@@ -46,7 +45,6 @@ func (s *Service) SaveSource(ctx context.Context, scanned MediaSource) (*MediaSo
 		UpdateDateModified().
 		UpdateExternalID().
 		UpdateExternalFileID().
-		UpdateUpdatedAt().
 		ID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save media source: %w", err)
@@ -85,7 +83,7 @@ func (s *Service) SaveProbe(ctx context.Context, item *Item, source *MediaSource
 			SetNillableSize(probe.Size).
 			SetNillableBitrate(probe.Bitrate).
 			SetLyrics(probe.Lyrics).
-			SetProbedAt(time.Now()).
+			Modify(store.StampNow(sourcemodel.FieldProbedAt)).
 			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to save the probed media source: %w", err)

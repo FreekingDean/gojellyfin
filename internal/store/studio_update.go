@@ -20,8 +20,9 @@ import (
 // StudioUpdate is the builder for updating Studio entities.
 type StudioUpdate struct {
 	config
-	hooks    []Hook
-	mutation *StudioMutation
+	hooks     []Hook
+	mutation  *StudioMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the StudioUpdate builder.
@@ -30,23 +31,17 @@ func (_u *StudioUpdate) Where(ps ...predicate.Studio) *StudioUpdate {
 	return _u
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (_u *StudioUpdate) SetCreatedAt(v time.Time) *StudioUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *StudioUpdate) SetNillableCreatedAt(v *time.Time) *StudioUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *StudioUpdate) SetUpdatedAt(v time.Time) *StudioUpdate {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *StudioUpdate) SetNillableUpdatedAt(v *time.Time) *StudioUpdate {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -107,7 +102,6 @@ func (_u *StudioUpdate) RemoveItems(v ...*Item) *StudioUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *StudioUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -133,12 +127,10 @@ func (_u *StudioUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *StudioUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := studio.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *StudioUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *StudioUpdate {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *StudioUpdate) sqlSave(ctx context.Context) (_node int, err error) {
@@ -149,9 +141,6 @@ func (_u *StudioUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(studio.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(studio.FieldUpdatedAt, field.TypeTime, value)
@@ -204,6 +193,7 @@ func (_u *StudioUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{studio.Label}
@@ -219,28 +209,23 @@ func (_u *StudioUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 // StudioUpdateOne is the builder for updating a single Studio entity.
 type StudioUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *StudioMutation
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *StudioUpdateOne) SetCreatedAt(v time.Time) *StudioUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *StudioUpdateOne) SetNillableCreatedAt(v *time.Time) *StudioUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
-	}
-	return _u
+	fields    []string
+	hooks     []Hook
+	mutation  *StudioMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *StudioUpdateOne) SetUpdatedAt(v time.Time) *StudioUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_u *StudioUpdateOne) SetNillableUpdatedAt(v *time.Time) *StudioUpdateOne {
+	if v != nil {
+		_u.SetUpdatedAt(*v)
+	}
 	return _u
 }
 
@@ -314,7 +299,6 @@ func (_u *StudioUpdateOne) Select(field string, fields ...string) *StudioUpdateO
 
 // Save executes the query and returns the updated Studio entity.
 func (_u *StudioUpdateOne) Save(ctx context.Context) (*Studio, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -340,12 +324,10 @@ func (_u *StudioUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *StudioUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := studio.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (_u *StudioUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *StudioUpdateOne {
+	_u.modifiers = append(_u.modifiers, modifiers...)
+	return _u
 }
 
 func (_u *StudioUpdateOne) sqlSave(ctx context.Context) (_node *Studio, err error) {
@@ -373,9 +355,6 @@ func (_u *StudioUpdateOne) sqlSave(ctx context.Context) (_node *Studio, err erro
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(studio.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(studio.FieldUpdatedAt, field.TypeTime, value)
@@ -428,6 +407,7 @@ func (_u *StudioUpdateOne) sqlSave(ctx context.Context) (_node *Studio, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(_u.modifiers...)
 	_node = &Studio{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

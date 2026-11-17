@@ -279,8 +279,9 @@ func (_q *ImageQuery) Clone() *ImageQuery {
 		predicates: append([]predicate.Image{}, _q.predicates...),
 		withItem:   _q.withItem.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:       _q.sql.Clone(),
+		path:      _q.path,
+		modifiers: append([]func(*sql.Selector){}, _q.modifiers...),
 	}
 }
 
@@ -553,6 +554,12 @@ func (_q *ImageQuery) ForShare(opts ...sql.LockOption) *ImageQuery {
 	return _q
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_q *ImageQuery) Modify(modifiers ...func(s *sql.Selector)) *ImageSelect {
+	_q.modifiers = append(_q.modifiers, modifiers...)
+	return _q.Select()
+}
+
 // ImageGroupBy is the group-by builder for Image entities.
 type ImageGroupBy struct {
 	selector
@@ -641,4 +648,10 @@ func (_s *ImageSelect) sqlScan(ctx context.Context, root *ImageQuery, v any) err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (_s *ImageSelect) Modify(modifiers ...func(s *sql.Selector)) *ImageSelect {
+	_s.modifiers = append(_s.modifiers, modifiers...)
+	return _s
 }
