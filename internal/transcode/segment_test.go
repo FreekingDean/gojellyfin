@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -197,6 +198,65 @@ func TestSegments_CopiedPictureJoinsBackToBack(t *testing.T) {
 
 	path := played(t, NewEncoder(4, 0), Segment{Path: source, Track: TrackVideo, Codec: "h264"}, windows)
 	assertFrames(t, path)
+}
+
+func TestSegments_SnappedPictureJoinsBackToBack(t *testing.T) {
+	source := seamSource(t, 4*seamRate, "-c:a", "ac3")
+	keyframes, err := ffmpeg.New().Keyframes(context.Background(), source)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	runtime := int64(seamSeconds * ticksPerSecond)
+	windows, ok := SnappedWindows(keyframes, runtime)
+	if !ok || len(windows) != len(EncodedWindows(runtime)) {
+		t.Fatalf("windows = %+v, want one per encoded window", windows)
+	}
+	for _, window := range windows {
+		if !slices.Contains(keyframes, window.Start) {
+			t.Errorf("window %+v does not start on a keyframe", window)
+		}
+	}
+
+	path := played(t, NewEncoder(4, 0), Segment{Path: source, Track: TrackVideo, Codec: "h264"}, windows)
+	assertFrames(t, path)
+}
+
+func TestSnappedWindows(t *testing.T) {
+	second := int64(ticksPerSecond)
+	tests := []struct {
+		name      string
+		keyframes []int64
+		runtime   int64
+		want      []Window
+		ok        bool
+	}{
+		{
+			name:      "each window starts on the first keyframe of its six seconds",
+			keyframes: []int64{0, 2 * second, 4 * second, 7 * second, 13 * second, 15 * second},
+			runtime:   16 * second,
+			want:      []Window{{0, 7 * second}, {7 * second, 13 * second}, {13 * second, 16 * second}},
+			ok:        true,
+		},
+		{
+			name:      "six seconds without a keyframe cannot be cut",
+			keyframes: []int64{0, 13 * second},
+			runtime:   16 * second,
+		},
+		{
+			name:    "no keyframes cannot be cut",
+			runtime: 16 * second,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			windows, ok := SnappedWindows(test.keyframes, test.runtime)
+			if ok != test.ok || !slices.Equal(windows, test.want) {
+				t.Errorf("SnappedWindows = %+v, %v, want %+v, %v", windows, ok, test.want, test.ok)
+			}
+		})
+	}
 }
 
 func TestSegments_EncodedPictureJoinsBackToBack(t *testing.T) {
