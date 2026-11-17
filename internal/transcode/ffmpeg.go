@@ -56,12 +56,22 @@ func run(ctx context.Context, args []string) (io.ReadCloser, error) {
 	if _, err := output.Peek(1); err != nil {
 		span.Failed()
 		_ = stdout.Close()
-		_ = cmd.Wait()
 
-		return nil, fmt.Errorf("ffmpeg produced no output: %s", stderr)
+		return nil, silent(ctx, cmd.Wait(), stderr)
 	}
 
 	return &process{cmd: cmd, stdout: stdout, output: output, stderr: stderr}, nil
+}
+
+func silent(ctx context.Context, exit error, stderr *tail) error {
+	if ctx.Err() != nil {
+		return fmt.Errorf("ffmpeg was stopped before its first byte: %w", context.Cause(ctx))
+	}
+	if exit == nil {
+		return fmt.Errorf("ffmpeg exited cleanly without writing anything: %s", stderr)
+	}
+
+	return fmt.Errorf("ffmpeg produced no output: %w: %s", exit, stderr)
 }
 
 func (p *process) Read(b []byte) (int, error) {
