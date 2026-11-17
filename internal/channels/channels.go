@@ -291,7 +291,7 @@ func (s *Service) slots(ctx context.Context, roots []uuid.UUID) ([]Slot, error) 
 	for i, leaf := range leaves {
 		ids[i] = leaf.ID
 	}
-	files, err := s.items.PlayedSources(ctx, ids)
+	files, err := s.items.EncodableSources(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
