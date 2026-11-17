@@ -54,7 +54,7 @@ type Database struct {
 type Transcoder struct {
 	Jobs            int           `mapstructure:"TRANSCODER_JOBS"`
 	StallTimeout    time.Duration `mapstructure:"TRANSCODER_STALL_TIMEOUT"`
-	MaxSourceHeight int           `mapstructure:"TRANSCODER_MAX_SOURCE_HEIGHT"`
+	MaxSourceHeight int32         `mapstructure:"TRANSCODER_MAX_SOURCE_HEIGHT"`
 }
 
 type Temporal struct {

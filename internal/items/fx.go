@@ -21,5 +21,5 @@ func register(registry *jobs.Registry, service *Service) {
 }
 
 func limit(config env.Config, service *Service) {
-	service.EncodeAtMost(int32(config.Transcoder.MaxSourceHeight))
+	service.EncodeAtMost(config.Transcoder.MaxSourceHeight)
 }
