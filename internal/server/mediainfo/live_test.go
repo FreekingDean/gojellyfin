@@ -43,18 +43,7 @@ func TestServer_PlaybackInfoForAChannel(t *testing.T) {
 	chrome := profileFrom(t, chromeProfile)
 	epoch := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	tune := func(t *testing.T, fixture *fixture, slots []channels.Slot) uuid.UUID {
-		t.Helper()
-
-		channel := &channels.Channel{ID: uuid.New(), Number: 3, Name: "Fixture Channel"}
-		fixture.server.channels = onAir{
-			channel:  channel,
-			schedule: channels.NewSchedule(channelmodel.OrderSequential, 1, epoch, slots),
-			now:      epoch.Add(90 * time.Minute),
-		}
-
-		return channel.ID
-	}
+	tune := serverPlaybackInfoForAChannelTune(epoch)
 
 	t.Run("a channel is one endless encoded HLS stream", func(t *testing.T) {
 		fixture := newFixture(t)
@@ -113,4 +102,19 @@ func TestServer_PlaybackInfoForAChannel(t *testing.T) {
 			t.Errorf("the title was answered as %+v", source)
 		}
 	})
+}
+
+func serverPlaybackInfoForAChannelTune(epoch time.Time) func(t *testing.T, fixture *fixture, slots []channels.Slot) uuid.UUID {
+	return func(t *testing.T, fixture *fixture, slots []channels.Slot) uuid.UUID {
+		t.Helper()
+
+		channel := &channels.Channel{ID: uuid.New(), Number: 3, Name: "Fixture Channel"}
+		fixture.server.channels = onAir{
+			channel:  channel,
+			schedule: channels.NewSchedule(channelmodel.OrderSequential, 1, epoch, slots),
+			now:      epoch.Add(90 * time.Minute),
+		}
+
+		return channel.ID
+	}
 }

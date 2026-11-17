@@ -207,15 +207,7 @@ func TestServer_AuthenticateWithQuickConnect(t *testing.T) {
 	})
 
 	ctx = auth.ContextWithAuthorization(ctx, auth.Authorization{Client: "Jellyfin Web", Device: "tv", DeviceID: deviceID})
-	redeem := func(secret string) api.AuthenticateWithQuickConnectResponseObject {
-		response, err := server.AuthenticateWithQuickConnect(ctx, api.AuthenticateWithQuickConnectRequestObject{
-			JSONBody: &api.QuickConnectDto{Secret: secret},
-		})
-		if err != nil {
-			t.Fatalf("failed to authenticate with quick connect: %v", err)
-		}
-		return response
-	}
+	redeem := serverAuthenticateWithQuickConnectRedeem(t, server, ctx)
 
 	for _, secret := range []string{"", "not-a-secret"} {
 		if _, ok := redeem(secret).(api.AuthenticateWithQuickConnect400Response); !ok {
@@ -245,5 +237,19 @@ func TestServer_AuthenticateWithQuickConnect(t *testing.T) {
 
 	if _, ok := redeem(request.Secret).(api.AuthenticateWithQuickConnect400Response); !ok {
 		t.Error("the secret was redeemed twice, want 400")
+	}
+}
+
+func serverAuthenticateWithQuickConnectRedeem(t *testing.T, server *Server, ctx context.Context) func(secret string) api.AuthenticateWithQuickConnectResponseObject {
+	t.Helper()
+
+	return func(secret string) api.AuthenticateWithQuickConnectResponseObject {
+		response, err := server.AuthenticateWithQuickConnect(ctx, api.AuthenticateWithQuickConnectRequestObject{
+			JSONBody: &api.QuickConnectDto{Secret: secret},
+		})
+		if err != nil {
+			t.Fatalf("failed to authenticate with quick connect: %v", err)
+		}
+		return response
 	}
 }

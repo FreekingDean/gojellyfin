@@ -197,12 +197,7 @@ func TestService_SeriesEpisodes(t *testing.T) {
 	fixture.add(t, seed{kind: itemmodel.KindMovie, name: "Behind The Scenes", parentID: &seasonOne, index: number(1), parentIndex: number(1)})
 	fixture.add(t, seed{kind: itemmodel.KindEpisode, name: "Elsewhere", parentID: &otherSeason, index: number(1), parentIndex: number(1)})
 
-	tests := []struct {
-		name      string
-		query     EpisodeQuery
-		want      []string
-		wantTotal int
-	}{
+	tests := []serviceSeriesEpisodesCase{
 		{
 			name:      "orders by season then episode",
 			query:     EpisodeQuery{Viewer: Everyone, SeriesID: series},
@@ -242,20 +237,31 @@ func TestService_SeriesEpisodes(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			records, total, err := fixture.service.SeriesEpisodes(ctx, test.query)
-			if err != nil {
-				t.Fatalf("failed to query episodes: %v", err)
-			}
-
-			if got := names(records); !slices.Equal(got, test.want) {
-				t.Errorf("episodes = %v, want %v", got, test.want)
-			}
-			if total != test.wantTotal {
-				t.Errorf("total = %d, want %d", total, test.wantTotal)
-			}
-		})
+		t.Run(test.name, testService_SeriesEpisodesCase(fixture, ctx, test))
 	}
+}
+
+func testService_SeriesEpisodesCase(fixture *fixture, ctx context.Context, test serviceSeriesEpisodesCase) func(*testing.T) {
+	return func(t *testing.T) {
+		records, total, err := fixture.service.SeriesEpisodes(ctx, test.query)
+		if err != nil {
+			t.Fatalf("failed to query episodes: %v", err)
+		}
+
+		if got := names(records); !slices.Equal(got, test.want) {
+			t.Errorf("episodes = %v, want %v", got, test.want)
+		}
+		if total != test.wantTotal {
+			t.Errorf("total = %d, want %d", total, test.wantTotal)
+		}
+	}
+}
+
+type serviceSeriesEpisodesCase struct {
+	name      string
+	query     EpisodeQuery
+	want      []string
+	wantTotal int
 }
 
 func TestService_SeriesEpisodes_Shuffled(t *testing.T) {

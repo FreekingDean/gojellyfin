@@ -78,7 +78,21 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the item: %v", err)
 	}
 
-	t.Cleanup(func() {
+	t.Cleanup(newFixtureCleanup(t, client, user, sessionService, token, name, item, library))
+
+	return &fixture{
+		server: New(displaypreferences.New(client)),
+		client: client,
+		ctx:    authenticated,
+		userID: user.ID,
+		itemID: item.ID,
+	}
+}
+
+func newFixtureCleanup(t *testing.T, client *store.Client, user *users.User, sessionService *sessions.Service, token string, name string, item *store.Item, library *store.Library) func() {
+	t.Helper()
+
+	return func() {
 		ctx := context.Background()
 		if _, err := client.DisplayPreferences.Delete().
 			Where(displaypreferencesmodel.UserID(user.ID)).
@@ -100,14 +114,6 @@ func newFixture(t *testing.T) *fixture {
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
 		}
-	})
-
-	return &fixture{
-		server: New(displaypreferences.New(client)),
-		client: client,
-		ctx:    authenticated,
-		userID: user.ID,
-		itemID: item.ID,
 	}
 }
 

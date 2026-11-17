@@ -51,11 +51,7 @@ func TestQueryItems_UserDataFilters(t *testing.T) {
 	}
 
 	yes, no := true, false
-	for _, test := range []struct {
-		name  string
-		query ItemQuery
-		want  []string
-	}{
+	for _, test := range []queryItemsUserDataFiltersCase{
 		{
 			name:  "played takes what this user finished",
 			query: ItemQuery{User: user, Played: &yes},
@@ -103,4 +99,10 @@ func TestQueryItems_UserDataFilters(t *testing.T) {
 			}
 		})
 	}
+}
+
+type queryItemsUserDataFiltersCase struct {
+	name  string
+	query ItemQuery
+	want  []string
 }

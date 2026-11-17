@@ -112,27 +112,7 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the session: %v", err)
 	}
 
-	t.Cleanup(func() {
-		inLibrary := sourcemodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
-		if _, err := client.MediaStream.Delete().Where(streammodel.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the media streams: %v", err)
-		}
-		if _, err := client.ItemSource.Delete().Where(inLibrary).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the media sources: %v", err)
-		}
-		if err := libraryService.DeleteLibrary(ctx, library.ID); err != nil {
-			t.Errorf("failed to delete the library: %v", err)
-		}
-		if err := sessionService.DeleteByToken(ctx, token); err != nil {
-			t.Errorf("failed to delete the session: %v", err)
-		}
-		if err := sessionService.RemoveDevice(ctx, unique); err != nil {
-			t.Errorf("failed to delete the device: %v", err)
-		}
-		if err := client.User.DeleteOneID(user.ID).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the user: %v", err)
-		}
-	})
+	t.Cleanup(newFixtureCleanup(t, library, client, ctx, libraryService, sessionService, token, unique, user))
 
 	transcoder := &stubTranscoder{}
 
@@ -159,6 +139,32 @@ func newFixture(t *testing.T) *fixture {
 		transcoder: transcoder,
 		library:    library.ID,
 		token:      token,
+	}
+}
+
+func newFixtureCleanup(t *testing.T, library *libraries.Library, client *store.Client, ctx context.Context, libraryService *libraries.Service, sessionService *sessions.Service, token string, unique string, user *users.User) func() {
+	t.Helper()
+
+	return func() {
+		inLibrary := sourcemodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
+		if _, err := client.MediaStream.Delete().Where(streammodel.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the media streams: %v", err)
+		}
+		if _, err := client.ItemSource.Delete().Where(inLibrary).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the media sources: %v", err)
+		}
+		if err := libraryService.DeleteLibrary(ctx, library.ID); err != nil {
+			t.Errorf("failed to delete the library: %v", err)
+		}
+		if err := sessionService.DeleteByToken(ctx, token); err != nil {
+			t.Errorf("failed to delete the session: %v", err)
+		}
+		if err := sessionService.RemoveDevice(ctx, unique); err != nil {
+			t.Errorf("failed to delete the device: %v", err)
+		}
+		if err := client.User.DeleteOneID(user.ID).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the user: %v", err)
+		}
 	}
 }
 

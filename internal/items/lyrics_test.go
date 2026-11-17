@@ -15,27 +15,7 @@ func TestService_Lyrics(t *testing.T) {
 	fixture := newFixture(t)
 	ctx := context.Background()
 
-	song := func(lyrics string) *Item {
-		key := TrackKey(uuid.NewString())
-		fixture.refresh(t, Scanned{
-			Key: key, Tagged: true, Kind: itemmodel.KindAudio, Name: "Opener", SortName: "opener",
-			Files: []ScannedFile{{Path: "/media/music/" + uuid.NewString() + ".flac", DateModified: time.Now()}},
-		})
-
-		item, err := fixture.service.ItemByKey(ctx, key)
-		if err != nil {
-			t.Fatalf("failed to read the track back: %v", err)
-		}
-		sources, err := fixture.service.MediaSources(ctx, item.ID)
-		if err != nil {
-			t.Fatalf("failed to read the file back: %v", err)
-		}
-		if err := fixture.service.SaveProbe(ctx, item, sources[0], MediaSource{Container: "flac", Lyrics: lyrics}); err != nil {
-			t.Fatalf("failed to probe: %v", err)
-		}
-
-		return item
-	}
+	song := serviceLyricsSong(t, fixture, ctx)
 
 	sung, silent := song("[00:01.00]hello"), song("")
 
@@ -77,5 +57,31 @@ func TestService_Lyrics(t *testing.T) {
 	}
 	if err := fixture.service.SaveLyrics(ctx, Everyone, uuid.New(), "nowhere"); !errors.Is(err, ErrNotFound) {
 		t.Errorf("an upload to no track answered %v, want %v", err, ErrNotFound)
+	}
+}
+
+func serviceLyricsSong(t *testing.T, fixture *fixture, ctx context.Context) func(lyrics string) *Item {
+	t.Helper()
+
+	return func(lyrics string) *Item {
+		key := TrackKey(uuid.NewString())
+		fixture.refresh(t, Scanned{
+			Key: key, Tagged: true, Kind: itemmodel.KindAudio, Name: "Opener", SortName: "opener",
+			Files: []ScannedFile{{Path: "/media/music/" + uuid.NewString() + ".flac", DateModified: time.Now()}},
+		})
+
+		item, err := fixture.service.ItemByKey(ctx, key)
+		if err != nil {
+			t.Fatalf("failed to read the track back: %v", err)
+		}
+		sources, err := fixture.service.MediaSources(ctx, item.ID)
+		if err != nil {
+			t.Fatalf("failed to read the file back: %v", err)
+		}
+		if err := fixture.service.SaveProbe(ctx, item, sources[0], MediaSource{Container: "flac", Lyrics: lyrics}); err != nil {
+			t.Fatalf("failed to probe: %v", err)
+		}
+
+		return item
 	}
 }

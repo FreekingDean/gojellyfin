@@ -21,17 +21,7 @@ func TestServer_GetLogEntries(t *testing.T) {
 	itemID := uuid.New()
 	failed := errors.New("the database is gone")
 
-	tests := []struct {
-		name             string
-		request          api.GetLogEntriesRequestObject
-		expectedResponse api.GetLogEntriesResponseObject
-		expectedError    error
-
-		mockExpectedQuery activity.Query
-		mockResponse      []*activity.Entry
-		mockTotal         int
-		mockError         error
-	}{
+	tests := []serverGetLogEntriesCase{
 		{
 			name:    "empty result",
 			request: api.GetLogEntriesRequestObject{},
@@ -163,19 +153,35 @@ func TestServer_GetLogEntries(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			activities := mocks.NewMockActivitiesService(ctrl)
-			activities.EXPECT().
-				Entries(gomock.Any(), test.mockExpectedQuery).
-				Return(test.mockResponse, test.mockTotal, test.mockError)
-			server := Server{
-				activity: activities,
-			}
-
-			resp, err := server.GetLogEntries(t.Context(), test.request)
-			assert.Equal(t, test.expectedError, err)
-			assert.Equal(t, test.expectedResponse, resp)
-		})
+		t.Run(test.name, testServer_GetLogEntriesCase(test))
 	}
+}
+
+func testServer_GetLogEntriesCase(test serverGetLogEntriesCase) func(*testing.T) {
+	return func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		activities := mocks.NewMockActivitiesService(ctrl)
+		activities.EXPECT().
+			Entries(gomock.Any(), test.mockExpectedQuery).
+			Return(test.mockResponse, test.mockTotal, test.mockError)
+		server := Server{
+			activity: activities,
+		}
+
+		resp, err := server.GetLogEntries(t.Context(), test.request)
+		assert.Equal(t, test.expectedError, err)
+		assert.Equal(t, test.expectedResponse, resp)
+	}
+}
+
+type serverGetLogEntriesCase struct {
+	name             string
+	request          api.GetLogEntriesRequestObject
+	expectedResponse api.GetLogEntriesResponseObject
+	expectedError    error
+
+	mockExpectedQuery activity.Query
+	mockResponse      []*activity.Entry
+	mockTotal         int
+	mockError         error
 }

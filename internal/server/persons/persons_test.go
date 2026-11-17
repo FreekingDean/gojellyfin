@@ -54,24 +54,7 @@ func TestServer_GetPersons(t *testing.T) {
 		t.Fatalf("failed to create the library: %v", err)
 	}
 
-	t.Cleanup(func() {
-		owned := itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))
-		if _, err := client.Credit.Delete().Where(creditmodel.HasItemWith(owned)).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the credits: %v", err)
-		}
-		if _, err := client.ItemSource.Delete().Where(sourcemodel.HasItemWith(owned)).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the media sources: %v", err)
-		}
-		if _, err := client.Item.Delete().Where(owned).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the items: %v", err)
-		}
-		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the library: %v", err)
-		}
-		if _, err := client.Person.Delete().Where(personmodel.NameHasPrefix(prefix)).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the people: %v", err)
-		}
-	})
+	t.Cleanup(serverGetPersonsCleanup(t, library, client, ctx, prefix))
 
 	service := items.New(client)
 	movie, err := service.SaveScanned(ctx, items.Item{
@@ -96,11 +79,7 @@ func TestServer_GetPersons(t *testing.T) {
 	term := "director"
 	otherItem := uuid.New()
 
-	tests := []struct {
-		name   string
-		params api.GetPersonsParams
-		want   []string
-	}{
+	tests := []serverGetPersonsCase{
 		{
 			name:   "returns the credited people",
 			params: api.GetPersonsParams{AppearsInItemId: &movie.ID},
@@ -148,6 +127,35 @@ func TestServer_GetPersons(t *testing.T) {
 			}
 		})
 	}
+}
+
+func serverGetPersonsCleanup(t *testing.T, library *store.Library, client *store.Client, ctx context.Context, prefix string) func() {
+	t.Helper()
+
+	return func() {
+		owned := itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))
+		if _, err := client.Credit.Delete().Where(creditmodel.HasItemWith(owned)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the credits: %v", err)
+		}
+		if _, err := client.ItemSource.Delete().Where(sourcemodel.HasItemWith(owned)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the media sources: %v", err)
+		}
+		if _, err := client.Item.Delete().Where(owned).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the items: %v", err)
+		}
+		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the library: %v", err)
+		}
+		if _, err := client.Person.Delete().Where(personmodel.NameHasPrefix(prefix)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the people: %v", err)
+		}
+	}
+}
+
+type serverGetPersonsCase struct {
+	name   string
+	params api.GetPersonsParams
+	want   []string
 }
 
 func getPersons(t *testing.T, server *Server, params api.GetPersonsParams) api.GetPersons200JSONResponse {

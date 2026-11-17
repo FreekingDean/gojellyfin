@@ -113,27 +113,7 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 		t.Fatalf("failed to create the session: %v", err)
 	}
 
-	t.Cleanup(func() {
-		inLibrary := sourcemodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
-		if _, err := client.MediaStream.Delete().Where(streammodel.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the media streams: %v", err)
-		}
-		if _, err := client.ItemSource.Delete().Where(inLibrary).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the media sources: %v", err)
-		}
-		if err := libraryService.DeleteLibrary(ctx, library.ID); err != nil {
-			t.Errorf("failed to delete the library: %v", err)
-		}
-		if err := sessionService.DeleteByToken(ctx, token); err != nil {
-			t.Errorf("failed to delete the session: %v", err)
-		}
-		if err := sessionService.RemoveDevice(ctx, unique); err != nil {
-			t.Errorf("failed to delete the device: %v", err)
-		}
-		if err := client.User.DeleteOneID(user.ID).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the user: %v", err)
-		}
-	})
+	t.Cleanup(newPlaybackFixtureCleanup(t, library, client, ctx, libraryService, sessionService, token, unique, user))
 
 	downloader, err := client.Source.Create().
 		SetName(t.Name() + "-" + uuid.NewString()).
@@ -160,6 +140,32 @@ func newPlaybackFixture(t *testing.T) *playbackFixture {
 		library:    library.ID,
 		token:      token,
 		paths:      map[string]string{},
+	}
+}
+
+func newPlaybackFixtureCleanup(t *testing.T, library *libraries.Library, client *store.Client, ctx context.Context, libraryService *libraries.Service, sessionService *sessions.Service, token string, unique string, user *users.User) func() {
+	t.Helper()
+
+	return func() {
+		inLibrary := sourcemodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))
+		if _, err := client.MediaStream.Delete().Where(streammodel.HasSourceWith(inLibrary)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the media streams: %v", err)
+		}
+		if _, err := client.ItemSource.Delete().Where(inLibrary).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the media sources: %v", err)
+		}
+		if err := libraryService.DeleteLibrary(ctx, library.ID); err != nil {
+			t.Errorf("failed to delete the library: %v", err)
+		}
+		if err := sessionService.DeleteByToken(ctx, token); err != nil {
+			t.Errorf("failed to delete the session: %v", err)
+		}
+		if err := sessionService.RemoveDevice(ctx, unique); err != nil {
+			t.Errorf("failed to delete the device: %v", err)
+		}
+		if err := client.User.DeleteOneID(user.ID).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the user: %v", err)
+		}
 	}
 }
 
@@ -750,16 +756,7 @@ func (allLibraries) Access(context.Context, uuid.UUID) (users.Access, error) {
 }
 
 func TestPlaybackIsShownOnTheSession(t *testing.T) {
-	for _, tc := range []struct {
-		name    string
-		file    string
-		video   string
-		audio   string
-		method  api.PlayMethod
-		shown   *api.TranscodingInfo
-		reasons []api.TranscodeReason
-		hls     bool
-	}{
+	for _, tc := range []playbackIsShownOnTheSessionCase{
 		{
 			name:   "a file handed over untouched is a direct play",
 			file:   "untouched.mkv",
@@ -793,71 +790,86 @@ func TestPlaybackIsShownOnTheSession(t *testing.T) {
 			hls:     true,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			fixture := newPlaybackFixture(t)
-			var id uuid.UUID
-			if tc.video == "" {
-				id = fixture.rip(t, tc.file, tc.audio)
-			} else {
-				id = fixture.ripped(t, tc.file, tc.video, tc.video, tc.audio)
-			}
-			fixture.offer(t, id, chromeProfile, 0)
-
-			ctx := context.Background()
-			mine, err := fixture.sessions.ByToken(ctx, fixture.token)
-			if err != nil {
-				t.Fatalf("failed to read the session: %v", err)
-			}
-			if err := fixture.sessions.Playing(ctx, mine.ID, "", sessions.Playback{ItemID: id, PlayMethod: "Transcode"}); err != nil {
-				t.Fatalf("failed to report playing: %v", err)
-			}
-
-			listed, err := fixture.sessions.List(ctx)
-			if err != nil {
-				t.Fatalf("failed to list sessions: %v", err)
-			}
-			var shown *api.SessionInfoDto
-			for _, session := range listed {
-				if session.ID == mine.ID {
-					shown = dto.SessionDto(session)
-				}
-			}
-			if shown == nil {
-				t.Fatal("the session is not listed")
-			}
-
-			if got := apiutil.Deref(shown.PlayState.PlayMethod); got != tc.method {
-				t.Errorf("play method = %q, want %q", got, tc.method)
-			}
-			streams := apiutil.Deref(shown.NowPlayingItem.MediaStreams)
-			if len(streams) == 0 || apiutil.Deref(streams[len(streams)-1].Codec) != tc.audio {
-				t.Errorf("now playing streams = %+v, want the planned file's, ending in %s", streams, tc.audio)
-			}
-
-			sent := apiutil.Deref(shown.NowPlayingItem.MediaSources)
-			if hls := len(sent) == 1 && apiutil.Deref(sent[0].TranscodingSubProtocol) == api.MediaStreamProtocolHls; hls != tc.hls {
-				t.Errorf("sent as hls = %v, want %v", hls, tc.hls)
-			}
-
-			info := shown.TranscodingInfo
-			if tc.shown == nil {
-				if info != nil {
-					t.Errorf("transcoding info = %+v, want none for a direct play", info)
-				}
-				return
-			}
-			if info == nil {
-				t.Fatal("transcoding info is missing")
-			}
-			if apiutil.Deref(info.IsVideoDirect) != apiutil.Deref(tc.shown.IsVideoDirect) || apiutil.Deref(info.IsAudioDirect) != apiutil.Deref(tc.shown.IsAudioDirect) {
-				t.Errorf("video direct %v, audio direct %v, want %v and %v", apiutil.Deref(info.IsVideoDirect), apiutil.Deref(info.IsAudioDirect), apiutil.Deref(tc.shown.IsVideoDirect), apiutil.Deref(tc.shown.IsAudioDirect))
-			}
-			if apiutil.Deref(info.VideoCodec) != apiutil.Deref(tc.shown.VideoCodec) || apiutil.Deref(info.AudioCodec) != apiutil.Deref(tc.shown.AudioCodec) {
-				t.Errorf("codecs = %q and %q, want %q and %q", apiutil.Deref(info.VideoCodec), apiutil.Deref(info.AudioCodec), apiutil.Deref(tc.shown.VideoCodec), apiutil.Deref(tc.shown.AudioCodec))
-			}
-			if !slices.Equal(apiutil.Deref(info.TranscodeReasons), tc.reasons) {
-				t.Errorf("reasons = %v, want %v", apiutil.Deref(info.TranscodeReasons), tc.reasons)
-			}
-		})
+		t.Run(tc.name, testPlaybackIsShownOnTheSessionCase(tc))
 	}
+}
+
+func testPlaybackIsShownOnTheSessionCase(tc playbackIsShownOnTheSessionCase) func(*testing.T) {
+	return func(t *testing.T) {
+		fixture := newPlaybackFixture(t)
+		var id uuid.UUID
+		if tc.video == "" {
+			id = fixture.rip(t, tc.file, tc.audio)
+		} else {
+			id = fixture.ripped(t, tc.file, tc.video, tc.video, tc.audio)
+		}
+		fixture.offer(t, id, chromeProfile, 0)
+
+		ctx := context.Background()
+		mine, err := fixture.sessions.ByToken(ctx, fixture.token)
+		if err != nil {
+			t.Fatalf("failed to read the session: %v", err)
+		}
+		if err := fixture.sessions.Playing(ctx, mine.ID, "", sessions.Playback{ItemID: id, PlayMethod: "Transcode"}); err != nil {
+			t.Fatalf("failed to report playing: %v", err)
+		}
+
+		listed, err := fixture.sessions.List(ctx)
+		if err != nil {
+			t.Fatalf("failed to list sessions: %v", err)
+		}
+		var shown *api.SessionInfoDto
+		for _, session := range listed {
+			if session.ID == mine.ID {
+				shown = dto.SessionDto(session)
+			}
+		}
+		if shown == nil {
+			t.Fatal("the session is not listed")
+		}
+
+		if got := apiutil.Deref(shown.PlayState.PlayMethod); got != tc.method {
+			t.Errorf("play method = %q, want %q", got, tc.method)
+		}
+		streams := apiutil.Deref(shown.NowPlayingItem.MediaStreams)
+		if len(streams) == 0 || apiutil.Deref(streams[len(streams)-1].Codec) != tc.audio {
+			t.Errorf("now playing streams = %+v, want the planned file's, ending in %s", streams, tc.audio)
+		}
+
+		sent := apiutil.Deref(shown.NowPlayingItem.MediaSources)
+		if hls := len(sent) == 1 && apiutil.Deref(sent[0].TranscodingSubProtocol) == api.MediaStreamProtocolHls; hls != tc.hls {
+			t.Errorf("sent as hls = %v, want %v", hls, tc.hls)
+		}
+
+		info := shown.TranscodingInfo
+		if tc.shown == nil {
+			if info != nil {
+				t.Errorf("transcoding info = %+v, want none for a direct play", info)
+			}
+			return
+		}
+		if info == nil {
+			t.Fatal("transcoding info is missing")
+		}
+		if apiutil.Deref(info.IsVideoDirect) != apiutil.Deref(tc.shown.IsVideoDirect) || apiutil.Deref(info.IsAudioDirect) != apiutil.Deref(tc.shown.IsAudioDirect) {
+			t.Errorf("video direct %v, audio direct %v, want %v and %v", apiutil.Deref(info.IsVideoDirect), apiutil.Deref(info.IsAudioDirect), apiutil.Deref(tc.shown.IsVideoDirect), apiutil.Deref(tc.shown.IsAudioDirect))
+		}
+		if apiutil.Deref(info.VideoCodec) != apiutil.Deref(tc.shown.VideoCodec) || apiutil.Deref(info.AudioCodec) != apiutil.Deref(tc.shown.AudioCodec) {
+			t.Errorf("codecs = %q and %q, want %q and %q", apiutil.Deref(info.VideoCodec), apiutil.Deref(info.AudioCodec), apiutil.Deref(tc.shown.VideoCodec), apiutil.Deref(tc.shown.AudioCodec))
+		}
+		if !slices.Equal(apiutil.Deref(info.TranscodeReasons), tc.reasons) {
+			t.Errorf("reasons = %v, want %v", apiutil.Deref(info.TranscodeReasons), tc.reasons)
+		}
+	}
+}
+
+type playbackIsShownOnTheSessionCase struct {
+	name    string
+	file    string
+	video   string
+	audio   string
+	method  api.PlayMethod
+	shown   *api.TranscodingInfo
+	reasons []api.TranscodeReason
+	hls     bool
 }

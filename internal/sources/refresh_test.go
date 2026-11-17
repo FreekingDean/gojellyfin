@@ -101,16 +101,7 @@ func newFixture(t *testing.T, reported *[]movie) *fixture {
 
 	records := items.New(client)
 
-	t.Cleanup(func() {
-		ctx := context.Background()
-		if _, err := client.ItemSource.Delete().
-			Where(itemsourcemodel.SourceID(source.ID)).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the files: %v", err)
-		}
-		if err := client.Source.DeleteOne(source).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the source: %v", err)
-		}
-	})
+	t.Cleanup(newFixtureCleanup(t, client, source))
 
 	return &fixture{
 		service:    New(client, config, records, activity.New(client)),
@@ -119,6 +110,21 @@ func newFixture(t *testing.T, reported *[]movie) *fixture {
 		sourceID:   source.ID,
 		downloader: held,
 		config:     config,
+	}
+}
+
+func newFixtureCleanup(t *testing.T, client *store.Client, source *store.Source) func() {
+	t.Helper()
+
+	return func() {
+		ctx := context.Background()
+		if _, err := client.ItemSource.Delete().
+			Where(itemsourcemodel.SourceID(source.ID)).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the files: %v", err)
+		}
+		if err := client.Source.DeleteOne(source).Exec(ctx); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
 	}
 }
 

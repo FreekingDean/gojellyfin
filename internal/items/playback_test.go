@@ -72,16 +72,7 @@ func hdr(source *MediaSource) *MediaSource {
 }
 
 func TestPlanFor(t *testing.T) {
-	for _, tc := range []struct {
-		name       string
-		can        Capabilities
-		source     *MediaSource
-		change     Change
-		container  string
-		audioCodec string
-		videoCodec string
-		reasons    []Reason
-	}{
+	for _, tc := range []planForCase{
 		{
 			name:       "everything declared is handed over as it is",
 			can:        chrome,
@@ -201,25 +192,7 @@ func TestPlanFor(t *testing.T) {
 			audioCodec: "",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			plan := tc.can.plan(tc.source)
-
-			if plan.Change != tc.change {
-				t.Errorf("change = %v, want %v", plan.Change, tc.change)
-			}
-			if plan.Container != tc.container {
-				t.Errorf("container = %q, want %q", plan.Container, tc.container)
-			}
-			if plan.AudioCodec != tc.audioCodec {
-				t.Errorf("audio codec = %q, want %q", plan.AudioCodec, tc.audioCodec)
-			}
-			if plan.VideoCodec != tc.videoCodec {
-				t.Errorf("video codec = %q, want %q", plan.VideoCodec, tc.videoCodec)
-			}
-			if plan.Change != ChangeRefused && !slices.Equal(plan.Reasons, tc.reasons) {
-				t.Errorf("reasons = %v, want %v", plan.Reasons, tc.reasons)
-			}
-		})
+		t.Run(tc.name, testPlanForCase(tc))
 	}
 
 	t.Run("the names the client writes are the names the probe wrote", theNamesTheClientWritesAreTheNamesTheProbeWrote())
@@ -229,6 +202,39 @@ func TestPlanFor(t *testing.T) {
 	t.Run("a container the client declared that cannot be written down a pipe is passed over", aContainerTheClientDeclaredThatCannotBeWrittenDownAPipeIsPassedOver())
 
 	t.Run("a picture only an unwritable container declared is still carried", aPictureOnlyAnUnwritableContainerDeclaredIsStillCarried())
+}
+
+func testPlanForCase(tc planForCase) func(*testing.T) {
+	return func(t *testing.T) {
+		plan := tc.can.plan(tc.source)
+
+		if plan.Change != tc.change {
+			t.Errorf("change = %v, want %v", plan.Change, tc.change)
+		}
+		if plan.Container != tc.container {
+			t.Errorf("container = %q, want %q", plan.Container, tc.container)
+		}
+		if plan.AudioCodec != tc.audioCodec {
+			t.Errorf("audio codec = %q, want %q", plan.AudioCodec, tc.audioCodec)
+		}
+		if plan.VideoCodec != tc.videoCodec {
+			t.Errorf("video codec = %q, want %q", plan.VideoCodec, tc.videoCodec)
+		}
+		if plan.Change != ChangeRefused && !slices.Equal(plan.Reasons, tc.reasons) {
+			t.Errorf("reasons = %v, want %v", plan.Reasons, tc.reasons)
+		}
+	}
+}
+
+type planForCase struct {
+	name       string
+	can        Capabilities
+	source     *MediaSource
+	change     Change
+	container  string
+	audioCodec string
+	videoCodec string
+	reasons    []Reason
 }
 
 func aProfileThatNamedNoCodecsNamedNoneItRefuses() func(*testing.T) {

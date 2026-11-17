@@ -66,7 +66,15 @@ func newFixture(t *testing.T) *fixture {
 	_, fixture.owner = fixture.signIn(t, "owner")
 	fixture.guestID, fixture.guest = fixture.signIn(t, "guest")
 
-	t.Cleanup(func() {
+	t.Cleanup(newFixtureCleanup(t, client, fixture, ctx, library))
+
+	return fixture
+}
+
+func newFixtureCleanup(t *testing.T, client *store.Client, fixture *fixture, ctx context.Context, library *store.Library) func() {
+	t.Helper()
+
+	return func() {
 		if _, err := client.PlaylistShare.Delete().
 			Where(sharemodel.HasPlaylistWith(playlistmodel.ItemIDIn(fixture.created...))).
 			Exec(ctx); err != nil {
@@ -100,9 +108,7 @@ func newFixture(t *testing.T) *fixture {
 		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the library: %v", err)
 		}
-	})
-
-	return fixture
+	}
 }
 
 func (f *fixture) signIn(t *testing.T, name string) (uuid.UUID, context.Context) {

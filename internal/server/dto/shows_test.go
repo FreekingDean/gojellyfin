@@ -29,20 +29,7 @@ func TestItemDtos(t *testing.T) {
 	})
 
 	service := items.New(client)
-	save := func(kind items.Kind, itemName string, parentID *uuid.UUID) *items.Item {
-		record, err := service.SaveScanned(ctx, items.Item{
-			ParentID: parentID,
-			Kind:     kind,
-			Name:     itemName,
-			SortName: itemName,
-			Key:      "test:" + itemName,
-		})
-		if err != nil {
-			t.Fatalf("failed to save %q: %v", itemName, err)
-		}
-
-		return record
-	}
+	save := itemDtosSave(t, service, ctx)
 
 	series := save(itemmodel.KindSeries, name+" Series", nil)
 	season := save(itemmodel.KindSeason, name+" Season 1", &series.ID)
@@ -92,6 +79,25 @@ func TestItemDtos(t *testing.T) {
 	})
 
 	t.Run("a movie carries nothing", aMovieCarriesNothing(byID, movie))
+}
+
+func itemDtosSave(t *testing.T, service *items.Service, ctx context.Context) func(kind items.Kind, itemName string, parentID *uuid.UUID) *items.Item {
+	t.Helper()
+
+	return func(kind items.Kind, itemName string, parentID *uuid.UUID) *items.Item {
+		record, err := service.SaveScanned(ctx, items.Item{
+			ParentID: parentID,
+			Kind:     kind,
+			Name:     itemName,
+			SortName: itemName,
+			Key:      "test:" + itemName,
+		})
+		if err != nil {
+			t.Fatalf("failed to save %q: %v", itemName, err)
+		}
+
+		return record
+	}
 }
 
 func aMovieCarriesNothing(byID map[uuid.UUID]api.BaseItemDto, movie *items.Item) func(*testing.T) {

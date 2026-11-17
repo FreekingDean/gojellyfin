@@ -30,13 +30,7 @@ func TestService(t *testing.T) {
 	})
 
 	descending := displaypreferencesmodel.SortOrderDescending
-	tests := []struct {
-		name     string
-		client   string
-		settings *Settings
-		want     func(*DisplayPreferences) bool
-		stored   int
-	}{
+	tests := []serviceCase{
 		{
 			name:   "a miss serves the defaults and stores nothing",
 			client: "web",
@@ -96,6 +90,14 @@ func TestService(t *testing.T) {
 			}
 		})
 	}
+}
+
+type serviceCase struct {
+	name     string
+	client   string
+	settings *Settings
+	want     func(*DisplayPreferences) bool
+	stored   int
 }
 
 func ptr[T any](value T) *T { return &value }

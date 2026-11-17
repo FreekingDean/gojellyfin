@@ -73,7 +73,33 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("failed to create the library: %v", err)
 	}
 
+	t.Cleanup(newFixtureCleanup(t, client, library, ctx, prefix))
+
+	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), jobs.NewService(disconnected(t), jobs.NewRegistry()), drawn(client), reports.New(client, nil))
+
+	downloader, err := client.Source.Create().
+		SetName(t.Name() + "-" + uuid.NewString()).
+		SetURL("http://" + uuid.NewString() + ".invalid").
+		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
+		SetKind(sourcemodel.KindRadarr).
+		Save(context.Background())
+	if err != nil {
+		t.Fatalf("failed to create the source: %v", err)
+	}
 	t.Cleanup(func() {
+		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
+			t.Errorf("failed to delete the source: %v", err)
+		}
+	})
+
+	return &fixture{
+		downloader: downloader.ID, server: server, client: client, libraryID: library.ID, prefix: prefix}
+}
+
+func newFixtureCleanup(t *testing.T, client *store.Client, library *libraries.Library, ctx context.Context, prefix string) func() {
+	t.Helper()
+
+	return func() {
 		if _, err := client.Image.Delete().
 			Where(imagemodel.HasItemWith(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID)))).
 			Exec(ctx); err != nil {
@@ -116,27 +142,7 @@ func newFixture(t *testing.T) *fixture {
 		if _, err := client.Library.Delete().Where(librarymodel.NameHasPrefix(prefix)).Exec(ctx); err != nil {
 			t.Errorf("failed to delete the libraries: %v", err)
 		}
-	})
-
-	server := New(items.New(client), libraries.New(client), users.New(client), filesystem.New(env.Config{MediaDirectories: []string{filesystem.Root}}), jobs.NewService(disconnected(t), jobs.NewRegistry()), drawn(client), reports.New(client, nil))
-
-	downloader, err := client.Source.Create().
-		SetName(t.Name() + "-" + uuid.NewString()).
-		SetURL("http://" + uuid.NewString() + ".invalid").
-		SetAPIKeyVariable("SOURCE_API_KEY_TEST").
-		SetKind(sourcemodel.KindRadarr).
-		Save(context.Background())
-	if err != nil {
-		t.Fatalf("failed to create the source: %v", err)
 	}
-	t.Cleanup(func() {
-		if err := client.Source.DeleteOne(downloader).Exec(context.Background()); err != nil {
-			t.Errorf("failed to delete the source: %v", err)
-		}
-	})
-
-	return &fixture{
-		downloader: downloader.ID, server: server, client: client, libraryID: library.ID, prefix: prefix}
 }
 
 func (f *fixture) add(t *testing.T, item seed) uuid.UUID {

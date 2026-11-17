@@ -161,13 +161,7 @@ func TestService_Shelves(t *testing.T) {
 
 	viewer := items.Viewer{Libraries: []uuid.UUID{fixture.libraryID}}
 
-	tests := []struct {
-		slug     string
-		now      time.Time
-		wantName string
-		want     []string
-		absent   bool
-	}{
+	tests := []serviceShelvesCase{
 		{slug: "new-releases", now: october, wantName: "New Releases", want: []string{"Dud", "Quick", "Gem", "Seen", "Older"}},
 		{slug: "hidden-gems", now: october, wantName: "Hidden Gems", want: []string{"Future", "Gem"}},
 		{slug: "short-on-time", now: october, wantName: "Short on Time", want: []string{"Future", "Quick", "Dud"}},
@@ -208,6 +202,14 @@ func TestService_Shelves(t *testing.T) {
 			}
 		})
 	}
+}
+
+type serviceShelvesCase struct {
+	slug     string
+	now      time.Time
+	wantName string
+	want     []string
+	absent   bool
 }
 
 func TestService_GenreSpotlight(t *testing.T) {
@@ -354,13 +356,7 @@ func TestService_TrendingShelves(t *testing.T) {
 
 	everything := trendingStub{keys: []string{key("Missing"), key("First"), key("Orphan"), key("Second")}}
 
-	tests := []struct {
-		name      string
-		discovery Discovery
-		viewer    items.Viewer
-		want      []string
-		absent    bool
-	}{
+	tests := []serviceTrendingShelvesCase{
 		{name: "only what the library holds with a file, in the provider's order", discovery: everything, viewer: items.Everyone, want: []string{"First", "Second"}},
 		{name: "what the viewer cannot see is left out", discovery: everything, viewer: items.Viewer{Libraries: []uuid.UUID{uuid.New()}}, absent: true},
 		{name: "nothing held leaves the shelf out", discovery: trendingStub{keys: []string{key("Missing"), key("Orphan")}}, viewer: items.Everyone, absent: true},
@@ -408,6 +404,14 @@ func TestService_TrendingShelves(t *testing.T) {
 			}
 		})
 	}
+}
+
+type serviceTrendingShelvesCase struct {
+	name      string
+	discovery Discovery
+	viewer    items.Viewer
+	want      []string
+	absent    bool
 }
 
 func TestService_Titles(t *testing.T) {

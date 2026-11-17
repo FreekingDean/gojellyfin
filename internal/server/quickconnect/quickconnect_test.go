@@ -129,15 +129,7 @@ func TestServer_AuthorizeQuickConnect(t *testing.T) {
 	caller := uuid.New()
 	target := uuid.New()
 
-	tests := []struct {
-		name             string
-		target           *uuid.UUID
-		administrator    bool
-		targetError      error
-		authorizeAs      uuid.UUID
-		authorizeError   error
-		expectedResponse api.AuthorizeQuickConnectResponseObject
-	}{
+	tests := []serverAuthorizeQuickConnectCase{
 		{
 			name:             "authorizes for the caller",
 			authorizeAs:      caller,
@@ -195,4 +187,14 @@ func TestServer_AuthorizeQuickConnect(t *testing.T) {
 			assert.Equal(t, tt.expectedResponse, response)
 		})
 	}
+}
+
+type serverAuthorizeQuickConnectCase struct {
+	name             string
+	target           *uuid.UUID
+	administrator    bool
+	targetError      error
+	authorizeAs      uuid.UUID
+	authorizeError   error
+	expectedResponse api.AuthorizeQuickConnectResponseObject
 }

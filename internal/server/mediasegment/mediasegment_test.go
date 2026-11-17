@@ -64,11 +64,7 @@ func TestServer_GetItemSegments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create the file: %v", err)
 	}
-	for _, segment := range []struct {
-		kind       segmentmodel.Kind
-		origin     segmentmodel.Origin
-		start, end int64
-	}{
+	for _, segment := range []serverGetItemSegmentsCase{
 		{segmentmodel.KindIntro, segmentmodel.OriginFingerprint, 10, 20},
 		{segmentmodel.KindIntro, segmentmodel.OriginChapter, 11, 21},
 		{segmentmodel.KindOutro, segmentmodel.OriginChapter, 90, 100},
@@ -119,6 +115,12 @@ func TestServer_GetItemSegments(t *testing.T) {
 	if listed := response.(api.GetItemSegments200JSONResponse); len(*listed.Items) != 1 || *(*listed.Items)[0].Type != api.MediaSegmentTypeOutro {
 		t.Errorf("segments = %v, want only the outro", *listed.Items)
 	}
+}
+
+type serverGetItemSegmentsCase struct {
+	kind       segmentmodel.Kind
+	origin     segmentmodel.Origin
+	start, end int64
 }
 
 type access users.Access

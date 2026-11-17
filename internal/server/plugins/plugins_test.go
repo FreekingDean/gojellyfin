@@ -23,11 +23,7 @@ func TestServer(t *testing.T) {
 	server := New()
 	ctx := context.Background()
 
-	for _, tc := range []struct {
-		name string
-		call func() (any, error)
-		want any
-	}{
+	for _, tc := range []serverCase{
 		{
 			name: "GetPluginConfiguration",
 			call: func() (any, error) {
@@ -85,15 +81,25 @@ func TestServer(t *testing.T) {
 			want: api.DisablePlugin404JSONResponse{},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			response, err := tc.call()
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if got, want := fmt.Sprintf("%T", response), fmt.Sprintf("%T", tc.want); got != want {
-				t.Errorf("got %s, want %s", got, want)
-			}
-		})
+		t.Run(tc.name, testServerCase(tc))
 	}
+}
+
+func testServerCase(tc serverCase) func(*testing.T) {
+	return func(t *testing.T) {
+		response, err := tc.call()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if got, want := fmt.Sprintf("%T", response), fmt.Sprintf("%T", tc.want); got != want {
+			t.Errorf("got %s, want %s", got, want)
+		}
+	}
+}
+
+type serverCase struct {
+	name string
+	call func() (any, error)
+	want any
 }
