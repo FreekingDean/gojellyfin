@@ -23,7 +23,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/localization"
 	"github.com/FreekingDean/gojellyfin/internal/metadata"
 	"github.com/FreekingDean/gojellyfin/internal/notify"
-	"github.com/FreekingDean/gojellyfin/internal/observability"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/playlists"
 	"github.com/FreekingDean/gojellyfin/internal/prank"
 	"github.com/FreekingDean/gojellyfin/internal/probe"
@@ -44,7 +44,7 @@ import (
 
 var serverModules = fx.Options(
 	env.Module,
-	observability.Module,
+	tracing.Module,
 	store.Module,
 
 	activity.Module,
