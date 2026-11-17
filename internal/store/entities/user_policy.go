@@ -5,8 +5,11 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+)
 
-	"github.com/FreekingDean/gojellyfin/internal/consts"
+const (
+	DefaultAuthenticationProvider = "Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider"
+	DefaultPasswordResetProvider  = "Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider"
 )
 
 type AccessSchedule struct {
@@ -68,9 +71,9 @@ func (UserPolicy) Fields() []ent.Field {
 		field.JSON("block_unrated_items", []string{}).Optional().Default([]string{}),
 
 		field.String("authentication_provider_id").NotEmpty().
-			Default(consts.DefaultProviderFor("Users", "DefaultAuthenticationProvider")),
+			Default(DefaultAuthenticationProvider),
 		field.String("password_reset_provider_id").NotEmpty().
-			Default(consts.DefaultProviderFor("Users", "DefaultPasswordResetProvider")),
+			Default(DefaultPasswordResetProvider),
 		field.Enum("sync_play_access").Values(
 			"CreateAndJoinGroups", "JoinGroups", "None",
 		).Default("CreateAndJoinGroups"),

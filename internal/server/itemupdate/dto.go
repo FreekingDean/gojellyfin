@@ -3,7 +3,6 @@ package itemupdate
 import (
 	"slices"
 
-	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
@@ -15,7 +14,7 @@ func metadata(req *api.BaseItemDto) items.Metadata {
 		Name:            req.Name,
 		SortName:        req.SortName,
 		Overview:        req.Overview,
-		OfficialRating:  rating(req.OfficialRating),
+		OfficialRating:  req.OfficialRating,
 		CommunityRating: score(req.CommunityRating),
 		ProductionYear:  req.ProductionYear,
 		PremiereDate:    req.PremiereDate,
@@ -81,10 +80,6 @@ func credits(people []api.BaseItemPerson) []items.Credit {
 	}
 
 	return converted
-}
-
-func rating(value *string) *consts.Rating {
-	return (*consts.Rating)(value)
 }
 
 func score(value *float32) *float64 {

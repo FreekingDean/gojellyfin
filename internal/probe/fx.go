@@ -1,7 +1,8 @@
 package probe
 
 import (
-	"github.com/FreekingDean/gojellyfin/internal/fx"
+	"go.uber.org/fx"
+
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 )
 

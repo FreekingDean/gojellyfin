@@ -9,7 +9,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
 )
@@ -26,7 +25,7 @@ type Metadata struct {
 	Name            *string
 	SortName        *string
 	Overview        *string
-	OfficialRating  *consts.Rating
+	OfficialRating  *string
 	ParentalRating  *int
 	CommunityRating *float64
 	ProductionYear  *int32
@@ -54,7 +53,7 @@ func (m *Metadata) Rate(levels RatingLevels) {
 	if m.OfficialRating == nil {
 		return
 	}
-	if level, found := levels.RatingLevel(string(*m.OfficialRating)); found {
+	if level, found := levels.RatingLevel(*m.OfficialRating); found {
 		m.ParentalRating = &level
 	}
 }
@@ -64,7 +63,7 @@ func (s *Service) UpdateMetadata(ctx context.Context, id uuid.UUID, metadata Met
 		SetNillableName(metadata.Name).
 		SetNillableSortName(metadata.SortName).
 		SetNillableOverview(metadata.Overview).
-		SetNillableOfficialRating((*string)(metadata.OfficialRating)).
+		SetNillableOfficialRating(metadata.OfficialRating).
 		SetNillableCommunityRating(metadata.CommunityRating).
 		SetNillableProductionYear(metadata.ProductionYear).
 		SetNillablePremiereDate(metadata.PremiereDate).

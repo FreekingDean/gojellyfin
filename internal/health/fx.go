@@ -1,7 +1,8 @@
 package health
 
 import (
-	"github.com/FreekingDean/gojellyfin/internal/fx"
+	"go.uber.org/fx"
+
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/metadata"

@@ -12,7 +12,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/env"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
@@ -348,10 +347,8 @@ func text(value string) *string {
 	return &value
 }
 
-func rated(value string) *consts.Rating {
-	official := consts.Rating(value)
-
-	return &official
+func rated(value string) *string {
+	return &value
 }
 
 func number(value float64) *float64 {

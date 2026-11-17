@@ -1,7 +1,8 @@
 package syncplay
 
 import (
-	"github.com/FreekingDean/gojellyfin/internal/fx"
+	"go.uber.org/fx"
+
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/notify"
 	"github.com/FreekingDean/gojellyfin/internal/sessions"
@@ -17,6 +18,6 @@ var Module = fx.Module(
 		func(service *users.Service) Policies { return service },
 		func(notifier *notify.Service) Publisher { return notifier },
 	),
-	fx.InvokeStartStop[*Sweeper](),
+	fx.Invoke(func(lifecycle fx.Lifecycle, sweeper *Sweeper) { lifecycle.Append(fx.StartStopHook(sweeper.Start, sweeper.Stop)) }),
 	fx.Invoke(func(sessions *sessions.Service, service *Service) { sessions.OnEnding(service.SessionsEnding) }),
 )

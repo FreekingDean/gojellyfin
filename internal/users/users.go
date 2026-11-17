@@ -23,6 +23,11 @@ type (
 	AccessSchedule = entities.AccessSchedule
 )
 
+const (
+	DefaultAuthenticationProvider = entities.DefaultAuthenticationProvider
+	DefaultPasswordResetProvider  = entities.DefaultPasswordResetProvider
+)
+
 type Service struct {
 	store *store.Client
 }

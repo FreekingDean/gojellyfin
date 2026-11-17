@@ -6,7 +6,6 @@ import (
 
 	gotmdb "github.com/cyruzin/golang-tmdb"
 
-	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	creditmodel "github.com/FreekingDean/gojellyfin/internal/store/credit"
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
@@ -352,13 +351,12 @@ func list(value string) *[]string {
 	return &[]string{value}
 }
 
-func rating(value string) *consts.Rating {
+func rating(value string) *string {
 	if value == "" {
 		return nil
 	}
-	official := consts.Rating(value)
 
-	return &official
+	return &value
 }
 
 func score(value float32) *float64 {

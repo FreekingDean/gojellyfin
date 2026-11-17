@@ -1,8 +1,9 @@
 package metadata
 
 import (
+	"go.uber.org/fx"
+
 	"github.com/FreekingDean/gojellyfin/internal/discover"
-	"github.com/FreekingDean/gojellyfin/internal/fx"
 	"github.com/FreekingDean/gojellyfin/internal/items"
 	"github.com/FreekingDean/gojellyfin/internal/jobs"
 	"github.com/FreekingDean/gojellyfin/internal/localization"

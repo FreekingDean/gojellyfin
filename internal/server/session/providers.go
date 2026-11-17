@@ -3,21 +3,21 @@ package session
 import (
 	"context"
 
-	"github.com/FreekingDean/gojellyfin/internal/consts"
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/server/apiutil"
+	"github.com/FreekingDean/gojellyfin/internal/users"
 )
 
 func (s *Server) GetAuthProviders(ctx context.Context, request api.GetAuthProvidersRequestObject) (api.GetAuthProvidersResponseObject, error) {
 	return api.GetAuthProviders200JSONResponse([]api.NameIdPair{{
 		Name: apiutil.Ptr("Default"),
-		Id:   apiutil.Ptr(consts.DefaultProviderFor("Users", "DefaultAuthenticationProvider")),
+		Id:   apiutil.Ptr(users.DefaultAuthenticationProvider),
 	}}), nil
 }
 
 func (s *Server) GetPasswordResetProviders(ctx context.Context, request api.GetPasswordResetProvidersRequestObject) (api.GetPasswordResetProvidersResponseObject, error) {
 	return api.GetPasswordResetProviders200JSONResponse([]api.NameIdPair{{
 		Name: apiutil.Ptr("Default"),
-		Id:   apiutil.Ptr(consts.DefaultProviderFor("Users", "DefaultPasswordResetProvider")),
+		Id:   apiutil.Ptr(users.DefaultPasswordResetProvider),
 	}}), nil
 }

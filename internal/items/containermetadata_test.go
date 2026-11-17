@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/FreekingDean/gojellyfin/internal/consts"
 	creditmodel "github.com/FreekingDean/gojellyfin/internal/store/credit"
 	genremodel "github.com/FreekingDean/gojellyfin/internal/store/genre"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
@@ -396,7 +395,7 @@ func TestService_DistinctOfficialRatings(t *testing.T) {
 	fixture := newMetadataFixture(t)
 	ctx := context.Background()
 
-	for name, rating := range map[string]consts.Rating{"Rated R": "R", "Rated PG": "PG", "Also R": "R"} {
+	for name, rating := range map[string]string{"Rated R": "R", "Rated PG": "PG", "Also R": "R"} {
 		item := fixture.item(t, name)
 		if _, err := fixture.service.UpdateMetadata(ctx, item.ID, Metadata{OfficialRating: &rating}); err != nil {
 			t.Fatalf("failed to rate %q: %v", name, err)
