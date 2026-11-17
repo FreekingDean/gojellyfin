@@ -11,7 +11,7 @@
     "android": "playwright test --config android.config.js"
   },
   "devDependencies": {
-    "@playwright/test": "1.63.0",
+    "@playwright/test": "1.65.1",
     "jsqr": "1.4.0",
     "pngjs": "7.0.0"
   }
