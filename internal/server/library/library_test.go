@@ -459,9 +459,9 @@ func TestServer_GetDownload(t *testing.T) {
 
 	t.Run("refuses a user without the downloading policy", func(t *testing.T) {
 		ctx := fixture.signIn(t, "restricted", false)
-		err := users.New(fixture.client).UpdatePolicy(auth.UserID(ctx)).
-			SetEnableContentDownloading(false).
-			Exec(context.Background())
+		err := users.New(fixture.client).SavePolicy(context.Background(), auth.UserID(ctx), func(policy *users.Policy) {
+			policy.EnableContentDownloading = false
+		})
 		if err != nil {
 			t.Fatalf("failed to update the policy: %v", err)
 		}

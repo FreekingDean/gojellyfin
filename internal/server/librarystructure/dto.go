@@ -82,6 +82,7 @@ func optionsDto(options *libraries.Options) api.LibraryOptions {
 		DisabledSubtitleFetchers:                &options.DisabledSubtitleFetchers,
 		SubtitleFetcherOrder:                    &options.SubtitleFetcherOrder,
 		DisabledMediaSegmentProviders:           &options.DisabledMediaSegmentProviders,
+		MediaSegmentProviderOrder:               &options.MediaSegmentProviderOrder,
 		SubtitleDownloadLanguages:               &options.SubtitleDownloadLanguages,
 		DisabledLyricFetchers:                   &options.DisabledLyricFetchers,
 		LyricFetcherOrder:                       &options.LyricFetcherOrder,
@@ -97,84 +98,70 @@ func (s *Server) saveOptions(ctx context.Context, id uuid.UUID, req *api.Library
 		return nil
 	}
 
-	update := s.libraries.UpdateOptions(id).
-		SetNillableEnabled(req.Enabled).
-		SetNillableEnablePhotos(req.EnablePhotos).
-		SetNillableEnableRealtimeMonitor(req.EnableRealtimeMonitor).
-		SetNillableEnableLufsScan(req.EnableLUFSScan).
-		SetNillableEnableChapterImageExtraction(req.EnableChapterImageExtraction).
-		SetNillableExtractChapterImagesDuringLibraryScan(req.ExtractChapterImagesDuringLibraryScan).
-		SetNillableEnableTrickplayImageExtraction(req.EnableTrickplayImageExtraction).
-		SetNillableExtractTrickplayImagesDuringLibraryScan(req.ExtractTrickplayImagesDuringLibraryScan).
-		SetNillableSaveLocalMetadata(req.SaveLocalMetadata).
-		SetNillableEnableInternetProviders(req.EnableInternetProviders). //nolint:staticcheck
-		SetNillableEnableAutomaticSeriesGrouping(req.EnableAutomaticSeriesGrouping).
-		SetNillableEnableEmbeddedTitles(req.EnableEmbeddedTitles).
-		SetNillableEnableEmbeddedExtrasTitles(req.EnableEmbeddedExtrasTitles).
-		SetNillableEnableEmbeddedEpisodeInfos(req.EnableEmbeddedEpisodeInfos).
-		SetNillableSkipSubtitlesIfEmbeddedSubtitlesPresent(req.SkipSubtitlesIfEmbeddedSubtitlesPresent).
-		SetNillableSkipSubtitlesIfAudioTrackMatches(req.SkipSubtitlesIfAudioTrackMatches).
-		SetNillableRequirePerfectSubtitleMatch(req.RequirePerfectSubtitleMatch).
-		SetNillableSaveSubtitlesWithMedia(req.SaveSubtitlesWithMedia).
-		SetNillableSaveLyricsWithMedia(req.SaveLyricsWithMedia).
-		SetNillableSaveTrickplayWithMedia(req.SaveTrickplayWithMedia).
-		SetNillablePreferNonstandardArtistsTag(req.PreferNonstandardArtistsTag).
-		SetNillableUseCustomTagDelimiters(req.UseCustomTagDelimiters).
-		SetNillableAutomaticallyAddToCollection(req.AutomaticallyAddToCollection).
-		SetNillableAutomaticRefreshIntervalDays(req.AutomaticRefreshIntervalDays).
-		SetNillablePreferredMetadataLanguage(req.PreferredMetadataLanguage).
-		SetNillableMetadataCountryCode(req.MetadataCountryCode).
-		SetNillableSeasonZeroDisplayName(req.SeasonZeroDisplayName)
+	return s.libraries.SaveOptions(ctx, id, func(options *libraries.Options) {
+		mergeOptions(options, req)
+	})
+}
 
+func mergeOptions(options *libraries.Options, req *api.LibraryOptions) {
+	options.Enabled = apiutil.OrElse(req.Enabled, options.Enabled)
+	options.EnablePhotos = apiutil.OrElse(req.EnablePhotos, options.EnablePhotos)
+	options.EnableRealtimeMonitor = apiutil.OrElse(req.EnableRealtimeMonitor, options.EnableRealtimeMonitor)
+	options.EnableLufsScan = apiutil.OrElse(req.EnableLUFSScan, options.EnableLufsScan)
+	options.EnableChapterImageExtraction = apiutil.OrElse(req.EnableChapterImageExtraction, options.EnableChapterImageExtraction)
+	options.ExtractChapterImagesDuringLibraryScan = apiutil.OrElse(req.ExtractChapterImagesDuringLibraryScan, options.ExtractChapterImagesDuringLibraryScan)
+	options.EnableTrickplayImageExtraction = apiutil.OrElse(req.EnableTrickplayImageExtraction, options.EnableTrickplayImageExtraction)
+	options.ExtractTrickplayImagesDuringLibraryScan = apiutil.OrElse(req.ExtractTrickplayImagesDuringLibraryScan, options.ExtractTrickplayImagesDuringLibraryScan)
+	options.SaveLocalMetadata = apiutil.OrElse(req.SaveLocalMetadata, options.SaveLocalMetadata)
+	options.EnableInternetProviders = apiutil.OrElse(req.EnableInternetProviders, options.EnableInternetProviders) //nolint:staticcheck
+	options.EnableAutomaticSeriesGrouping = apiutil.OrElse(req.EnableAutomaticSeriesGrouping, options.EnableAutomaticSeriesGrouping)
+	options.EnableEmbeddedTitles = apiutil.OrElse(req.EnableEmbeddedTitles, options.EnableEmbeddedTitles)
+	options.EnableEmbeddedExtrasTitles = apiutil.OrElse(req.EnableEmbeddedExtrasTitles, options.EnableEmbeddedExtrasTitles)
+	options.EnableEmbeddedEpisodeInfos = apiutil.OrElse(req.EnableEmbeddedEpisodeInfos, options.EnableEmbeddedEpisodeInfos)
+	options.SkipSubtitlesIfEmbeddedSubtitlesPresent = apiutil.OrElse(req.SkipSubtitlesIfEmbeddedSubtitlesPresent, options.SkipSubtitlesIfEmbeddedSubtitlesPresent)
+	options.SkipSubtitlesIfAudioTrackMatches = apiutil.OrElse(req.SkipSubtitlesIfAudioTrackMatches, options.SkipSubtitlesIfAudioTrackMatches)
+	options.RequirePerfectSubtitleMatch = apiutil.OrElse(req.RequirePerfectSubtitleMatch, options.RequirePerfectSubtitleMatch)
+	options.SaveSubtitlesWithMedia = apiutil.OrElse(req.SaveSubtitlesWithMedia, options.SaveSubtitlesWithMedia)
+	options.SaveLyricsWithMedia = apiutil.OrElse(req.SaveLyricsWithMedia, options.SaveLyricsWithMedia)
+	options.SaveTrickplayWithMedia = apiutil.OrElse(req.SaveTrickplayWithMedia, options.SaveTrickplayWithMedia)
+	options.PreferNonstandardArtistsTag = apiutil.OrElse(req.PreferNonstandardArtistsTag, options.PreferNonstandardArtistsTag)
+	options.UseCustomTagDelimiters = apiutil.OrElse(req.UseCustomTagDelimiters, options.UseCustomTagDelimiters)
+	options.AutomaticallyAddToCollection = apiutil.OrElse(req.AutomaticallyAddToCollection, options.AutomaticallyAddToCollection)
+	options.AutomaticRefreshIntervalDays = apiutil.OrElse(req.AutomaticRefreshIntervalDays, options.AutomaticRefreshIntervalDays)
+	options.PreferredMetadataLanguage = apiutil.OrElse(req.PreferredMetadataLanguage, options.PreferredMetadataLanguage)
+	options.MetadataCountryCode = apiutil.OrElse(req.MetadataCountryCode, options.MetadataCountryCode)
+	options.SeasonZeroDisplayName = apiutil.OrElse(req.SeasonZeroDisplayName, options.SeasonZeroDisplayName)
+	options.MetadataSavers = apiutil.OrElse(req.MetadataSavers, options.MetadataSavers)
+	options.DisabledLocalMetadataReaders = apiutil.OrElse(req.DisabledLocalMetadataReaders, options.DisabledLocalMetadataReaders)
+	options.LocalMetadataReaderOrder = apiutil.OrElse(req.LocalMetadataReaderOrder, options.LocalMetadataReaderOrder)
+	options.DisabledSubtitleFetchers = apiutil.OrElse(req.DisabledSubtitleFetchers, options.DisabledSubtitleFetchers)
+	options.SubtitleFetcherOrder = apiutil.OrElse(req.SubtitleFetcherOrder, options.SubtitleFetcherOrder)
+	options.DisabledMediaSegmentProviders = apiutil.OrElse(req.DisabledMediaSegmentProviders, options.DisabledMediaSegmentProviders)
+	options.MediaSegmentProviderOrder = apiutil.OrElse(req.MediaSegmentProviderOrder, options.MediaSegmentProviderOrder)
+	options.SubtitleDownloadLanguages = apiutil.OrElse(req.SubtitleDownloadLanguages, options.SubtitleDownloadLanguages)
+	options.DisabledLyricFetchers = apiutil.OrElse(req.DisabledLyricFetchers, options.DisabledLyricFetchers)
+	options.LyricFetcherOrder = apiutil.OrElse(req.LyricFetcherOrder, options.LyricFetcherOrder)
+	options.CustomTagDelimiters = apiutil.OrElse(req.CustomTagDelimiters, options.CustomTagDelimiters)
+	options.DelimiterWhitelist = apiutil.OrElse(req.DelimiterWhitelist, options.DelimiterWhitelist)
 	if req.AllowEmbeddedSubtitles != nil {
-		update.SetAllowEmbeddedSubtitles(libraries.EmbeddedSubtitles(*req.AllowEmbeddedSubtitles))
-	}
-	if req.MetadataSavers != nil {
-		update.SetMetadataSavers(*req.MetadataSavers)
-	}
-	if req.DisabledLocalMetadataReaders != nil {
-		update.SetDisabledLocalMetadataReaders(*req.DisabledLocalMetadataReaders)
-	}
-	if req.LocalMetadataReaderOrder != nil {
-		update.SetLocalMetadataReaderOrder(*req.LocalMetadataReaderOrder)
-	}
-	if req.DisabledSubtitleFetchers != nil {
-		update.SetDisabledSubtitleFetchers(*req.DisabledSubtitleFetchers)
-	}
-	if req.SubtitleFetcherOrder != nil {
-		update.SetSubtitleFetcherOrder(*req.SubtitleFetcherOrder)
-	}
-	if req.DisabledMediaSegmentProviders != nil {
-		update.SetDisabledMediaSegmentProviders(*req.DisabledMediaSegmentProviders)
-	}
-	if req.SubtitleDownloadLanguages != nil {
-		update.SetSubtitleDownloadLanguages(*req.SubtitleDownloadLanguages)
-	}
-	if req.DisabledLyricFetchers != nil {
-		update.SetDisabledLyricFetchers(*req.DisabledLyricFetchers)
-	}
-	if req.LyricFetcherOrder != nil {
-		update.SetLyricFetcherOrder(*req.LyricFetcherOrder)
-	}
-	if req.CustomTagDelimiters != nil {
-		update.SetCustomTagDelimiters(*req.CustomTagDelimiters)
-	}
-	if req.DelimiterWhitelist != nil {
-		update.SetDelimiterWhitelist(*req.DelimiterWhitelist)
+		options.AllowEmbeddedSubtitles = libraries.EmbeddedSubtitles(*req.AllowEmbeddedSubtitles)
 	}
 	if req.TypeOptions != nil {
-		typeOptions := make([]libraries.TypeOptions, 0, len(*req.TypeOptions))
-		for _, option := range *req.TypeOptions {
-			typeOptions = append(typeOptions, libraries.TypeOptions{
-				Type:                 apiutil.Deref(option.Type),
-				MetadataFetchers:     apiutil.Deref(option.MetadataFetchers),
-				MetadataFetcherOrder: apiutil.Deref(option.MetadataFetcherOrder),
-				ImageFetchers:        apiutil.Deref(option.ImageFetchers),
-				ImageFetcherOrder:    apiutil.Deref(option.ImageFetcherOrder),
-			})
-		}
-		update.SetTypeOptions(typeOptions)
+		options.TypeOptions = typeOptions(*req.TypeOptions)
+	}
+}
+
+func typeOptions(requested []api.TypeOptions) []libraries.TypeOptions {
+	options := make([]libraries.TypeOptions, 0, len(requested))
+	for _, option := range requested {
+		options = append(options, libraries.TypeOptions{
+			Type:                 apiutil.Deref(option.Type),
+			MetadataFetchers:     apiutil.Deref(option.MetadataFetchers),
+			MetadataFetcherOrder: apiutil.Deref(option.MetadataFetcherOrder),
+			ImageFetchers:        apiutil.Deref(option.ImageFetchers),
+			ImageFetcherOrder:    apiutil.Deref(option.ImageFetcherOrder),
+		})
 	}
 
-	return update.Exec(ctx)
+	return options
 }

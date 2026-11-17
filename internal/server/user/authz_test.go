@@ -238,7 +238,7 @@ func TestServer_AuthenticateUserByNameRefusesADisabledAccount(t *testing.T) {
 	accounts := newAccounts(t)
 	ctx := context.Background()
 
-	if err := accounts.users.UpdatePolicy(accounts.member.ID).SetIsDisabled(true).Exec(ctx); err != nil {
+	if err := accounts.users.SavePolicy(ctx, accounts.member.ID, func(policy *users.Policy) { policy.IsDisabled = true }); err != nil {
 		t.Fatalf("failed to disable the member: %v", err)
 	}
 
@@ -262,7 +262,7 @@ func TestServer_DisablingAnAccountStopsItsSessions(t *testing.T) {
 		t.Fatalf("the token did not work before the account was disabled: %v", err)
 	}
 
-	if err := accounts.users.UpdatePolicy(accounts.member.ID).SetIsDisabled(true).Exec(ctx); err != nil {
+	if err := accounts.users.SavePolicy(ctx, accounts.member.ID, func(policy *users.Policy) { policy.IsDisabled = true }); err != nil {
 		t.Fatalf("failed to disable the member: %v", err)
 	}
 

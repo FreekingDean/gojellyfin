@@ -87,6 +87,16 @@ func (_u *ActivityLogEntryUpdateOne) SaveModel(ctx context.Context) (*ActivityLo
 	return fromActivityLogEntry(_m), err
 }
 
+func (_u *ActivityLogEntryUpdateOne) SetModel(m *ActivityLogEntryModel) *ActivityLogEntryUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetName(m.Name)
+	_u.SetKind(m.Kind)
+	_u.SetOverview(m.Overview)
+	_u.SetShortOverview(m.ShortOverview)
+	_u.SetSeverity(m.Severity)
+	return _u
+}
+
 func (_q *ActivityLogEntryQuery) OnlyModel(ctx context.Context) (*ActivityLogEntryModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromActivityLogEntry(_m), err
@@ -159,6 +169,18 @@ func (_c *ApiKeyCreate) SaveModel(ctx context.Context) (*ApiKeyModel, error) {
 func (_u *ApiKeyUpdateOne) SaveModel(ctx context.Context) (*ApiKeyModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromApiKey(_m), err
+}
+
+func (_u *ApiKeyUpdateOne) SetModel(m *ApiKeyModel) *ApiKeyUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetAccessToken(m.AccessToken)
+	_u.SetAppName(m.AppName)
+	if m.RevokedAt == nil {
+		_u.ClearRevokedAt()
+	} else {
+		_u.SetRevokedAt(*m.RevokedAt)
+	}
+	return _u
 }
 
 func (_q *ApiKeyQuery) OnlyModel(ctx context.Context) (*ApiKeyModel, error) {
@@ -235,6 +257,16 @@ func (_u *ChannelUpdateOne) SaveModel(ctx context.Context) (*ChannelModel, error
 	return fromChannel(_m), err
 }
 
+func (_u *ChannelUpdateOne) SetModel(m *ChannelModel) *ChannelUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetNumber(m.Number)
+	_u.SetName(m.Name)
+	_u.SetOrder(m.Order)
+	_u.SetSeed(m.Seed)
+	_u.SetEpoch(m.Epoch)
+	return _u
+}
+
 func (_q *ChannelQuery) OnlyModel(ctx context.Context) (*ChannelModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromChannel(_m), err
@@ -307,6 +339,12 @@ func (_u *ChannelEntryUpdateOne) SaveModel(ctx context.Context) (*ChannelEntryMo
 	return fromChannelEntry(_m), err
 }
 
+func (_u *ChannelEntryUpdateOne) SetModel(m *ChannelEntryModel) *ChannelEntryUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetPosition(m.Position)
+	return _u
+}
+
 func (_q *ChannelEntryQuery) OnlyModel(ctx context.Context) (*ChannelEntryModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromChannelEntry(_m), err
@@ -369,6 +407,13 @@ func (_c *ConfigurationCreate) SaveModel(ctx context.Context) (*ConfigurationMod
 func (_u *ConfigurationUpdateOne) SaveModel(ctx context.Context) (*ConfigurationModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromConfiguration(_m), err
+}
+
+func (_u *ConfigurationUpdateOne) SetModel(m *ConfigurationModel) *ConfigurationUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetKey(m.Key)
+	_u.SetValue(m.Value)
+	return _u
 }
 
 func (_q *ConfigurationQuery) OnlyModel(ctx context.Context) (*ConfigurationModel, error) {
@@ -447,6 +492,18 @@ func (_c *CreditCreate) SaveModel(ctx context.Context) (*CreditModel, error) {
 func (_u *CreditUpdateOne) SaveModel(ctx context.Context) (*CreditModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromCredit(_m), err
+}
+
+func (_u *CreditUpdateOne) SetModel(m *CreditModel) *CreditUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetKind(m.Kind)
+	_u.SetRole(m.Role)
+	if m.SortOrder == nil {
+		_u.ClearSortOrder()
+	} else {
+		_u.SetSortOrder(*m.SortOrder)
+	}
+	return _u
 }
 
 func (_q *CreditQuery) OnlyModel(ctx context.Context) (*CreditModel, error) {
@@ -535,6 +592,27 @@ func (_c *DeviceCreate) SaveModel(ctx context.Context) (*DeviceModel, error) {
 func (_u *DeviceUpdateOne) SaveModel(ctx context.Context) (*DeviceModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromDevice(_m), err
+}
+
+func (_u *DeviceUpdateOne) SetModel(m *DeviceModel) *DeviceUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetClientID(m.ClientID)
+	_u.SetName(m.Name)
+	_u.SetCustomName(m.CustomName)
+	_u.SetAppName(m.AppName)
+	_u.SetAppVersion(m.AppVersion)
+	_u.SetIconURL(m.IconURL)
+	_u.SetPlayableMediaTypes(m.PlayableMediaTypes)
+	_u.SetSupportedCommands(m.SupportedCommands)
+	_u.SetProfile(m.Profile)
+	_u.SetSupportsMediaControl(m.SupportsMediaControl)
+	_u.SetSupportsPersistentIdentifier(m.SupportsPersistentIdentifier)
+	if m.LastActivityAt == nil {
+		_u.ClearLastActivityAt()
+	} else {
+		_u.SetLastActivityAt(*m.LastActivityAt)
+	}
+	return _u
 }
 
 func (_q *DeviceQuery) OnlyModel(ctx context.Context) (*DeviceModel, error) {
@@ -631,6 +709,25 @@ func (_u *DisplayPreferencesUpdateOne) SaveModel(ctx context.Context) (*DisplayP
 	return fromDisplayPreferences(_m), err
 }
 
+func (_u *DisplayPreferencesUpdateOne) SetModel(m *DisplayPreferencesModel) *DisplayPreferencesUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetReferenceID(m.ReferenceID)
+	_u.SetClient(m.Client)
+	_u.SetViewType(m.ViewType)
+	_u.SetSortBy(m.SortBy)
+	_u.SetIndexBy(m.IndexBy)
+	_u.SetSortOrder(m.SortOrder)
+	_u.SetScrollDirection(m.ScrollDirection)
+	_u.SetRememberIndexing(m.RememberIndexing)
+	_u.SetRememberSorting(m.RememberSorting)
+	_u.SetShowBackdrop(m.ShowBackdrop)
+	_u.SetShowSidebar(m.ShowSidebar)
+	_u.SetPrimaryImageHeight(m.PrimaryImageHeight)
+	_u.SetPrimaryImageWidth(m.PrimaryImageWidth)
+	_u.SetCustomPrefs(m.CustomPrefs)
+	return _u
+}
+
 func (_q *DisplayPreferencesQuery) OnlyModel(ctx context.Context) (*DisplayPreferencesModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromDisplayPreferences(_m), err
@@ -695,6 +792,12 @@ func (_c *GenreCreate) SaveModel(ctx context.Context) (*GenreModel, error) {
 func (_u *GenreUpdateOne) SaveModel(ctx context.Context) (*GenreModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromGenre(_m), err
+}
+
+func (_u *GenreUpdateOne) SetModel(m *GenreModel) *GenreUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetName(m.Name)
+	return _u
 }
 
 func (_q *GenreQuery) OnlyModel(ctx context.Context) (*GenreModel, error) {
@@ -769,6 +872,15 @@ func (_c *ImageCreate) SaveModel(ctx context.Context) (*ImageModel, error) {
 func (_u *ImageUpdateOne) SaveModel(ctx context.Context) (*ImageModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromImage(_m), err
+}
+
+func (_u *ImageUpdateOne) SetModel(m *ImageModel) *ImageUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetKind(m.Kind)
+	_u.SetIndex(m.Index)
+	_u.SetURL(m.URL)
+	_u.SetTag(m.Tag)
+	return _u
 }
 
 func (_q *ImageQuery) OnlyModel(ctx context.Context) (*ImageModel, error) {
@@ -913,6 +1025,73 @@ func (_u *ItemUpdateOne) SaveModel(ctx context.Context) (*ItemModel, error) {
 	return fromItem(_m), err
 }
 
+func (_u *ItemUpdateOne) SetModel(m *ItemModel) *ItemUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetKind(m.Kind)
+	_u.SetKey(m.Key)
+	_u.SetName(m.Name)
+	_u.SetSortName(m.SortName)
+	if m.DeletedAt == nil {
+		_u.ClearDeletedAt()
+	} else {
+		_u.SetDeletedAt(*m.DeletedAt)
+	}
+	_u.SetOverview(m.Overview)
+	_u.SetLockData(m.LockData)
+	if m.PremiereDate == nil {
+		_u.ClearPremiereDate()
+	} else {
+		_u.SetPremiereDate(*m.PremiereDate)
+	}
+	if m.EndDate == nil {
+		_u.ClearEndDate()
+	} else {
+		_u.SetEndDate(*m.EndDate)
+	}
+	if m.DateModified == nil {
+		_u.ClearDateModified()
+	} else {
+		_u.SetDateModified(*m.DateModified)
+	}
+	if m.ProductionYear == nil {
+		_u.ClearProductionYear()
+	} else {
+		_u.SetProductionYear(*m.ProductionYear)
+	}
+	_u.SetOfficialRating(m.OfficialRating)
+	if m.ParentalRating == nil {
+		_u.ClearParentalRating()
+	} else {
+		_u.SetParentalRating(*m.ParentalRating)
+	}
+	if m.CommunityRating == nil {
+		_u.ClearCommunityRating()
+	} else {
+		_u.SetCommunityRating(*m.CommunityRating)
+	}
+	if m.RunTimeTicks == nil {
+		_u.ClearRunTimeTicks()
+	} else {
+		_u.SetRunTimeTicks(*m.RunTimeTicks)
+	}
+	if m.IndexNumber == nil {
+		_u.ClearIndexNumber()
+	} else {
+		_u.SetIndexNumber(*m.IndexNumber)
+	}
+	if m.ParentIndexNumber == nil {
+		_u.ClearParentIndexNumber()
+	} else {
+		_u.SetParentIndexNumber(*m.ParentIndexNumber)
+	}
+	_u.SetStatus(m.Status)
+	_u.SetProviderIds(m.ProviderIds)
+	_u.SetTags(m.Tags)
+	_u.SetTaglines(m.Taglines)
+	_u.SetLockedFields(m.LockedFields)
+	return _u
+}
+
 func (_q *ItemQuery) OnlyModel(ctx context.Context) (*ItemModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromItem(_m), err
@@ -1017,6 +1196,55 @@ func (_u *ItemSourceUpdateOne) SaveModel(ctx context.Context) (*ItemSourceModel,
 	return fromItemSource(_m), err
 }
 
+func (_u *ItemSourceUpdateOne) SetModel(m *ItemSourceModel) *ItemSourceUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetName(m.Name)
+	_u.SetPath(m.Path)
+	_u.SetContainer(m.Container)
+	if m.Size == nil {
+		_u.ClearSize()
+	} else {
+		_u.SetSize(*m.Size)
+	}
+	if m.RunTimeTicks == nil {
+		_u.ClearRunTimeTicks()
+	} else {
+		_u.SetRunTimeTicks(*m.RunTimeTicks)
+	}
+	if m.Bitrate == nil {
+		_u.ClearBitrate()
+	} else {
+		_u.SetBitrate(*m.Bitrate)
+	}
+	if m.DateModified == nil {
+		_u.ClearDateModified()
+	} else {
+		_u.SetDateModified(*m.DateModified)
+	}
+	if m.ProbedAt == nil {
+		_u.ClearProbedAt()
+	} else {
+		_u.SetProbedAt(*m.ProbedAt)
+	}
+	if m.SegmentsDetectedAt == nil {
+		_u.ClearSegmentsDetectedAt()
+	} else {
+		_u.SetSegmentsDetectedAt(*m.SegmentsDetectedAt)
+	}
+	if m.ExternalID == nil {
+		_u.ClearExternalID()
+	} else {
+		_u.SetExternalID(*m.ExternalID)
+	}
+	if m.ExternalFileID == nil {
+		_u.ClearExternalFileID()
+	} else {
+		_u.SetExternalFileID(*m.ExternalFileID)
+	}
+	_u.SetLyrics(m.Lyrics)
+	return _u
+}
+
 func (_q *ItemSourceQuery) OnlyModel(ctx context.Context) (*ItemSourceModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromItemSource(_m), err
@@ -1083,6 +1311,12 @@ func (_c *KeyframeIndexCreate) SaveModel(ctx context.Context) (*KeyframeIndexMod
 func (_u *KeyframeIndexUpdateOne) SaveModel(ctx context.Context) (*KeyframeIndexModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromKeyframeIndex(_m), err
+}
+
+func (_u *KeyframeIndexUpdateOne) SetModel(m *KeyframeIndexModel) *KeyframeIndexUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetTicks(m.Ticks)
+	return _u
 }
 
 func (_q *KeyframeIndexQuery) OnlyModel(ctx context.Context) (*KeyframeIndexModel, error) {
@@ -1159,6 +1393,14 @@ func (_u *LibraryUpdateOne) SaveModel(ctx context.Context) (*LibraryModel, error
 	return fromLibrary(_m), err
 }
 
+func (_u *LibraryUpdateOne) SetModel(m *LibraryModel) *LibraryUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetName(m.Name)
+	_u.SetCollectionType(m.CollectionType)
+	_u.SetLocations(m.Locations)
+	return _u
+}
+
 func (_q *LibraryQuery) OnlyModel(ctx context.Context) (*LibraryModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromLibrary(_m), err
@@ -1231,6 +1473,11 @@ func (_c *LibraryItemCreate) SaveModel(ctx context.Context) (*LibraryItemModel, 
 func (_u *LibraryItemUpdateOne) SaveModel(ctx context.Context) (*LibraryItemModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromLibraryItem(_m), err
+}
+
+func (_u *LibraryItemUpdateOne) SetModel(m *LibraryItemModel) *LibraryItemUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	return _u
 }
 
 func (_q *LibraryItemQuery) OnlyModel(ctx context.Context) (*LibraryItemModel, error) {
@@ -1383,6 +1630,52 @@ func (_u *LibraryOptionsUpdateOne) SaveModel(ctx context.Context) (*LibraryOptio
 	return fromLibraryOptions(_m), err
 }
 
+func (_u *LibraryOptionsUpdateOne) SetModel(m *LibraryOptionsModel) *LibraryOptionsUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetEnabled(m.Enabled)
+	_u.SetEnablePhotos(m.EnablePhotos)
+	_u.SetEnableRealtimeMonitor(m.EnableRealtimeMonitor)
+	_u.SetEnableLufsScan(m.EnableLufsScan)
+	_u.SetEnableChapterImageExtraction(m.EnableChapterImageExtraction)
+	_u.SetExtractChapterImagesDuringLibraryScan(m.ExtractChapterImagesDuringLibraryScan)
+	_u.SetEnableTrickplayImageExtraction(m.EnableTrickplayImageExtraction)
+	_u.SetExtractTrickplayImagesDuringLibraryScan(m.ExtractTrickplayImagesDuringLibraryScan)
+	_u.SetSaveLocalMetadata(m.SaveLocalMetadata)
+	_u.SetEnableInternetProviders(m.EnableInternetProviders)
+	_u.SetEnableAutomaticSeriesGrouping(m.EnableAutomaticSeriesGrouping)
+	_u.SetEnableEmbeddedTitles(m.EnableEmbeddedTitles)
+	_u.SetEnableEmbeddedExtrasTitles(m.EnableEmbeddedExtrasTitles)
+	_u.SetEnableEmbeddedEpisodeInfos(m.EnableEmbeddedEpisodeInfos)
+	_u.SetSkipSubtitlesIfEmbeddedSubtitlesPresent(m.SkipSubtitlesIfEmbeddedSubtitlesPresent)
+	_u.SetSkipSubtitlesIfAudioTrackMatches(m.SkipSubtitlesIfAudioTrackMatches)
+	_u.SetRequirePerfectSubtitleMatch(m.RequirePerfectSubtitleMatch)
+	_u.SetSaveSubtitlesWithMedia(m.SaveSubtitlesWithMedia)
+	_u.SetSaveLyricsWithMedia(m.SaveLyricsWithMedia)
+	_u.SetSaveTrickplayWithMedia(m.SaveTrickplayWithMedia)
+	_u.SetPreferNonstandardArtistsTag(m.PreferNonstandardArtistsTag)
+	_u.SetUseCustomTagDelimiters(m.UseCustomTagDelimiters)
+	_u.SetAutomaticallyAddToCollection(m.AutomaticallyAddToCollection)
+	_u.SetAutomaticRefreshIntervalDays(m.AutomaticRefreshIntervalDays)
+	_u.SetPreferredMetadataLanguage(m.PreferredMetadataLanguage)
+	_u.SetMetadataCountryCode(m.MetadataCountryCode)
+	_u.SetSeasonZeroDisplayName(m.SeasonZeroDisplayName)
+	_u.SetAllowEmbeddedSubtitles(m.AllowEmbeddedSubtitles)
+	_u.SetMetadataSavers(m.MetadataSavers)
+	_u.SetDisabledLocalMetadataReaders(m.DisabledLocalMetadataReaders)
+	_u.SetLocalMetadataReaderOrder(m.LocalMetadataReaderOrder)
+	_u.SetDisabledSubtitleFetchers(m.DisabledSubtitleFetchers)
+	_u.SetSubtitleFetcherOrder(m.SubtitleFetcherOrder)
+	_u.SetDisabledMediaSegmentProviders(m.DisabledMediaSegmentProviders)
+	_u.SetMediaSegmentProviderOrder(m.MediaSegmentProviderOrder)
+	_u.SetSubtitleDownloadLanguages(m.SubtitleDownloadLanguages)
+	_u.SetDisabledLyricFetchers(m.DisabledLyricFetchers)
+	_u.SetLyricFetcherOrder(m.LyricFetcherOrder)
+	_u.SetCustomTagDelimiters(m.CustomTagDelimiters)
+	_u.SetDelimiterWhitelist(m.DelimiterWhitelist)
+	_u.SetTypeOptions(m.TypeOptions)
+	return _u
+}
+
 func (_q *LibraryOptionsQuery) OnlyModel(ctx context.Context) (*LibraryOptionsModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromLibraryOptions(_m), err
@@ -1459,6 +1752,18 @@ func (_u *LibrarySourceUpdateOne) SaveModel(ctx context.Context) (*LibrarySource
 	return fromLibrarySource(_m), err
 }
 
+func (_u *LibrarySourceUpdateOne) SetModel(m *LibrarySourceModel) *LibrarySourceUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetTagFilter(m.TagFilter)
+	if m.LastSyncedAt == nil {
+		_u.ClearLastSyncedAt()
+	} else {
+		_u.SetLastSyncedAt(*m.LastSyncedAt)
+	}
+	_u.SetLastError(m.LastError)
+	return _u
+}
+
 func (_q *LibrarySourceQuery) OnlyModel(ctx context.Context) (*LibrarySourceModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromLibrarySource(_m), err
@@ -1531,6 +1836,15 @@ func (_c *MediaSegmentCreate) SaveModel(ctx context.Context) (*MediaSegmentModel
 func (_u *MediaSegmentUpdateOne) SaveModel(ctx context.Context) (*MediaSegmentModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromMediaSegment(_m), err
+}
+
+func (_u *MediaSegmentUpdateOne) SetModel(m *MediaSegmentModel) *MediaSegmentUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetKind(m.Kind)
+	_u.SetOrigin(m.Origin)
+	_u.SetStartTicks(m.StartTicks)
+	_u.SetEndTicks(m.EndTicks)
+	return _u
 }
 
 func (_q *MediaSegmentQuery) OnlyModel(ctx context.Context) (*MediaSegmentModel, error) {
@@ -1635,6 +1949,57 @@ func (_u *MediaStreamUpdateOne) SaveModel(ctx context.Context) (*MediaStreamMode
 	return fromMediaStream(_m), err
 }
 
+func (_u *MediaStreamUpdateOne) SetModel(m *MediaStreamModel) *MediaStreamUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetKind(m.Kind)
+	if m.VideoRangeType == nil {
+		_u.ClearVideoRangeType()
+	} else {
+		_u.SetVideoRangeType(*m.VideoRangeType)
+	}
+	_u.SetIndex(m.Index)
+	_u.SetCodec(m.Codec)
+	_u.SetProfile(m.Profile)
+	_u.SetLanguage(m.Language)
+	_u.SetTitle(m.Title)
+	_u.SetPixelFormat(m.PixelFormat)
+	if m.BitRate == nil {
+		_u.ClearBitRate()
+	} else {
+		_u.SetBitRate(*m.BitRate)
+	}
+	if m.Channels == nil {
+		_u.ClearChannels()
+	} else {
+		_u.SetChannels(*m.Channels)
+	}
+	if m.SampleRate == nil {
+		_u.ClearSampleRate()
+	} else {
+		_u.SetSampleRate(*m.SampleRate)
+	}
+	if m.Width == nil {
+		_u.ClearWidth()
+	} else {
+		_u.SetWidth(*m.Width)
+	}
+	if m.Height == nil {
+		_u.ClearHeight()
+	} else {
+		_u.SetHeight(*m.Height)
+	}
+	if m.Level == nil {
+		_u.ClearLevel()
+	} else {
+		_u.SetLevel(*m.Level)
+	}
+	_u.SetIsDefault(m.IsDefault)
+	_u.SetIsForced(m.IsForced)
+	_u.SetIsInterlaced(m.IsInterlaced)
+	_u.SetIsAnamorphic(m.IsAnamorphic)
+	return _u
+}
+
 func (_q *MediaStreamQuery) OnlyModel(ctx context.Context) (*MediaStreamModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromMediaStream(_m), err
@@ -1701,6 +2066,13 @@ func (_c *PersonCreate) SaveModel(ctx context.Context) (*PersonModel, error) {
 func (_u *PersonUpdateOne) SaveModel(ctx context.Context) (*PersonModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromPerson(_m), err
+}
+
+func (_u *PersonUpdateOne) SetModel(m *PersonModel) *PersonUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetName(m.Name)
+	_u.SetImageURL(m.ImageURL)
+	return _u
 }
 
 func (_q *PersonQuery) OnlyModel(ctx context.Context) (*PersonModel, error) {
@@ -1781,6 +2153,13 @@ func (_u *PlaylistUpdateOne) SaveModel(ctx context.Context) (*PlaylistModel, err
 	return fromPlaylist(_m), err
 }
 
+func (_u *PlaylistUpdateOne) SetModel(m *PlaylistModel) *PlaylistUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetMediaType(m.MediaType)
+	_u.SetOpenAccess(m.OpenAccess)
+	return _u
+}
+
 func (_q *PlaylistQuery) OnlyModel(ctx context.Context) (*PlaylistModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromPlaylist(_m), err
@@ -1853,6 +2232,12 @@ func (_u *PlaylistEntryUpdateOne) SaveModel(ctx context.Context) (*PlaylistEntry
 	return fromPlaylistEntry(_m), err
 }
 
+func (_u *PlaylistEntryUpdateOne) SetModel(m *PlaylistEntryModel) *PlaylistEntryUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetSortOrder(m.SortOrder)
+	return _u
+}
+
 func (_q *PlaylistEntryQuery) OnlyModel(ctx context.Context) (*PlaylistEntryModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromPlaylistEntry(_m), err
@@ -1923,6 +2308,12 @@ func (_c *PlaylistShareCreate) SaveModel(ctx context.Context) (*PlaylistShareMod
 func (_u *PlaylistShareUpdateOne) SaveModel(ctx context.Context) (*PlaylistShareModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromPlaylistShare(_m), err
+}
+
+func (_u *PlaylistShareUpdateOne) SetModel(m *PlaylistShareModel) *PlaylistShareUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetCanEdit(m.CanEdit)
+	return _u
 }
 
 func (_q *PlaylistShareQuery) OnlyModel(ctx context.Context) (*PlaylistShareModel, error) {
@@ -2005,6 +2396,19 @@ func (_c *QuickConnectRequestCreate) SaveModel(ctx context.Context) (*QuickConne
 func (_u *QuickConnectRequestUpdateOne) SaveModel(ctx context.Context) (*QuickConnectRequestModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromQuickConnectRequest(_m), err
+}
+
+func (_u *QuickConnectRequestUpdateOne) SetModel(m *QuickConnectRequestModel) *QuickConnectRequestUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetSecret(m.Secret)
+	_u.SetCode(m.Code)
+	_u.SetDeviceID(m.DeviceID)
+	_u.SetDeviceName(m.DeviceName)
+	_u.SetAppName(m.AppName)
+	_u.SetAppVersion(m.AppVersion)
+	_u.SetRemoteAddress(m.RemoteAddress)
+	_u.SetExpiresAt(m.ExpiresAt)
+	return _u
 }
 
 func (_q *QuickConnectRequestQuery) OnlyModel(ctx context.Context) (*QuickConnectRequestModel, error) {
@@ -2091,6 +2495,16 @@ func (_u *ReportUpdateOne) SaveModel(ctx context.Context) (*ReportModel, error) 
 	return fromReport(_m), err
 }
 
+func (_u *ReportUpdateOne) SetModel(m *ReportModel) *ReportUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetKind(m.Kind)
+	_u.SetOrigin(m.Origin)
+	_u.SetNote(m.Note)
+	_u.SetStatus(m.Status)
+	_u.SetAttempt(m.Attempt)
+	return _u
+}
+
 func (_q *ReportQuery) OnlyModel(ctx context.Context) (*ReportModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromReport(_m), err
@@ -2169,6 +2583,17 @@ func (_u *RequestUpdateOne) SaveModel(ctx context.Context) (*RequestModel, error
 	return fromRequest(_m), err
 }
 
+func (_u *RequestUpdateOne) SetModel(m *RequestModel) *RequestUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetKey(m.Key)
+	_u.SetKind(m.Kind)
+	_u.SetTmdbID(m.TmdbID)
+	_u.SetTvdbID(m.TvdbID)
+	_u.SetName(m.Name)
+	_u.SetStatus(m.Status)
+	return _u
+}
+
 func (_q *RequestQuery) OnlyModel(ctx context.Context) (*RequestModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromRequest(_m), err
@@ -2239,6 +2664,18 @@ func (_c *RequestSubmissionCreate) SaveModel(ctx context.Context) (*RequestSubmi
 func (_u *RequestSubmissionUpdateOne) SaveModel(ctx context.Context) (*RequestSubmissionModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromRequestSubmission(_m), err
+}
+
+func (_u *RequestSubmissionUpdateOne) SetModel(m *RequestSubmissionModel) *RequestSubmissionUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetKey(m.Key)
+	if m.AcceptedAt == nil {
+		_u.ClearAcceptedAt()
+	} else {
+		_u.SetAcceptedAt(*m.AcceptedAt)
+	}
+	_u.SetLastError(m.LastError)
+	return _u
 }
 
 func (_q *RequestSubmissionQuery) OnlyModel(ctx context.Context) (*RequestSubmissionModel, error) {
@@ -2353,6 +2790,37 @@ func (_u *SessionUpdateOne) SaveModel(ctx context.Context) (*SessionModel, error
 	return fromSession(_m), err
 }
 
+func (_u *SessionUpdateOne) SetModel(m *SessionModel) *SessionUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetAccessToken(m.AccessToken)
+	_u.SetRemoteEndpoint(m.RemoteEndpoint)
+	if m.LastActivityAt == nil {
+		_u.ClearLastActivityAt()
+	} else {
+		_u.SetLastActivityAt(*m.LastActivityAt)
+	}
+	if m.RevokedAt == nil {
+		_u.ClearRevokedAt()
+	} else {
+		_u.SetRevokedAt(*m.RevokedAt)
+	}
+	_u.SetPositionTicks(m.PositionTicks)
+	_u.SetPlayMethod(m.PlayMethod)
+	_u.SetIsPaused(m.IsPaused)
+	if m.PlayingAt == nil {
+		_u.ClearPlayingAt()
+	} else {
+		_u.SetPlayingAt(*m.PlayingAt)
+	}
+	_u.SetPlaybackPlan(m.PlaybackPlan)
+	if m.ViewingAt == nil {
+		_u.ClearViewingAt()
+	} else {
+		_u.SetViewingAt(*m.ViewingAt)
+	}
+	return _u
+}
+
 func (_q *SessionQuery) OnlyModel(ctx context.Context) (*SessionModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromSession(_m), err
@@ -2451,6 +2919,36 @@ func (_u *SourceUpdateOne) SaveModel(ctx context.Context) (*SourceModel, error) 
 	return fromSource(_m), err
 }
 
+func (_u *SourceUpdateOne) SetModel(m *SourceModel) *SourceUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetName(m.Name)
+	_u.SetURL(m.URL)
+	_u.SetAPIKeyVariable(m.APIKeyVariable)
+	_u.SetKind(m.Kind)
+	_u.SetVersion(m.Version)
+	if m.ContactedAt == nil {
+		_u.ClearContactedAt()
+	} else {
+		_u.SetContactedAt(*m.ContactedAt)
+	}
+	_u.SetLastError(m.LastError)
+	if m.RequestProfileID == nil {
+		_u.ClearRequestProfileID()
+	} else {
+		_u.SetRequestProfileID(*m.RequestProfileID)
+	}
+	_u.SetRequestRootFolder(m.RequestRootFolder)
+	_u.SetRequestTag(m.RequestTag)
+	_u.SetWebhookSecret(m.WebhookSecret)
+	if m.WebhookRegisteredAt == nil {
+		_u.ClearWebhookRegisteredAt()
+	} else {
+		_u.SetWebhookRegisteredAt(*m.WebhookRegisteredAt)
+	}
+	_u.SetWebhookError(m.WebhookError)
+	return _u
+}
+
 func (_q *SourceQuery) OnlyModel(ctx context.Context) (*SourceModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromSource(_m), err
@@ -2521,6 +3019,13 @@ func (_u *SourcePathUpdateOne) SaveModel(ctx context.Context) (*SourcePathModel,
 	return fromSourcePath(_m), err
 }
 
+func (_u *SourcePathUpdateOne) SetModel(m *SourcePathModel) *SourcePathUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetRemotePath(m.RemotePath)
+	_u.SetLocalPath(m.LocalPath)
+	return _u
+}
+
 func (_q *SourcePathQuery) OnlyModel(ctx context.Context) (*SourcePathModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromSourcePath(_m), err
@@ -2585,6 +3090,12 @@ func (_c *StudioCreate) SaveModel(ctx context.Context) (*StudioModel, error) {
 func (_u *StudioUpdateOne) SaveModel(ctx context.Context) (*StudioModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromStudio(_m), err
+}
+
+func (_u *StudioUpdateOne) SetModel(m *StudioModel) *StudioUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetName(m.Name)
+	return _u
 }
 
 func (_q *StudioQuery) OnlyModel(ctx context.Context) (*StudioModel, error) {
@@ -2681,6 +3192,33 @@ func (_u *SyncPlayGroupUpdateOne) SaveModel(ctx context.Context) (*SyncPlayGroup
 	return fromSyncPlayGroup(_m), err
 }
 
+func (_u *SyncPlayGroupUpdateOne) SetModel(m *SyncPlayGroupModel) *SyncPlayGroupUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetName(m.Name)
+	_u.SetState(m.State)
+	_u.SetPositionTicks(m.PositionTicks)
+	_u.SetRunTimeTicks(m.RunTimeTicks)
+	_u.SetLastActivity(m.LastActivity)
+	_u.SetPlayingIndex(m.PlayingIndex)
+	_u.SetShuffleMode(m.ShuffleMode)
+	_u.SetRepeatMode(m.RepeatMode)
+	_u.SetQueueChangedAt(m.QueueChangedAt)
+	_u.SetResumePlaying(m.ResumePlaying)
+	if m.WaitingFrom == nil {
+		_u.ClearWaitingFrom()
+	} else {
+		_u.SetWaitingFrom(*m.WaitingFrom)
+	}
+	_u.SetPositionJumped(m.PositionJumped)
+	_u.SetIgnoreBuffering(m.IgnoreBuffering)
+	if m.WaitDeadline == nil {
+		_u.ClearWaitDeadline()
+	} else {
+		_u.SetWaitDeadline(*m.WaitDeadline)
+	}
+	return _u
+}
+
 func (_q *SyncPlayGroupQuery) OnlyModel(ctx context.Context) (*SyncPlayGroupModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromSyncPlayGroup(_m), err
@@ -2757,6 +3295,14 @@ func (_u *SyncPlayGroupMemberUpdateOne) SaveModel(ctx context.Context) (*SyncPla
 	return fromSyncPlayGroupMember(_m), err
 }
 
+func (_u *SyncPlayGroupMemberUpdateOne) SetModel(m *SyncPlayGroupMemberModel) *SyncPlayGroupMemberUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetPing(m.Ping)
+	_u.SetIsBuffering(m.IsBuffering)
+	_u.SetIgnoreWait(m.IgnoreWait)
+	return _u
+}
+
 func (_q *SyncPlayGroupMemberQuery) OnlyModel(ctx context.Context) (*SyncPlayGroupMemberModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromSyncPlayGroupMember(_m), err
@@ -2829,6 +3375,17 @@ func (_c *SyncPlayQueueEntryCreate) SaveModel(ctx context.Context) (*SyncPlayQue
 func (_u *SyncPlayQueueEntryUpdateOne) SaveModel(ctx context.Context) (*SyncPlayQueueEntryModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromSyncPlayQueueEntry(_m), err
+}
+
+func (_u *SyncPlayQueueEntryUpdateOne) SetModel(m *SyncPlayQueueEntryModel) *SyncPlayQueueEntryUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetSortedIndex(m.SortedIndex)
+	if m.ShuffledIndex == nil {
+		_u.ClearShuffledIndex()
+	} else {
+		_u.SetShuffledIndex(*m.ShuffledIndex)
+	}
+	return _u
 }
 
 func (_q *SyncPlayQueueEntryQuery) OnlyModel(ctx context.Context) (*SyncPlayQueueEntryModel, error) {
@@ -2939,6 +3496,41 @@ func (_u *UserUpdateOne) SaveModel(ctx context.Context) (*UserModel, error) {
 	return fromUser(_m), err
 }
 
+func (_u *UserUpdateOne) SetModel(m *UserModel) *UserUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetName(m.Name)
+	_u.SetUsername(m.Username)
+	_u.SetPasswordHash(m.PasswordHash)
+	if m.LastLoginAt == nil {
+		_u.ClearLastLoginAt()
+	} else {
+		_u.SetLastLoginAt(*m.LastLoginAt)
+	}
+	if m.LastActivityAt == nil {
+		_u.ClearLastActivityAt()
+	} else {
+		_u.SetLastActivityAt(*m.LastActivityAt)
+	}
+	if m.OidcIssuer == nil {
+		_u.ClearOidcIssuer()
+	} else {
+		_u.SetOidcIssuer(*m.OidcIssuer)
+	}
+	if m.OidcSubject == nil {
+		_u.ClearOidcSubject()
+	} else {
+		_u.SetOidcSubject(*m.OidcSubject)
+	}
+	_u.SetCanRequest(m.CanRequest)
+	_u.SetRequestsNeedApproval(m.RequestsNeedApproval)
+	if m.RequestQuota == nil {
+		_u.ClearRequestQuota()
+	} else {
+		_u.SetRequestQuota(*m.RequestQuota)
+	}
+	return _u
+}
+
 func (_q *UserQuery) OnlyModel(ctx context.Context) (*UserModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromUser(_m), err
@@ -3039,6 +3631,27 @@ func (_u *UserConfigurationUpdateOne) SaveModel(ctx context.Context) (*UserConfi
 	return fromUserConfiguration(_m), err
 }
 
+func (_u *UserConfigurationUpdateOne) SetModel(m *UserConfigurationModel) *UserConfigurationUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetCastReceiverID(m.CastReceiverID)
+	_u.SetAudioLanguagePreference(m.AudioLanguagePreference)
+	_u.SetSubtitleLanguagePreference(m.SubtitleLanguagePreference)
+	_u.SetPlayDefaultAudioTrack(m.PlayDefaultAudioTrack)
+	_u.SetSubtitleMode(m.SubtitleMode)
+	_u.SetGroupedFolders(m.GroupedFolders)
+	_u.SetOrderedViews(m.OrderedViews)
+	_u.SetLatestItemsExcludes(m.LatestItemsExcludes)
+	_u.SetMyMediaExcludes(m.MyMediaExcludes)
+	_u.SetDisplayMissingEpisodes(m.DisplayMissingEpisodes)
+	_u.SetDisplayCollectionsView(m.DisplayCollectionsView)
+	_u.SetEnableLocalPassword(m.EnableLocalPassword)
+	_u.SetHidePlayedInLatest(m.HidePlayedInLatest)
+	_u.SetRememberAudioSelections(m.RememberAudioSelections)
+	_u.SetRememberSubtitleSelections(m.RememberSubtitleSelections)
+	_u.SetEnableNextEpisodeAutoPlay(m.EnableNextEpisodeAutoPlay)
+	return _u
+}
+
 func (_q *UserConfigurationQuery) OnlyModel(ctx context.Context) (*UserConfigurationModel, error) {
 	_m, err := _q.Only(ctx)
 	return fromUserConfiguration(_m), err
@@ -3121,6 +3734,30 @@ func (_c *UserItemDataCreate) SaveModel(ctx context.Context) (*UserItemDataModel
 func (_u *UserItemDataUpdateOne) SaveModel(ctx context.Context) (*UserItemDataModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromUserItemData(_m), err
+}
+
+func (_u *UserItemDataUpdateOne) SetModel(m *UserItemDataModel) *UserItemDataUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetPlayed(m.Played)
+	_u.SetIsFavorite(m.IsFavorite)
+	_u.SetPlayCount(m.PlayCount)
+	_u.SetPlaybackPositionTicks(m.PlaybackPositionTicks)
+	if m.Rating == nil {
+		_u.ClearRating()
+	} else {
+		_u.SetRating(*m.Rating)
+	}
+	if m.Likes == nil {
+		_u.ClearLikes()
+	} else {
+		_u.SetLikes(*m.Likes)
+	}
+	if m.LastPlayedAt == nil {
+		_u.ClearLastPlayedAt()
+	} else {
+		_u.SetLastPlayedAt(*m.LastPlayedAt)
+	}
+	return _u
 }
 
 func (_q *UserItemDataQuery) OnlyModel(ctx context.Context) (*UserItemDataModel, error) {
@@ -3277,6 +3914,63 @@ func (_c *UserPolicyCreate) SaveModel(ctx context.Context) (*UserPolicyModel, er
 func (_u *UserPolicyUpdateOne) SaveModel(ctx context.Context) (*UserPolicyModel, error) {
 	_m, err := _u.Save(ctx)
 	return fromUserPolicy(_m), err
+}
+
+func (_u *UserPolicyUpdateOne) SetModel(m *UserPolicyModel) *UserPolicyUpdateOne {
+	_u.SetCreatedAt(m.CreatedAt)
+	_u.SetIsAdministrator(m.IsAdministrator)
+	_u.SetIsHidden(m.IsHidden)
+	_u.SetIsDisabled(m.IsDisabled)
+	_u.SetEnableCollectionManagement(m.EnableCollectionManagement)
+	_u.SetEnableSubtitleManagement(m.EnableSubtitleManagement)
+	_u.SetEnableLyricManagement(m.EnableLyricManagement)
+	_u.SetEnableUserPreferenceAccess(m.EnableUserPreferenceAccess)
+	_u.SetEnableRemoteControlOfOtherUsers(m.EnableRemoteControlOfOtherUsers)
+	_u.SetEnableSharedDeviceControl(m.EnableSharedDeviceControl)
+	_u.SetEnableRemoteAccess(m.EnableRemoteAccess)
+	_u.SetEnableLiveTvManagement(m.EnableLiveTvManagement)
+	_u.SetEnableLiveTvAccess(m.EnableLiveTvAccess)
+	_u.SetEnableMediaPlayback(m.EnableMediaPlayback)
+	_u.SetEnableAudioPlaybackTranscoding(m.EnableAudioPlaybackTranscoding)
+	_u.SetEnableVideoPlaybackTranscoding(m.EnableVideoPlaybackTranscoding)
+	_u.SetEnablePlaybackRemuxing(m.EnablePlaybackRemuxing)
+	_u.SetForceRemoteSourceTranscoding(m.ForceRemoteSourceTranscoding)
+	_u.SetEnableContentDeletion(m.EnableContentDeletion)
+	_u.SetEnableContentDownloading(m.EnableContentDownloading)
+	_u.SetEnableSyncTranscoding(m.EnableSyncTranscoding)
+	_u.SetEnableMediaConversion(m.EnableMediaConversion)
+	_u.SetEnablePublicSharing(m.EnablePublicSharing)
+	_u.SetEnableAllDevices(m.EnableAllDevices)
+	_u.SetEnableAllChannels(m.EnableAllChannels)
+	_u.SetEnableAllFolders(m.EnableAllFolders)
+	if m.MaxParentalRating == nil {
+		_u.ClearMaxParentalRating()
+	} else {
+		_u.SetMaxParentalRating(*m.MaxParentalRating)
+	}
+	if m.MaxParentalSubRating == nil {
+		_u.ClearMaxParentalSubRating()
+	} else {
+		_u.SetMaxParentalSubRating(*m.MaxParentalSubRating)
+	}
+	_u.SetInvalidLoginAttemptCount(m.InvalidLoginAttemptCount)
+	_u.SetLoginAttemptsBeforeLockout(m.LoginAttemptsBeforeLockout)
+	_u.SetMaxActiveSessions(m.MaxActiveSessions)
+	_u.SetRemoteClientBitrateLimit(m.RemoteClientBitrateLimit)
+	_u.SetAllowedTags(m.AllowedTags)
+	_u.SetBlockedTags(m.BlockedTags)
+	_u.SetAccessSchedules(m.AccessSchedules)
+	_u.SetEnableContentDeletionFromFolders(m.EnableContentDeletionFromFolders)
+	_u.SetEnabledDevices(m.EnabledDevices)
+	_u.SetEnabledChannels(m.EnabledChannels)
+	_u.SetEnabledFolders(m.EnabledFolders)
+	_u.SetBlockedMediaFolders(m.BlockedMediaFolders)
+	_u.SetBlockedChannels(m.BlockedChannels)
+	_u.SetBlockUnratedItems(m.BlockUnratedItems)
+	_u.SetAuthenticationProviderID(m.AuthenticationProviderID)
+	_u.SetPasswordResetProviderID(m.PasswordResetProviderID)
+	_u.SetSyncPlayAccess(m.SyncPlayAccess)
+	return _u
 }
 
 func (_q *UserPolicyQuery) OnlyModel(ctx context.Context) (*UserPolicyModel, error) {

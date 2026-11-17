@@ -267,7 +267,21 @@ func (s *Service) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
 	})
 }
 
-func (s *Service) UpdateOptions(id uuid.UUID) *store.LibraryOptionsUpdate {
-	return s.store.LibraryOptions.Update().
-		Where(optionsmodel.HasLibraryWith(librarymodel.ID(id)))
+func (s *Service) SaveOptions(ctx context.Context, id uuid.UUID, edit func(*Options)) error {
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
+		options, err := tx.LibraryOptions.Query().
+			Where(optionsmodel.HasLibraryWith(librarymodel.ID(id))).
+			ForUpdate().
+			OnlyModel(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to read library options: %w", err)
+		}
+
+		edit(options)
+		if err := tx.LibraryOptions.UpdateOneID(options.ID).SetModel(options).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to update library options: %w", err)
+		}
+
+		return nil
+	})
 }

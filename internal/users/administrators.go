@@ -12,15 +12,20 @@ import (
 	policymodel "github.com/FreekingDean/gojellyfin/internal/store/userpolicy"
 )
 
-type PolicyUpdate = store.UserPolicyUpdate
-
 var ErrLastAdministrator = errors.New("there must be at least one user with administrative access")
 
-func (s *Service) SavePolicy(ctx context.Context, id uuid.UUID, apply func(*PolicyUpdate)) error {
+func (s *Service) SavePolicy(ctx context.Context, id uuid.UUID, edit func(*Policy)) error {
 	return s.keepingAnAdministrator(ctx, func(tx *store.Tx) error {
-		update := tx.UserPolicy.Update().Where(policymodel.HasUserWith(usermodel.ID(id)))
-		apply(update)
-		if err := update.Exec(ctx); err != nil {
+		policy, err := tx.UserPolicy.Query().
+			Where(policymodel.HasUserWith(usermodel.ID(id))).
+			ForUpdate().
+			OnlyModel(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to read user policy: %w", err)
+		}
+
+		edit(policy)
+		if err := tx.UserPolicy.UpdateOneID(policy.ID).SetModel(policy).Exec(ctx); err != nil {
 			return fmt.Errorf("failed to update user policy: %w", err)
 		}
 
