@@ -28,9 +28,9 @@ func (h header) sized() bool {
 }
 
 type reader struct {
-	file  io.ReadSeeker
-	buf   *bufio.Reader
-	at    int64
+	file io.ReadSeeker
+	buf  *bufio.Reader
+	at   int64
 }
 
 func newReader(file io.ReadSeeker) *reader {
