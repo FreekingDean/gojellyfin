@@ -117,6 +117,8 @@ A few cases need attention:
 
 ## Screenshots
 
+The [docs site](https://freekingdean.github.io/gojellyfin/) covers installing, configuring and using gojellyfin. It is built from the Markdown in `docs/`.
+
 The [screenshot gallery](https://freekingdean.github.io/gojellyfin/main/) shows gojellyfin in `jellyfin-web` and the standard Android TV app. The browser suite renders on every merge; emulator screenshots are updated nightly.
 
 ## Contributing

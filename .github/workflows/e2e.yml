@@ -436,10 +436,7 @@ jobs:
             done
             node ../source/e2e/setup/gallery.js render main "$PAGES" "$GITHUB_SHA"
             rm main/comment.md
-            cat > index.html <<'HTML'
-          <!doctype html><meta charset="utf-8"><title>gojellyfin e2e</title><p>The screenshots of <a href="main/">main</a> as it last ran. Reports for open pull requests live under <code>/pr-&lt;number&gt;/</code>.</p>
-          HTML
-            git add -A -- main index.html
+            git add -A -- main
             commit=$(git commit-tree "$(git write-tree)" -m "Publish e2e screenshots for main at $GITHUB_SHA")
             if git push --force-with-lease="gh-pages:$(git rev-parse origin/gh-pages)" origin "$commit:refs/heads/gh-pages"; then
               exit 0

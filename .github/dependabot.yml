@@ -46,3 +46,13 @@ updates:
     groups:
       docker:
         update-types: [minor, patch]
+
+  - package-ecosystem: pip
+    directory: /
+    labels: []
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      docs:
+        update-types: [minor, patch]
