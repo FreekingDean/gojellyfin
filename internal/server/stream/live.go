@@ -251,6 +251,7 @@ func (h *Handler) pictureWindows(r *http.Request, source *items.MediaSource, run
 
 	windows, ok := transcode.SnappedWindows(keyframes, runtime)
 	if !ok {
+		log.Printf("encoding the picture of %s: %d keyframes cannot be cut every %s", source.ID, len(keyframes), time.Duration(transcode.SegmentTicks)*tick)
 		return transcode.EncodedWindows(runtime), false
 	}
 
