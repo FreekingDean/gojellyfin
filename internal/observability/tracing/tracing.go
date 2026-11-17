@@ -27,6 +27,8 @@ const (
 	shutdownTimeout = 5 * time.Second
 )
 
+const tracesPath = "/v1/traces"
+
 type Tracing struct {
 	provider   *sdktrace.TracerProvider
 	propagator propagation.TextMapPropagator
@@ -45,7 +47,7 @@ func New(config env.Config) (*Tracing, error) {
 		return nil, fmt.Errorf("OTEL_EXPORTER_OTLP_ENDPOINT must be an http or https URL such as http://collector:4318, got %q", endpoint)
 	}
 
-	exporter, err := otlptracehttp.New(context.Background(), otlptracehttp.WithEndpointURL(endpoint))
+	exporter, err := otlptracehttp.New(context.Background(), otlptracehttp.WithEndpointURL(tracesURL(parsed)))
 	if err != nil {
 		return nil, err
 	}
@@ -61,6 +63,15 @@ func New(config env.Config) (*Tracing, error) {
 	)
 
 	return tracing, nil
+}
+
+func tracesURL(endpoint *url.URL) string {
+	traces := *endpoint
+	if !strings.HasSuffix(traces.Path, tracesPath) {
+		traces.Path = strings.TrimSuffix(traces.Path, "/") + tracesPath
+	}
+
+	return traces.String()
 }
 
 func describe(config env.Tracing) (*resource.Resource, error) {
