@@ -56,6 +56,22 @@ func ({{ $n.UpdateOneReceiver }} *{{ $n.UpdateOneName }}) SaveModel(ctx context.
 	return from{{ $n.Name }}({{ $receiver }}), err
 }
 
+func ({{ $n.UpdateOneReceiver }} *{{ $n.UpdateOneName }}) SetModel(m *{{ $n.Name }}Model) *{{ $n.UpdateOneName }} {
+	{{- range $f := $n.Fields }}
+		{{- if or $f.Immutable $f.UpdateDefault $f.IsEdgeField (eq $f.Name "updated_at") }}{{ continue }}{{ end }}
+		{{- if $f.NillableValue }}
+			if m.{{ $f.StructField }} == nil {
+				{{ $n.UpdateOneReceiver }}.Clear{{ $f.StructField }}()
+			} else {
+				{{ $n.UpdateOneReceiver }}.Set{{ $f.StructField }}(*m.{{ $f.StructField }})
+			}
+		{{- else }}
+			{{ $n.UpdateOneReceiver }}.Set{{ $f.StructField }}(m.{{ $f.StructField }})
+		{{- end }}
+	{{- end }}
+	return {{ $n.UpdateOneReceiver }}
+}
+
 func ({{ $n.QueryReceiver }} *{{ $n.QueryName }}) OnlyModel(ctx context.Context) (*{{ $n.Name }}Model, error) {
 	{{ $receiver }}, err := {{ $n.QueryReceiver }}.Only(ctx)
 	return from{{ $n.Name }}({{ $receiver }}), err

@@ -23,6 +23,11 @@ type (
 	AccessSchedule = entities.AccessSchedule
 )
 
+const (
+	DefaultAuthenticationProvider = entities.DefaultAuthenticationProvider
+	DefaultPasswordResetProvider  = entities.DefaultPasswordResetProvider
+)
+
 type Service struct {
 	store *store.Client
 }
@@ -159,14 +164,23 @@ func (s *Service) SetPassword(ctx context.Context, id uuid.UUID, passwordHash st
 	return nil
 }
 
-func (s *Service) UpdateConfiguration(id uuid.UUID) *store.UserConfigurationUpdate {
-	return s.store.UserConfiguration.Update().
-		Where(configurationmodel.HasUserWith(usermodel.ID(id)))
-}
+func (s *Service) SaveConfiguration(ctx context.Context, id uuid.UUID, edit func(*Configuration)) error {
+	return s.store.WithTx(ctx, func(tx *store.Tx) error {
+		configuration, err := tx.UserConfiguration.Query().
+			Where(configurationmodel.HasUserWith(usermodel.ID(id))).
+			ForUpdate().
+			OnlyModel(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to read user configuration: %w", err)
+		}
 
-func (s *Service) UpdatePolicy(id uuid.UUID) *store.UserPolicyUpdate {
-	return s.store.UserPolicy.Update().
-		Where(policymodel.HasUserWith(usermodel.ID(id)))
+		edit(configuration)
+		if err := tx.UserConfiguration.UpdateOneID(configuration.ID).SetModel(configuration).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to update user configuration: %w", err)
+		}
+
+		return nil
+	})
 }
 
 func (s *Service) TouchLogin(ctx context.Context, id uuid.UUID) error {

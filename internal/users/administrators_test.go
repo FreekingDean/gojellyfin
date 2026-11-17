@@ -60,7 +60,7 @@ func scratchService(t *testing.T) *Service {
 
 func TestService_KeepsAnAdministrator(t *testing.T) {
 	ctx := context.Background()
-	demote := func(update *PolicyUpdate) { update.SetIsAdministrator(false) }
+	demote := func(policy *Policy) { policy.IsAdministrator = false }
 
 	t.Run("refuses demoting the last administrator", func(t *testing.T) {
 		service := scratchService(t)
@@ -104,7 +104,7 @@ func TestService_KeepsAnAdministrator(t *testing.T) {
 		service := scratchService(t)
 		member := create(t, service, false)
 
-		if err := service.SavePolicy(ctx, member.ID, func(update *PolicyUpdate) { update.SetIsHidden(true) }); err != nil {
+		if err := service.SavePolicy(ctx, member.ID, func(policy *Policy) { policy.IsHidden = true }); err != nil {
 			t.Errorf("SavePolicy = %v, want a member's change allowed", err)
 		}
 		if err := service.DeleteUser(ctx, member.ID); err != nil {

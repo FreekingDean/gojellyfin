@@ -10,16 +10,18 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
+	"go.uber.org/fx"
 
 	"github.com/FreekingDean/gojellyfin/internal/env"
-	"github.com/FreekingDean/gojellyfin/internal/fx"
 	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 )
 
 var Module = fx.Module(
 	"store",
 	fx.Provide(NewStore, (*Store).Client),
-	fx.InvokeStartStop[*Store](),
+	fx.Invoke(func(lifecycle fx.Lifecycle, store *Store) {
+		lifecycle.Append(fx.StartStopHook(store.Start, store.Stop))
+	}),
 )
 
 type Store struct {

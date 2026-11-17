@@ -100,6 +100,21 @@ func (s *Service) read(ctx context.Context, binding Binding) error {
 		return err
 	}
 
+	if err := enqueueTitles(ctx, titles, libraryID, sourceID); err != nil {
+		return err
+	}
+
+	s.activity.Record(ctx, activity.Entry{
+		Name:          fmt.Sprintf("%s read", binding.Source.Name),
+		Kind:          activity.KindLibraryScanCompleted,
+		ShortOverview: fmt.Sprintf("%d titles, %d files", len(titles), len(paths)),
+		Severity:      activity.SeverityInformation,
+	})
+
+	return nil
+}
+
+func enqueueTitles(ctx context.Context, titles []Title, libraryID, sourceID uuid.UUID) error {
 	enqueuing, enqueueCtx := errgroup.WithContext(ctx)
 	enqueuing.SetLimit(enqueueConcurrency)
 
@@ -119,18 +134,7 @@ func (s *Service) read(ctx context.Context, binding Binding) error {
 		})
 	}
 
-	if err := enqueuing.Wait(); err != nil {
-		return err
-	}
-
-	s.activity.Record(ctx, activity.Entry{
-		Name:          fmt.Sprintf("%s read", binding.Source.Name),
-		Kind:          activity.KindLibraryScanCompleted,
-		ShortOverview: fmt.Sprintf("%d titles, %d files", len(titles), len(paths)),
-		Severity:      activity.SeverityInformation,
-	})
-
-	return nil
+	return enqueuing.Wait()
 }
 
 func (s *Service) binding(ctx context.Context, libraryID, sourceID uuid.UUID) (Binding, error) {

@@ -84,52 +84,17 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 		return err
 	}
 
-	var previous []uuid.UUID
-	unheard := false
-	for _, file := range scanned.Files {
-		jobs.Heartbeat(ctx, file.Path)
-
-		owner, err := s.fileOwner(ctx, file.Path)
-		if err != nil {
-			return err
-		}
-		if owner != nil && *owner != item.ID {
-			previous = append(previous, *owner)
-		}
-
-		saved, err := s.SaveSource(ctx, MediaSource{
-			SourceID:       sourceID,
-			ItemID:         item.ID,
-			Path:           file.Path,
-			Name:           filepath.Base(file.Path),
-			DateModified:   &file.DateModified,
-			ExternalID:     file.ExternalID,
-			ExternalFileID: file.ExternalFileID,
-		})
-		if err != nil {
-			return err
-		}
-
-		if NeedsProbe(saved) {
-			enqueue(ctx, jobs.ProbeFile, jobs.With(jobs.ParamSource, saved.ID))
-		}
-		unheard = unheard || saved.SegmentsDetectedAt == nil
+	previous, unheard, err := s.refreshFiles(ctx, sourceID, item.ID, scanned.Files)
+	if err != nil {
+		return err
 	}
 
 	if unheard && item.Kind == itemmodel.KindEpisode && item.ParentID != nil {
 		enqueue(ctx, jobs.DetectSeasonIntros, jobs.With(jobs.ParamSeason, *item.ParentID))
 	}
 
-	for _, reference := range scanned.Images {
-		if err := s.SaveImage(ctx, item.ID, reference.Image()); err != nil {
-			return err
-		}
-	}
-
-	if len(scanned.Genres) > 0 {
-		if err := s.replaceNamed(ctx, item.ID, Metadata{Genres: &scanned.Genres}); err != nil {
-			return err
-		}
+	if err := s.saveImagesAndGenres(ctx, item.ID, scanned); err != nil {
+		return err
 	}
 
 	if err := s.SweepUnreachable(ctx, previous); err != nil {
@@ -145,6 +110,58 @@ func (s *Service) RefreshItem(ctx context.Context, libraryID, sourceID uuid.UUID
 	}
 
 	return s.SaveMembership(ctx, libraryID, sourceID, []uuid.UUID{item.ID})
+}
+
+func (s *Service) refreshFiles(ctx context.Context, sourceID, itemID uuid.UUID, files []ScannedFile) ([]uuid.UUID, bool, error) {
+	var previous []uuid.UUID
+	unheard := false
+	for _, file := range files {
+		jobs.Heartbeat(ctx, file.Path)
+
+		owner, err := s.fileOwner(ctx, file.Path)
+		if err != nil {
+			return nil, false, err
+		}
+		if owner != nil && *owner != itemID {
+			previous = append(previous, *owner)
+		}
+
+		saved, err := s.SaveSource(ctx, MediaSource{
+			SourceID:       sourceID,
+			ItemID:         itemID,
+			Path:           file.Path,
+			Name:           filepath.Base(file.Path),
+			DateModified:   &file.DateModified,
+			ExternalID:     file.ExternalID,
+			ExternalFileID: file.ExternalFileID,
+		})
+		if err != nil {
+			return nil, false, err
+		}
+
+		if NeedsProbe(saved) {
+			enqueue(ctx, jobs.ProbeFile, jobs.With(jobs.ParamSource, saved.ID))
+		}
+		unheard = unheard || saved.SegmentsDetectedAt == nil
+	}
+
+	return previous, unheard, nil
+}
+
+func (s *Service) saveImagesAndGenres(ctx context.Context, itemID uuid.UUID, scanned Scanned) error {
+	for _, reference := range scanned.Images {
+		if err := s.SaveImage(ctx, itemID, reference.Image()); err != nil {
+			return err
+		}
+	}
+
+	if len(scanned.Genres) > 0 {
+		if err := s.replaceNamed(ctx, itemID, Metadata{Genres: &scanned.Genres}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func enqueue(ctx context.Context, name string, params ...jobs.Param) {

@@ -49,23 +49,42 @@ func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[
 		BackdropImageTags: &[]string{},
 	}
 
-	if len(imageTags) > 0 {
-		tags := map[string]*string{}
-		backdrops := []string{}
-		for imageType, tag := range imageTags {
-			if imageType == "Backdrop" {
-				backdrops = append(backdrops, tag)
-				continue
-			}
-			tags[imageType] = &tag
-		}
-		dto.ImageTags = &tags
-		dto.BackdropImageTags = &backdrops
-		if _, ok := tags["Primary"]; ok {
-			dto.PrimaryImageAspectRatio = apiutil.Ptr(primaryAspect(kind))
-		}
+	applyImageTags(&dto, imageTags)
+
+	applyDescription(&dto, item)
+	if items.IsFolder(item.Kind) {
+		dto.ChildCount = apiutil.Ptr(childCount)
+	} else {
+		dto.MediaType = apiutil.Ptr(api.MediaType(items.MediaTypeOf(item.Kind)))
+		dto.HasSubtitles = apiutil.Ptr(held.HasSubtitles)
+		dto.HasLyrics = apiutil.Ptr(held.HasLyrics)
 	}
 
+	return dto
+}
+
+func applyImageTags(dto *api.BaseItemDto, imageTags map[string]string) {
+	if len(imageTags) == 0 {
+		return
+	}
+
+	tags := map[string]*string{}
+	backdrops := []string{}
+	for imageType, tag := range imageTags {
+		if imageType == "Backdrop" {
+			backdrops = append(backdrops, tag)
+			continue
+		}
+		tags[imageType] = &tag
+	}
+	dto.ImageTags = &tags
+	dto.BackdropImageTags = &backdrops
+	if _, ok := tags["Primary"]; ok {
+		dto.PrimaryImageAspectRatio = apiutil.Ptr(primaryAspect(*dto.Type))
+	}
+}
+
+func applyDescription(dto *api.BaseItemDto, item *items.Item) {
 	if item.Overview != "" {
 		dto.Overview = apiutil.Ptr(item.Overview)
 	}
@@ -89,15 +108,6 @@ func ItemDto(item *items.Item, held items.Held, childCount int32, imageTags map[
 		}
 		dto.LockedFields = &locked
 	}
-	if items.IsFolder(item.Kind) {
-		dto.ChildCount = apiutil.Ptr(childCount)
-	} else {
-		dto.MediaType = apiutil.Ptr(api.MediaType(items.MediaTypeOf(item.Kind)))
-		dto.HasSubtitles = apiutil.Ptr(held.HasSubtitles)
-		dto.HasLyrics = apiutil.Ptr(held.HasLyrics)
-	}
-
-	return dto
 }
 
 const (
@@ -154,11 +164,7 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 	for _, item := range records {
 		dto := ItemDto(item, held[item.ID], counts[item.ID], imageTags[item.ID])
 		if source, ok := played[item.ID]; ok {
-			listed := MediaSourceDto(source)
-			listed.Id = apiutil.Ptr(item.ID.String())
-			dto.MediaSources = &[]api.MediaSourceInfo{listed}
-			dto.MediaStreams = listed.MediaStreams
-			dto.Path = listed.Path
+			applySource(&dto, item.ID, source)
 		}
 		datum, ok := userData[item.ID]
 		if !ok {
@@ -176,6 +182,14 @@ func ItemDtos(ctx context.Context, store *items.Service, records []*items.Item) 
 	}
 
 	return converted, nil
+}
+
+func applySource(dto *api.BaseItemDto, id uuid.UUID, source *items.MediaSource) {
+	listed := MediaSourceDto(source)
+	listed.Id = apiutil.Ptr(id.String())
+	dto.MediaSources = &[]api.MediaSourceInfo{listed}
+	dto.MediaStreams = listed.MediaStreams
+	dto.Path = listed.Path
 }
 
 type Cards interface {

@@ -99,16 +99,14 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 		return api.PlaybackInfoResponse{}, err
 	}
 
-	if s.channels != nil {
-		channel, err := s.channels.Channel(ctx, viewer, itemID)
-		if err == nil {
-			return s.tuned(ctx, channel, session)
-		}
-		if !errors.Is(err, channels.ErrNotFound) {
-			return api.PlaybackInfoResponse{}, err
-		}
+	if response, tuned, err := s.channel(ctx, viewer, itemID, session); tuned || err != nil {
+		return response, err
 	}
 
+	return s.itemInfo(ctx, viewer, itemID, question, session)
+}
+
+func (s *Server) itemInfo(ctx context.Context, viewer items.Viewer, itemID uuid.UUID, question asked, session string) (api.PlaybackInfoResponse, error) {
 	item, err := s.items.ItemByID(ctx, viewer, itemID)
 	if err != nil {
 		return api.PlaybackInfoResponse{}, err
@@ -147,13 +145,43 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 		playback.StandsInFor = &item.ID
 	}
 
+	source, err := s.offer(ctx, item, plan, &playback, question, session, from)
+	if err != nil {
+		return api.PlaybackInfoResponse{}, err
+	}
+
+	s.record(ctx, plan, playback)
+	response.MediaSources = &[]api.MediaSourceInfo{source}
+
+	return response, nil
+}
+
+func (s *Server) channel(ctx context.Context, viewer items.Viewer, itemID uuid.UUID, session string) (api.PlaybackInfoResponse, bool, error) {
+	if s.channels == nil {
+		return api.PlaybackInfoResponse{}, false, nil
+	}
+
+	channel, err := s.channels.Channel(ctx, viewer, itemID)
+	if errors.Is(err, channels.ErrNotFound) {
+		return api.PlaybackInfoResponse{}, false, nil
+	}
+	if err != nil {
+		return api.PlaybackInfoResponse{}, false, err
+	}
+
+	response, err := s.tuned(ctx, channel, session)
+
+	return response, true, err
+}
+
+func (s *Server) offer(ctx context.Context, item *items.Item, plan items.Plan, playback *items.Playback, question asked, session string, from int64) (api.MediaSourceInfo, error) {
 	token := auth.AuthorizationFrom(ctx).Token
 	source := dto.MediaSourceDto(plan.Source)
 	switch {
 	case items.IsAudio(item):
-		served(&source, plan, streamURL("Audio", itemID, plan, token, session, question.startTicks))
+		served(&source, plan, streamURL("Audio", item.ID, plan, token, session, question.startTicks))
 	case plan.Change == items.ChangeNone && from == 0:
-		served(&source, plan, streamURL("Videos", itemID, plan, token, session, question.startTicks))
+		served(&source, plan, streamURL("Videos", item.ID, plan, token, session, question.startTicks))
 		source.SupportsDirectPlay = apiutil.Ptr(!question.noDirect)
 		if caller := auth.SessionFrom(ctx); caller != nil {
 			source.ETag = apiutil.Ptr(auth.StreamTag(caller.ID, token, plan.Source.ID))
@@ -161,22 +189,19 @@ func (s *Server) playbackInfo(ctx context.Context, itemID uuid.UUID, question as
 	default:
 		segmented, err := s.segmented(ctx, plan)
 		if err != nil {
-			return api.PlaybackInfoResponse{}, err
+			return api.MediaSourceInfo{}, err
 		}
 		playback.Segmented = segmented
 		if !segmented {
-			served(&source, plan, streamURL("Videos", itemID, plan, token, session, question.startTicks))
+			served(&source, plan, streamURL("Videos", item.ID, plan, token, session, question.startTicks))
 			break
 		}
-		served(&source, plan, playlistURL(itemID, plan, token, session, question.startTicks, from))
+		served(&source, plan, playlistURL(item.ID, plan, token, session, question.startTicks, from))
 		source.TranscodingSubProtocol = apiutil.Ptr(api.MediaStreamProtocolHls)
 		source.TranscodingContainer = apiutil.Ptr(transcode.VideoContainer)
 	}
 
-	s.record(ctx, plan, playback)
-	response.MediaSources = &[]api.MediaSourceInfo{source}
-
-	return response, nil
+	return source, nil
 }
 
 func (s *Server) standIn(ctx context.Context, item *items.Item) (*items.Item, bool, error) {

@@ -25,25 +25,8 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 		SupportedCommands:     &[]api.GeneralCommandType{},
 	}
 
-	if device := session.Device; device != nil {
-		playable := make([]api.MediaType, 0, len(device.PlayableMediaTypes))
-		for _, mediaType := range device.PlayableMediaTypes {
-			playable = append(playable, api.MediaType(mediaType))
-		}
-		commands := make([]api.GeneralCommandType, 0, len(device.SupportedCommands))
-		for _, command := range device.SupportedCommands {
-			commands = append(commands, api.GeneralCommandType(command))
-		}
-
-		dto.Client = apiutil.Ptr(device.AppName)
-		dto.DeviceId = apiutil.Ptr(device.ClientID)
-		dto.DeviceName = apiutil.Ptr(device.Name)
-		dto.ApplicationVersion = apiutil.Ptr(device.AppVersion)
-		dto.SupportsRemoteControl = apiutil.Ptr(device.SupportsMediaControl)
-		dto.SupportsMediaControl = apiutil.Ptr(device.SupportsMediaControl)
-		dto.HasCustomDeviceName = apiutil.Ptr(device.CustomName != "")
-		dto.PlayableMediaTypes = &playable
-		dto.SupportedCommands = &commands
+	if session.Device != nil {
+		applyDevice(dto, session.Device)
 	}
 
 	dto.Capabilities = &api.ClientCapabilitiesDto{
@@ -65,22 +48,7 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 		PlaybackOrder: apiutil.Ptr(api.PlaybackOrderDefault),
 	}
 	if sessions.NowPlaying(session, time.Now()) {
-		item := ItemDto(session.NowPlaying, items.Held{}, 0, nil)
-		if series := seriesOf(session.NowPlaying); series != nil {
-			item.SeriesName = apiutil.Ptr(series.Name)
-			item.SeriesId = &series.ID
-		}
-		dto.NowPlayingItem = &item
-		dto.PlayState.CanSeek = apiutil.Ptr(true)
-		dto.PlayState.IsPaused = apiutil.Ptr(session.IsPaused)
-		dto.PlayState.PositionTicks = apiutil.Ptr(session.PositionTicks)
-		dto.LastPlaybackCheckIn = session.PlayingAt
-		if session.PlayMethod != "" {
-			dto.PlayState.PlayMethod = apiutil.Ptr(api.PlayMethod(session.PlayMethod))
-		}
-		if source, plan := sessions.Planned(session); source != nil {
-			planned(dto, &item, source, plan)
-		}
+		applyNowPlaying(dto, session)
 	}
 
 	if user := session.User; user != nil {
@@ -99,6 +67,46 @@ func SessionDto(session *sessions.Session) *api.SessionInfoDto {
 	}
 
 	return dto
+}
+
+func applyDevice(dto *api.SessionInfoDto, device *sessions.Device) {
+	playable := make([]api.MediaType, 0, len(device.PlayableMediaTypes))
+	for _, mediaType := range device.PlayableMediaTypes {
+		playable = append(playable, api.MediaType(mediaType))
+	}
+	commands := make([]api.GeneralCommandType, 0, len(device.SupportedCommands))
+	for _, command := range device.SupportedCommands {
+		commands = append(commands, api.GeneralCommandType(command))
+	}
+
+	dto.Client = apiutil.Ptr(device.AppName)
+	dto.DeviceId = apiutil.Ptr(device.ClientID)
+	dto.DeviceName = apiutil.Ptr(device.Name)
+	dto.ApplicationVersion = apiutil.Ptr(device.AppVersion)
+	dto.SupportsRemoteControl = apiutil.Ptr(device.SupportsMediaControl)
+	dto.SupportsMediaControl = apiutil.Ptr(device.SupportsMediaControl)
+	dto.HasCustomDeviceName = apiutil.Ptr(device.CustomName != "")
+	dto.PlayableMediaTypes = &playable
+	dto.SupportedCommands = &commands
+}
+
+func applyNowPlaying(dto *api.SessionInfoDto, session *sessions.Session) {
+	item := ItemDto(session.NowPlaying, items.Held{}, 0, nil)
+	if series := seriesOf(session.NowPlaying); series != nil {
+		item.SeriesName = apiutil.Ptr(series.Name)
+		item.SeriesId = &series.ID
+	}
+	dto.NowPlayingItem = &item
+	dto.PlayState.CanSeek = apiutil.Ptr(true)
+	dto.PlayState.IsPaused = apiutil.Ptr(session.IsPaused)
+	dto.PlayState.PositionTicks = apiutil.Ptr(session.PositionTicks)
+	dto.LastPlaybackCheckIn = session.PlayingAt
+	if session.PlayMethod != "" {
+		dto.PlayState.PlayMethod = apiutil.Ptr(api.PlayMethod(session.PlayMethod))
+	}
+	if source, plan := sessions.Planned(session); source != nil {
+		planned(dto, &item, source, plan)
+	}
 }
 
 func planned(dto *api.SessionInfoDto, item *api.BaseItemDto, source *items.MediaSource, plan *items.Playback) {

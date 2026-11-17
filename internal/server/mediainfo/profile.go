@@ -14,6 +14,27 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/transcode"
 )
 
+type declaredProfile struct {
+	DirectPlayProfiles []struct {
+		items.Profile
+		Type string
+	}
+	TranscodingProfiles []struct {
+		Type      string
+		Container string
+		Protocol  string
+	}
+	CodecProfiles []struct {
+		Type       string
+		Codec      string
+		Conditions []struct {
+			Condition string
+			Property  string
+			Value     string
+		}
+	}
+}
+
 func capabilities(profile api.DeviceProfile) items.Capabilities {
 	if len(profile) == 0 {
 		return items.Capabilities{}
@@ -24,32 +45,18 @@ func capabilities(profile api.DeviceProfile) items.Capabilities {
 		return items.Capabilities{}
 	}
 
-	var parsed struct {
-		DirectPlayProfiles []struct {
-			items.Profile
-			Type string
-		}
-		TranscodingProfiles []struct {
-			Type      string
-			Container string
-			Protocol  string
-		}
-		CodecProfiles []struct {
-			Type       string
-			Codec      string
-			Conditions []struct {
-				Condition string
-				Property  string
-				Value     string
-			}
-		}
-	}
+	var parsed declaredProfile
 	if err := json.Unmarshal(declared, &parsed); err != nil {
 		return items.Capabilities{}
 	}
 
-	var video, audio []items.Profile
-	for _, entry := range parsed.DirectPlayProfiles {
+	video, audio := parsed.directPlay()
+
+	return items.Capabilities{Profiles: video, Conditions: parsed.conditions(), Audio: audio, AudioEncodes: parsed.audioEncodes()}
+}
+
+func (p declaredProfile) directPlay() (video, audio []items.Profile) {
+	for _, entry := range p.DirectPlayProfiles {
 		switch {
 		case strings.EqualFold(entry.Type, string(api.DlnaProfileTypeVideo)):
 			video = append(video, entry.Profile)
@@ -58,15 +65,23 @@ func capabilities(profile api.DeviceProfile) items.Capabilities {
 		}
 	}
 
+	return video, audio
+}
+
+func (p declaredProfile) audioEncodes() []string {
 	var encodes []string
-	for _, entry := range parsed.TranscodingProfiles {
+	for _, entry := range p.TranscodingProfiles {
 		if strings.EqualFold(entry.Type, string(api.DlnaProfileTypeAudio)) && !strings.EqualFold(entry.Protocol, "hls") {
 			encodes = append(encodes, strings.ToLower(strings.TrimSpace(entry.Container)))
 		}
 	}
 
-	conditions := make([]items.Condition, 0, len(parsed.CodecProfiles))
-	for _, entry := range parsed.CodecProfiles {
+	return encodes
+}
+
+func (p declaredProfile) conditions() []items.Condition {
+	conditions := make([]items.Condition, 0, len(p.CodecProfiles))
+	for _, entry := range p.CodecProfiles {
 		if !strings.EqualFold(entry.Type, string(api.DlnaProfileTypeVideo)) {
 			continue
 		}
@@ -80,7 +95,7 @@ func capabilities(profile api.DeviceProfile) items.Capabilities {
 		}
 	}
 
-	return items.Capabilities{Profiles: video, Conditions: conditions, Audio: audio, AudioEncodes: encodes}
+	return conditions
 }
 
 func conversion(plan items.Plan) url.Values {

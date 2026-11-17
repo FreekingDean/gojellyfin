@@ -1,7 +1,7 @@
 package env
 
 import (
-	"github.com/FreekingDean/gojellyfin/internal/fx"
+	"go.uber.org/fx"
 )
 
 var Module = fx.Module(

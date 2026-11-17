@@ -181,12 +181,7 @@ func (c Capabilities) plan(source *MediaSource) Plan {
 		return plan
 	}
 
-	var refused []Reason
-	for _, condition := range c.Conditions {
-		if picture != nil && lists(condition.Codec, video) && !condition.holds(picture) {
-			refused = append(refused, refusals[condition.Property])
-		}
-	}
+	refused := c.refused(picture, video)
 	decodes := len(refused) == 0
 
 	named, playsVideo := false, false
@@ -237,6 +232,17 @@ func (c Capabilities) plan(source *MediaSource) Plan {
 	}
 
 	return plan
+}
+
+func (c Capabilities) refused(picture *MediaStream, video string) []Reason {
+	var refused []Reason
+	for _, condition := range c.Conditions {
+		if picture != nil && lists(condition.Codec, video) && !condition.holds(picture) {
+			refused = append(refused, refusals[condition.Property])
+		}
+	}
+
+	return refused
 }
 
 func (c Capabilities) soundPlan(source *MediaSource) Plan {

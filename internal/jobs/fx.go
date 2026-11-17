@@ -1,7 +1,7 @@
 package jobs
 
 import (
-	"github.com/FreekingDean/gojellyfin/internal/fx"
+	"go.uber.org/fx"
 )
 
 var Module = fx.Module(
@@ -16,5 +16,7 @@ var Module = fx.Module(
 var WorkerModule = fx.Module(
 	"jobs/worker",
 	fx.Provide(NewWorker),
-	fx.InvokeStartStop[*Worker](),
+	fx.Invoke(func(lifecycle fx.Lifecycle, worker *Worker) {
+		lifecycle.Append(fx.StartStopHook(worker.Start, worker.Stop))
+	}),
 )

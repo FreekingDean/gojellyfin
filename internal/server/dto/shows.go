@@ -67,6 +67,10 @@ func applyShowFields(ctx context.Context, store *items.Service, records []*items
 		seriesIDs = append(seriesIDs, series.ID)
 	}
 
+	return applySeriesImages(ctx, store, seriesByIndex, seriesIDs, converted)
+}
+
+func applySeriesImages(ctx context.Context, store *items.Service, seriesByIndex map[int]*items.Item, seriesIDs []uuid.UUID, converted []api.BaseItemDto) error {
 	tags, err := store.ImageTagsByItem(ctx, seriesIDs)
 	if err != nil {
 		return err

@@ -30,7 +30,7 @@ func (s *Service) SignInIdentity(ctx context.Context, identity Identity, linkExi
 	if identity.Administrator == nil || user.Policy == nil || user.Policy.IsAdministrator == *identity.Administrator {
 		return user, nil
 	}
-	if err := s.UpdatePolicy(user.ID).SetIsAdministrator(*identity.Administrator).Exec(ctx); err != nil {
+	if err := s.store.UserPolicy.UpdateOneID(user.Policy.ID).SetIsAdministrator(*identity.Administrator).Exec(ctx); err != nil {
 		return nil, fmt.Errorf("failed to sync administrator from identity: %w", err)
 	}
 

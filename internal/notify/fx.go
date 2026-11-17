@@ -1,11 +1,13 @@
 package notify
 
 import (
-	"github.com/FreekingDean/gojellyfin/internal/fx"
+	"go.uber.org/fx"
 )
 
 var Module = fx.Module(
 	"notify",
 	fx.Provide(New),
-	fx.InvokeStartStop[*Service](),
+	fx.Invoke(func(lifecycle fx.Lifecycle, service *Service) {
+		lifecycle.Append(fx.StartStopHook(service.Start, service.Stop))
+	}),
 )

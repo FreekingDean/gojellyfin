@@ -13,7 +13,7 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/libraries"
 	"github.com/FreekingDean/gojellyfin/internal/localization"
 	"github.com/FreekingDean/gojellyfin/internal/metadata"
-	"github.com/FreekingDean/gojellyfin/internal/observability"
+	"github.com/FreekingDean/gojellyfin/internal/observability/tracing"
 	"github.com/FreekingDean/gojellyfin/internal/probe"
 	"github.com/FreekingDean/gojellyfin/internal/reports"
 	"github.com/FreekingDean/gojellyfin/internal/segments"
@@ -23,7 +23,7 @@ import (
 
 var workerModules = fx.Options(
 	env.Module,
-	observability.Module,
+	tracing.Module,
 	store.Module,
 	ffmpeg.Module,
 	activity.Module,
