@@ -27,6 +27,7 @@ var settings = []string{
 	"TEMPORAL_HOSTPORT",
 	"TEMPORAL_NAMESPACE",
 	"TEMPORAL_WORKER_STOP_TIMEOUT",
+	"TEMPORAL_WORKER_ACTIVITIES",
 	"OTEL_EXPORTER_OTLP_ENDPOINT",
 	"OTEL_SERVICE_NAME",
 	"OTEL_RESOURCE_ATTRIBUTES",
@@ -78,6 +79,7 @@ func TestLoad(t *testing.T) {
 			want: Config{
 				DatabaseURL:      testDatabaseURL,
 				Database:         Database{MaxConns: defaultDatabaseConns, ConnMaxLifetime: defaultConnMaxLifetime},
+				Temporal:         Temporal{WorkerActivities: defaultWorkerActivities},
 				HTTPPort:         defaultHTTPPort,
 				Transcoder:       Transcoder{MaxSourceHeight: defaultMaxSourceHeight},
 				CORSOrigins:      []string{},
@@ -103,6 +105,7 @@ func TestLoad(t *testing.T) {
 				"TEMPORAL_HOSTPORT":            "temporal:7233",
 				"TEMPORAL_NAMESPACE":           "gojellyfin_production",
 				"TEMPORAL_WORKER_STOP_TIMEOUT": "5m",
+				"TEMPORAL_WORKER_ACTIVITIES":   "48",
 				"OTEL_EXPORTER_OTLP_ENDPOINT":  "http://collector:4318",
 				"OTEL_SERVICE_NAME":            "gojellyfin-api",
 				"OTEL_RESOURCE_ATTRIBUTES":     "k8s.pod.ip=10.0.0.1",
@@ -128,7 +131,7 @@ func TestLoad(t *testing.T) {
 				CORSOrigins:        []string{"https://one.example", "https://two.example"},
 				TrustedProxies:     []string{"10.244.0.0/16", "fd00::/8"},
 				Transcoder:         Transcoder{Jobs: 4, StallTimeout: 45 * time.Second, MaxSourceHeight: 720},
-				Temporal:           Temporal{HostPort: "temporal:7233", Namespace: "gojellyfin_production", WorkerStopTimeout: 5 * time.Minute},
+				Temporal:           Temporal{HostPort: "temporal:7233", Namespace: "gojellyfin_production", WorkerStopTimeout: 5 * time.Minute, WorkerActivities: 48},
 				Tracing:            Tracing{OTLPEndpoint: "http://collector:4318", ServiceName: "gojellyfin-api", ResourceAttributes: "k8s.pod.ip=10.0.0.1"},
 				TMDB:               TMDB{APIKey: "not-a-real-key"},
 				MediaDirectories:   []string{"/media", "/library"},
@@ -161,6 +164,7 @@ func TestLoad(t *testing.T) {
 			want: Config{
 				DatabaseURL:      testDatabaseURL,
 				Database:         Database{MaxConns: defaultDatabaseConns, ConnMaxLifetime: defaultConnMaxLifetime},
+				Temporal:         Temporal{WorkerActivities: defaultWorkerActivities},
 				HTTPPort:         defaultHTTPPort,
 				Transcoder:       Transcoder{MaxSourceHeight: defaultMaxSourceHeight},
 				CORSOrigins:      []string{},
@@ -226,6 +230,16 @@ func TestLoad(t *testing.T) {
 		{
 			name:    "refuses a negative TEMPORAL_WORKER_STOP_TIMEOUT",
 			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "TEMPORAL_WORKER_STOP_TIMEOUT": "-1m"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses a TEMPORAL_WORKER_ACTIVITIES of zero",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "TEMPORAL_WORKER_ACTIVITIES": "0"},
+			wantErr: true,
+		},
+		{
+			name:    "refuses a TEMPORAL_WORKER_ACTIVITIES that is not a number",
+			env:     map[string]string{"DATABASE_URL": testDatabaseURL, "TEMPORAL_WORKER_ACTIVITIES": "lots"},
 			wantErr: true,
 		},
 		{

@@ -37,6 +37,7 @@ func (s *Prober) FileJob() jobs.Job {
 		Name:        jobs.ProbeFile,
 		Category:    "Library",
 		Description: "Reads the streams of one file.",
+		Queue:       jobs.ProbeQueue,
 		Run:         s.runOne,
 	}
 }
@@ -59,6 +60,7 @@ func (s *Prober) Job() jobs.Job {
 		Name:        jobs.ProbeFiles,
 		Category:    "Library",
 		Description: "Reads the streams of every file it has not seen before.",
+		Queue:       jobs.ProbeQueue,
 		Startable:   true,
 		Run:         s.run,
 		Outstanding: s.outstanding,

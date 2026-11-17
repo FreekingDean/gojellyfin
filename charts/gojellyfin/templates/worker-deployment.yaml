@@ -40,6 +40,8 @@ spec:
             {{- include "gojellyfin.tracingEnv" (dict "root" $ "component" $component) | nindent 12 }}
             - name: TEMPORAL_WORKER_STOP_TIMEOUT
               value: {{ printf "%ds" (int .Values.worker.stopTimeoutSeconds) | quote }}
+            - name: TEMPORAL_WORKER_ACTIVITIES
+              value: {{ .Values.worker.activities | int | toString | quote }}
           {{- with .Values.sources.existingSecret }}
           envFrom:
             - secretRef:

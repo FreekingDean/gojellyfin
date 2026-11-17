@@ -291,6 +291,12 @@ worker:
   # terminationGracePeriodSeconds follows it with 30s to spare, unless
   # worker.pod names one itself.
   stopTimeoutSeconds: 300
+  # TEMPORAL_WORKER_ACTIVITIES. How many activities each task queue runs at
+  # once on one pod. The probe and intro detection queues ignore it and run
+  # one per core, since ffprobe and a decode each saturate one. Past
+  # DATABASE_MAX_CONNS the rest wait on the connection pool rather than on
+  # Temporal.
+  activities: 64
   # A HorizontalPodAutoscaler on cpu. Utilization is measured against
   # resources.requests.cpu, so the chart refuses to render one without it.
   autoscaling:

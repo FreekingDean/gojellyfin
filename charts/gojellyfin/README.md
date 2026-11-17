@@ -178,6 +178,7 @@ use.
 | `worker.replicas` | `1` | Left off the Deployment while `worker.autoscaling.enabled`, so an upgrade does not reset what the autoscaler chose |
 | `worker.resources` | 200m/256Mi, limits 1 cpu/1Gi | The cpu limit is also the worker's slots: it runs `GOMAXPROCS` activities per task queue, and Go reads that off the limit |
 | `worker.stopTimeoutSeconds` | `300` | `TEMPORAL_WORKER_STOP_TIMEOUT`. On SIGTERM the worker stops polling and gives running activities this long to finish; what is left is cancelled and retried on another worker. `terminationGracePeriodSeconds` follows it with 30s to spare unless `worker.pod` names one |
+| `worker.activities` | `64` | `TEMPORAL_WORKER_ACTIVITIES`. Activities each task queue runs at once per pod; the probe and intro detection queues run one per core whatever this says |
 | `worker.autoscaling.enabled` | `false` | A cpu `HorizontalPodAutoscaler`. Needs `worker.resources.requests.cpu`, since utilization is measured against it, and metrics-server in the cluster |
 | `worker.autoscaling.minReplicas`, `.maxReplicas` | `1`, `3` | |
 | `worker.autoscaling.targetCPUUtilizationPercentage` | `80` | Of the request, not the limit |

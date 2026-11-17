@@ -15,12 +15,13 @@ import (
 )
 
 const (
-	defaultHTTPPort        = 8081
-	defaultDatabaseConns   = 20
-	defaultConnMaxLifetime = 30 * time.Minute
-	maxPort                = 65535
-	defaultMaxSourceHeight = 1080
-	maxSourceHeight        = 4320
+	defaultHTTPPort         = 8081
+	defaultDatabaseConns    = 20
+	defaultConnMaxLifetime  = 30 * time.Minute
+	maxPort                 = 65535
+	defaultWorkerActivities = 64
+	defaultMaxSourceHeight  = 1080
+	maxSourceHeight         = 4320
 
 	SourceAPIKeyPrefix = "SOURCE_API_KEY_"
 )
@@ -61,6 +62,7 @@ type Temporal struct {
 	HostPort          string        `mapstructure:"TEMPORAL_HOSTPORT"`
 	Namespace         string        `mapstructure:"TEMPORAL_NAMESPACE"`
 	WorkerStopTimeout time.Duration `mapstructure:"TEMPORAL_WORKER_STOP_TIMEOUT"`
+	WorkerActivities  int           `mapstructure:"TEMPORAL_WORKER_ACTIVITIES"`
 }
 
 type Tracing struct {
@@ -96,6 +98,7 @@ func Load() (Config, error) {
 	v.SetDefault("HTTP_PORT", defaultHTTPPort)
 	v.SetDefault("DATABASE_MAX_CONNS", defaultDatabaseConns)
 	v.SetDefault("DATABASE_CONN_MAX_LIFETIME", defaultConnMaxLifetime)
+	v.SetDefault("TEMPORAL_WORKER_ACTIVITIES", defaultWorkerActivities)
 	v.SetDefault("MEDIA_DIRECTORIES", []string{"/"})
 	v.SetDefault("TRANSCODER_MAX_SOURCE_HEIGHT", defaultMaxSourceHeight)
 
@@ -140,6 +143,9 @@ func (c Config) validate() error {
 	}
 	if c.Temporal.WorkerStopTimeout < 0 {
 		return fmt.Errorf("TEMPORAL_WORKER_STOP_TIMEOUT must be a positive duration such as 5m, got %s", c.Temporal.WorkerStopTimeout)
+	}
+	if c.Temporal.WorkerActivities < 1 {
+		return fmt.Errorf("TEMPORAL_WORKER_ACTIVITIES must be a whole number of at least 1, got %d", c.Temporal.WorkerActivities)
 	}
 	if _, err := time.LoadLocation(c.TimeZone); err != nil {
 		return fmt.Errorf("TZ must name a time zone such as Europe/London, got %q", c.TimeZone)
