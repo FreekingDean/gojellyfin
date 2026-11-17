@@ -173,6 +173,9 @@ func (s Segment) Valid() error {
 }
 
 func (s Segment) Bounds() Window {
+	if s.EncodesVideo() {
+		return Window{Start: 0, End: math.MaxInt64}
+	}
 	if s.Last {
 		return Window{Start: s.Window.Start, End: math.MaxInt64}
 	}
@@ -263,12 +266,23 @@ func (s Segment) videoArgs() []string {
 
 	encode := Spec{MaxHeight: s.MaxHeight, Transfer: s.Transfer, Threads: s.Threads, Preset: s.Preset}.videoEncode()
 	for i, arg := range encode {
-		if arg == "-force_key_frames" {
-			encode[i+1] = fmt.Sprintf("expr:gte(t,%s+n_forced*%d)", seconds(s.Window.Start), keyframeSecs)
+		switch arg {
+		case "-vf":
+			encode[i+1] = s.frames() + "," + encode[i+1]
+		case "-force_key_frames":
+			encode[i+1] = fmt.Sprintf("expr:if(isnan(prev_forced_t),1,gte(t,prev_forced_t+%d))", keyframeSecs)
 		}
 	}
 
 	return append(args, encode...)
+}
+
+func (s Segment) frames() string {
+	if s.Last {
+		return "trim=start=" + seconds(s.Window.Start)
+	}
+
+	return fmt.Sprintf("trim=start=%s:end=%s", seconds(s.Window.Start), seconds(s.Window.End))
 }
 
 func (s Segment) audioArgs() []string {

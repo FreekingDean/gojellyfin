@@ -298,6 +298,42 @@ func TestSegments_EncodedPictureJoinsBackToBack(t *testing.T) {
 	}
 }
 
+func TestSegments_EncodedPictureKeepsEveryFrameAtNTSCRate(t *testing.T) {
+	if !Available() {
+		t.Fatal("ffmpeg is not on PATH")
+	}
+
+	source := filepath.Join(t.TempDir(), "ntsc.avi")
+	generate := exec.Command("ffmpeg", "-nostdin", "-loglevel", "error",
+		"-f", "lavfi", "-i", "testsrc2=size=320x240:rate=30000/1001:duration="+strconv.Itoa(seamSeconds),
+		"-c:v", "mpeg4", "-bf", "2", source)
+	if output, err := generate.CombinedOutput(); err != nil {
+		t.Skipf("this ffmpeg cannot build the fixture: %v: %s", err, output)
+	}
+
+	windows := EncodedWindows(seamSeconds * ticksPerSecond)
+	path := played(t, NewEncoder(4, 0), Segment{Path: source, Track: TrackVideo, Encode: true}, windows)
+
+	frames := timestamps(t, path, "frame=pts_time")
+	if want := len(timestamps(t, source, "frame=pts_time")); len(frames) != want {
+		t.Errorf("decoded %d frames, want %d", len(frames), want)
+	}
+	step := 1001.0 / 30000
+	for i := 1; i < len(frames); i++ {
+		if gap := frames[i][0] - frames[i-1][0]; math.Abs(gap-step) > step/4 {
+			t.Errorf("frame %d follows frame %d by %.4fs, want %.4fs", i, i-1, gap, step)
+		}
+	}
+
+	flags, err := exec.Command("ffprobe", "-v", "error", "-show_entries", "packet=flags", "-of", "csv=p=0", path).Output()
+	if err != nil {
+		t.Fatalf("failed to read the packet flags: %v", err)
+	}
+	if got, want := strings.Count(string(flags), "K"), seamSeconds/keyframeSecs; got < want {
+		t.Errorf("the joined picture holds %d keyframes, want at least %d", got, want)
+	}
+}
+
 func TestSegments_EncodedSoundJoinsBackToBack(t *testing.T) {
 	source := seamSource(t, 4*seamRate, "-c:a", "ac3")
 
