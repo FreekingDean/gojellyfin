@@ -37,12 +37,6 @@ func (s *settings) SetConfiguration(_ context.Context, _ string, value json.RawM
 	return nil
 }
 
-type administrators map[uuid.UUID]bool
-
-func (a administrators) IsAdministrator(_ context.Context, id uuid.UUID) (bool, error) {
-	return a[id], nil
-}
-
 type world struct {
 	service *Service
 	standIn *items.Item
@@ -66,7 +60,7 @@ func newWorld(t *testing.T) *world {
 		admin:   uuid.New(),
 	}
 	shelf := catalogue{w.standIn.ID: w.standIn, w.episode.ID: w.episode, w.song.ID: w.song}
-	w.service = newService(shelf, &settings{}, administrators{w.admin: true}, func() time.Time { return now })
+	w.service = newService(shelf, &settings{}, func() time.Time { return now })
 
 	return w
 }
@@ -121,9 +115,18 @@ func TestService_Swap(t *testing.T) {
 			swapped:  true,
 		},
 		{
-			name:     "an administrator is never pranked",
+			name:     "an administrator is pranked like anyone else",
 			override: func(w *world) Override { return Override{Enabled: true, ItemID: &w.standIn.ID} },
 			user:     func(w *world) uuid.UUID { return w.admin },
+			swapped:  true,
+		},
+		{
+			name: "an administrator can be the only one on the list",
+			override: func(w *world) Override {
+				return Override{Enabled: true, ItemID: &w.standIn.ID, UserIDs: []uuid.UUID{w.admin}}
+			},
+			user:    func(w *world) uuid.UUID { return w.admin },
+			swapped: true,
 		},
 		{
 			name: "a user outside the chosen list is left alone",

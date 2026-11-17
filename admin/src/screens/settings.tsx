@@ -252,7 +252,7 @@ function stamped(value: string): string | undefined {
 
 function Override() {
   const [standing, setStanding] = useState<Standing | undefined>(mock.mocked ? mockedOverride : undefined);
-  const [people, setPeople] = useState<Person[]>(mock.mocked ? mock.people.filter((each) => !each.admin).map((each) => ({ id: each.id, name: each.name })) : []);
+  const [people, setPeople] = useState<Person[]>(mock.mocked ? mock.people.map((each) => ({ id: each.id, name: each.name })) : []);
   const [search, setSearch] = useState('');
   const [found, setFound] = useState<Found[]>([]);
   const [failure, setFailure] = useState('');
@@ -264,7 +264,7 @@ function Override() {
       return;
     }
     setStanding(override.data);
-    setPeople(users.data.filter((user) => !user.Policy?.IsAdministrator).map((user) => ({ id: user.Id ?? '', name: user.Name ?? '' })));
+    setPeople(users.data.map((user) => ({ id: user.Id ?? '', name: user.Name ?? '' })));
   }
 
   useEffect(() => {
@@ -342,7 +342,7 @@ function Override() {
         </span>
       </header>
       <p class="muted small">
-        Whatever movie or episode someone plays, this title plays instead. Administrators are never swapped, music and channels play as they are, and nothing is marked watched or resumed on either title while it is swapped.
+        Whatever movie or episode someone plays, this title plays instead, administrators included, so pick yourself alone to try it first. Music and channels play as they are, and nothing is marked watched or resumed on either title while it is swapped.
       </p>
       {failure && (
         <p class="failure" role="alert">
@@ -383,7 +383,7 @@ function Override() {
       </div>
       <p class="muted small">Times are in this browser's zone. Leave both empty to run for as long as it is on.</p>
       <fieldset class="people">
-        <legend>Who {standing.UserIds.length === 0 ? '(everyone who is not an administrator)' : ''}</legend>
+        <legend>Who {standing.UserIds.length === 0 ? '(everyone)' : ''}</legend>
         {people.map((person) => (
           <label class="check" key={person.id}>
             <input type="checkbox" checked={standing.UserIds.includes(person.id)} onChange={(event) => choose(person.id, event.currentTarget.checked)} />

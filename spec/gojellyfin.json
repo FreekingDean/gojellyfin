@@ -2172,7 +2172,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "description": "Who it applies to; empty means every user who is not an administrator."
+            "description": "Who it applies to, administrators included; empty means everyone."
           }
         }
       }
