@@ -121,35 +121,42 @@ func (s *Service) albums(ctx context.Context, source Source, artist lidarr.Artis
 			Images:    images(album.Images, albumImages),
 		})
 
-		for _, track := range byAlbum[album.ID] {
-			recorded, ok := byFile[track.TrackFileID]
-			if !ok || track.ForeignTrackID == "" {
-				continue
-			}
-
-			found, err := file(source, track.ID, recorded)
-			if err != nil {
-				log.Printf("skipping %s: %v", track.Title, err)
-
-				continue
-			}
-
-			titles = append(titles, Title{
-				Key:         items.TrackKey(track.ForeignTrackID),
-				ParentKey:   key,
-				Tagged:      tagged,
-				Kind:        itemmodel.KindAudio,
-				Name:        track.Title,
-				SortName:    items.SortName(track.Title),
-				Year:        year,
-				Index:       trackNumber(track),
-				ParentIndex: known32(track.MediumNumber),
-				Files:       []File{found},
-			})
-		}
+		titles = append(titles, trackTitles(source, key, year, tagged, byAlbum[album.ID], byFile)...)
 	}
 
 	return titles, nil
+}
+
+func trackTitles(source Source, albumKey string, year *int32, tagged bool, tracks []lidarr.Track, byFile map[int64]lidarr.File) []Title {
+	titles := make([]Title, 0, len(tracks))
+	for _, track := range tracks {
+		recorded, ok := byFile[track.TrackFileID]
+		if !ok || track.ForeignTrackID == "" {
+			continue
+		}
+
+		found, err := file(source, track.ID, recorded)
+		if err != nil {
+			log.Printf("skipping %s: %v", track.Title, err)
+
+			continue
+		}
+
+		titles = append(titles, Title{
+			Key:         items.TrackKey(track.ForeignTrackID),
+			ParentKey:   albumKey,
+			Tagged:      tagged,
+			Kind:        itemmodel.KindAudio,
+			Name:        track.Title,
+			SortName:    items.SortName(track.Title),
+			Year:        year,
+			Index:       trackNumber(track),
+			ParentIndex: known32(track.MediumNumber),
+			Files:       []File{found},
+		})
+	}
+
+	return titles
 }
 
 func images(from []lidarr.Image, kinds map[string]items.ImageKind) []items.RemoteImage {

@@ -166,7 +166,15 @@ func createUser(ctx context.Context, tx *store.Tx, user User) error {
 		return fmt.Errorf("failed to create %q: %w", user.Username, err)
 	}
 
-	err = tx.UserPolicy.Create().
+	if err := createPolicy(ctx, tx, user); err != nil {
+		return err
+	}
+
+	return createConfiguration(ctx, tx, user)
+}
+
+func createPolicy(ctx context.Context, tx *store.Tx, user User) error {
+	err := tx.UserPolicy.Create().
 		SetUserID(user.ID).
 		SetNillableIsAdministrator(permission(user, permissionIsAdministrator)).
 		SetNillableIsHidden(permission(user, permissionIsHidden)).
@@ -203,7 +211,11 @@ func createUser(ctx context.Context, tx *store.Tx, user User) error {
 		return fmt.Errorf("failed to create the policy of %q: %w", user.Username, err)
 	}
 
-	err = tx.UserConfiguration.Create().
+	return nil
+}
+
+func createConfiguration(ctx context.Context, tx *store.Tx, user User) error {
+	err := tx.UserConfiguration.Create().
 		SetUserID(user.ID).
 		SetCastReceiverID(user.CastReceiverID).
 		SetAudioLanguagePreference(user.AudioLanguagePreference).
@@ -362,16 +374,7 @@ func writeWatched(ctx context.Context, tx *store.Tx, watched []Watched, migrated
 		if !found {
 			report.WatchedCarried++
 			existing[pair] = &store.UserItemData{}
-			creates = append(creates, tx.UserItemData.Create().
-				SetUserID(state.UserID).
-				SetItemID(itemID).
-				SetPlayed(state.Played).
-				SetIsFavorite(state.IsFavorite).
-				SetPlayCount(state.PlayCount).
-				SetPlaybackPositionTicks(state.PlaybackPositionTicks).
-				SetNillableLastPlayedAt(state.LastPlayedAt).
-				SetNillableRating(state.Rating).
-				SetNillableLikes(state.Likes))
+			creates = append(creates, newWatched(tx, itemID, state))
 
 			continue
 		}
@@ -379,37 +382,62 @@ func writeWatched(ctx context.Context, tx *store.Tx, watched []Watched, migrated
 			continue
 		}
 
-		merged := further(Watched{
-			Played:                row.Played,
-			IsFavorite:            row.IsFavorite,
-			PlayCount:             row.PlayCount,
-			PlaybackPositionTicks: row.PlaybackPositionTicks,
-			LastPlayedAt:          row.LastPlayedAt,
-			Rating:                row.Rating,
-			Likes:                 row.Likes,
-		}, state)
-		if unchanged(row, merged) {
-			report.WatchedAlreadyHere++
-
-			continue
-		}
-		report.WatchedMerged++
-
-		err := tx.UserItemData.Update().
-			Where(datamodel.ID(row.ID)).
-			SetPlayed(merged.Played).
-			SetIsFavorite(merged.IsFavorite).
-			SetPlayCount(merged.PlayCount).
-			SetPlaybackPositionTicks(merged.PlaybackPositionTicks).
-			SetNillableLastPlayedAt(merged.LastPlayedAt).
-			SetNillableRating(merged.Rating).
-			SetNillableLikes(merged.Likes).
-			Exec(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to merge the watch state of %q: %w", state.Title.Name, err)
+		if err := mergeWatched(ctx, tx, row, state, report); err != nil {
+			return err
 		}
 	}
 
+	return createWatched(ctx, tx, creates)
+}
+
+func newWatched(tx *store.Tx, itemID uuid.UUID, state Watched) *store.UserItemDataCreate {
+	return tx.UserItemData.Create().
+		SetUserID(state.UserID).
+		SetItemID(itemID).
+		SetPlayed(state.Played).
+		SetIsFavorite(state.IsFavorite).
+		SetPlayCount(state.PlayCount).
+		SetPlaybackPositionTicks(state.PlaybackPositionTicks).
+		SetNillableLastPlayedAt(state.LastPlayedAt).
+		SetNillableRating(state.Rating).
+		SetNillableLikes(state.Likes)
+}
+
+func mergeWatched(ctx context.Context, tx *store.Tx, row *store.UserItemData, state Watched, report *Report) error {
+	merged := further(Watched{
+		Played:                row.Played,
+		IsFavorite:            row.IsFavorite,
+		PlayCount:             row.PlayCount,
+		PlaybackPositionTicks: row.PlaybackPositionTicks,
+		LastPlayedAt:          row.LastPlayedAt,
+		Rating:                row.Rating,
+		Likes:                 row.Likes,
+	}, state)
+	if unchanged(row, merged) {
+		report.WatchedAlreadyHere++
+
+		return nil
+	}
+	report.WatchedMerged++
+
+	err := tx.UserItemData.Update().
+		Where(datamodel.ID(row.ID)).
+		SetPlayed(merged.Played).
+		SetIsFavorite(merged.IsFavorite).
+		SetPlayCount(merged.PlayCount).
+		SetPlaybackPositionTicks(merged.PlaybackPositionTicks).
+		SetNillableLastPlayedAt(merged.LastPlayedAt).
+		SetNillableRating(merged.Rating).
+		SetNillableLikes(merged.Likes).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to merge the watch state of %q: %w", state.Title.Name, err)
+	}
+
+	return nil
+}
+
+func createWatched(ctx context.Context, tx *store.Tx, creates []*store.UserItemDataCreate) error {
 	for start := 0; start < len(creates); start += watchedBatch {
 		batch := creates[start:min(start+watchedBatch, len(creates))]
 		if err := tx.UserItemData.CreateBulk(batch...).Exec(ctx); err != nil {

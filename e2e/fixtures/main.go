@@ -207,8 +207,10 @@ func seed() error {
 		return err
 	}
 
-	ctx := context.Background()
-	client := connection.Client()
+	return seedLibraries(context.Background(), connection.Client())
+}
+
+func seedLibraries(ctx context.Context, client *store.Client) error {
 	modified := time.Now()
 
 	record, err := libraries.New(client).CreateLibrary(ctx, library, libraries.CollectionTypeMovies, []string{"/fixtures"})
@@ -216,23 +218,8 @@ func seed() error {
 		return err
 	}
 
-	downloader, err := client.Source.Create().
-		SetName("Fixtures").
-		SetURL(cmp.Or(os.Getenv("FIXTURE_DOWNLOADER"), "http://fixtures.invalid")).
-		SetAPIKeyVariable(env.SourceAPIKeyPrefix + "FIXTURES").
-		SetKind(sourcemodel.KindRadarr).
-		SetRequestProfileID(requestProfile).
-		SetRequestRootFolder("/fixtures").
-		Save(ctx)
+	downloader, err := seedDownloader(ctx, client)
 	if err != nil {
-		return err
-	}
-
-	if err := client.SourcePath.Create().
-		SetSourceID(downloader.ID).
-		SetRemotePath("/fixtures").
-		SetLocalPath("/fixtures").
-		Exec(ctx); err != nil {
 		return err
 	}
 
@@ -241,35 +228,9 @@ func seed() error {
 	}
 
 	catalogue := items.New(client)
-	watching := map[string]uuid.UUID{}
-	for _, name := range movies {
-		item, err := catalogue.SaveScanned(ctx, items.Item{
-			Kind:         itemmodel.KindMovie,
-			Key:          "movie:" + slugify(name),
-			Name:         name,
-			SortName:     strings.ToLower(name),
-			DateModified: &modified,
-		})
-		if err != nil {
-			return err
-		}
-
-		if err := file(ctx, catalogue, downloader.ID, item.ID, name); err != nil {
-			return err
-		}
-		if err := member(ctx, client, record.ID, downloader.ID, item.ID); err != nil {
-			return err
-		}
-		if err := poster(ctx, catalogue, item.ID, name); err != nil {
-			return err
-		}
-		if err := aired(ctx, catalogue, item.ID, released[name]); err != nil {
-			return err
-		}
-		if err := backdrop(ctx, catalogue, item.ID, name); err != nil {
-			return err
-		}
-		watching[name] = item.ID
+	watching, err := seedMovies(ctx, client, catalogue, record.ID, downloader.ID, modified)
+	if err != nil {
+		return err
 	}
 
 	trending, err := strconv.Atoi(os.Getenv("FIXTURE_TRENDING_TMDB"))
@@ -283,16 +244,7 @@ func seed() error {
 		return err
 	}
 
-	shown, err := libraries.New(client).CreateLibrary(ctx, shows, libraries.CollectionTypeTvshows, []string{"/fixtures/shows"})
-	if err != nil {
-		return err
-	}
-
-	shelf := shelf{client: client, catalogue: catalogue, libraryID: shown.ID, sourceID: downloader.ID, watching: watching, media: os.Getenv("FIXTURE_EPISODES")}
-	if err := shelf.series(ctx, series, episodes, modified); err != nil {
-		return err
-	}
-	if err := shelf.series(ctx, drama, []string{finale}, modified.Add(time.Minute)); err != nil {
+	if err := seedShows(ctx, client, catalogue, downloader.ID, watching, modified); err != nil {
 		return err
 	}
 
@@ -303,6 +255,78 @@ func seed() error {
 	fmt.Println(record.ID)
 
 	return nil
+}
+
+func seedDownloader(ctx context.Context, client *store.Client) (*store.Source, error) {
+	downloader, err := client.Source.Create().
+		SetName("Fixtures").
+		SetURL(cmp.Or(os.Getenv("FIXTURE_DOWNLOADER"), "http://fixtures.invalid")).
+		SetAPIKeyVariable(env.SourceAPIKeyPrefix + "FIXTURES").
+		SetKind(sourcemodel.KindRadarr).
+		SetRequestProfileID(requestProfile).
+		SetRequestRootFolder("/fixtures").
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := client.SourcePath.Create().
+		SetSourceID(downloader.ID).
+		SetRemotePath("/fixtures").
+		SetLocalPath("/fixtures").
+		Exec(ctx); err != nil {
+		return nil, err
+	}
+
+	return downloader, nil
+}
+
+func seedMovies(ctx context.Context, client *store.Client, catalogue *items.Service, libraryID, sourceID uuid.UUID, modified time.Time) (map[string]uuid.UUID, error) {
+	watching := map[string]uuid.UUID{}
+	for _, name := range movies {
+		item, err := catalogue.SaveScanned(ctx, items.Item{
+			Kind:         itemmodel.KindMovie,
+			Key:          "movie:" + slugify(name),
+			Name:         name,
+			SortName:     strings.ToLower(name),
+			DateModified: &modified,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if err := file(ctx, catalogue, sourceID, item.ID, name); err != nil {
+			return nil, err
+		}
+		if err := member(ctx, client, libraryID, sourceID, item.ID); err != nil {
+			return nil, err
+		}
+		if err := poster(ctx, catalogue, item.ID, name); err != nil {
+			return nil, err
+		}
+		if err := aired(ctx, catalogue, item.ID, released[name]); err != nil {
+			return nil, err
+		}
+		if err := backdrop(ctx, catalogue, item.ID, name); err != nil {
+			return nil, err
+		}
+		watching[name] = item.ID
+	}
+
+	return watching, nil
+}
+
+func seedShows(ctx context.Context, client *store.Client, catalogue *items.Service, sourceID uuid.UUID, watching map[string]uuid.UUID, modified time.Time) error {
+	shown, err := libraries.New(client).CreateLibrary(ctx, shows, libraries.CollectionTypeTvshows, []string{"/fixtures/shows"})
+	if err != nil {
+		return err
+	}
+
+	shelf := shelf{client: client, catalogue: catalogue, libraryID: shown.ID, sourceID: sourceID, watching: watching, media: os.Getenv("FIXTURE_EPISODES")}
+	if err := shelf.series(ctx, series, episodes, modified); err != nil {
+		return err
+	}
+	return shelf.series(ctx, drama, []string{finale}, modified.Add(time.Minute))
 }
 
 func resume(ctx context.Context, client *store.Client, watching map[string]uuid.UUID) error {
@@ -369,10 +393,24 @@ func (s shelf) series(ctx context.Context, name string, titles []string, modifie
 		return err
 	}
 
+	if err := s.episodes(ctx, name, first.ID, number, titles, modified); err != nil {
+		return err
+	}
+
+	for _, id := range []uuid.UUID{show.ID, first.ID} {
+		if err := member(ctx, s.client, s.libraryID, s.sourceID, id); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s shelf) episodes(ctx context.Context, name string, seasonID uuid.UUID, number int32, titles []string, modified time.Time) error {
 	for index, title := range titles {
 		position := int32(index + 1)
 		item, err := s.catalogue.SaveScanned(ctx, items.Item{
-			ParentID:          &first.ID,
+			ParentID:          &seasonID,
 			Kind:              itemmodel.KindEpisode,
 			Key:               fmt.Sprintf("episode:%s:1:%d", slugify(name), position),
 			Name:              title,
@@ -395,12 +433,6 @@ func (s shelf) series(ctx context.Context, name string, titles []string, modifie
 			return err
 		}
 		s.watching[title] = item.ID
-	}
-
-	for _, id := range []uuid.UUID{show.ID, first.ID} {
-		if err := member(ctx, s.client, s.libraryID, s.sourceID, id); err != nil {
-			return err
-		}
 	}
 
 	return nil

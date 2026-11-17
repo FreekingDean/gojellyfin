@@ -437,7 +437,17 @@ func validate(ctx context.Context, tx *store.Tx, roots []string, id uuid.UUID, e
 		return err
 	}
 
-	source := entry.Source
+	if err := validateSource(entry.Source, roots); err != nil {
+		return err
+	}
+	if err := validateLibraries(ctx, tx, entry); err != nil {
+		return err
+	}
+
+	return validateClaims(ctx, tx, id, entry.Source)
+}
+
+func validateSource(source Source, roots []string) error {
 	if strings.TrimSpace(source.Name) == "" {
 		return invalid("a source needs a name")
 	}
@@ -479,10 +489,10 @@ func validate(ctx context.Context, tx *store.Tx, roots []string, id uuid.UUID, e
 		}
 	}
 
-	if err := validateLibraries(ctx, tx, entry); err != nil {
-		return err
-	}
+	return nil
+}
 
+func validateClaims(ctx context.Context, tx *store.Tx, id uuid.UUID, source Source) error {
 	claimed, err := tx.SourcePath.Query().
 		Where(sourcepathmodel.SourceIDNEQ(id)).
 		WithSource().

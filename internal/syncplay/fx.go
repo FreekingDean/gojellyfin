@@ -18,6 +18,8 @@ var Module = fx.Module(
 		func(service *users.Service) Policies { return service },
 		func(notifier *notify.Service) Publisher { return notifier },
 	),
-	fx.Invoke(func(lifecycle fx.Lifecycle, sweeper *Sweeper) { lifecycle.Append(fx.StartStopHook(sweeper.Start, sweeper.Stop)) }),
+	fx.Invoke(func(lifecycle fx.Lifecycle, sweeper *Sweeper) {
+		lifecycle.Append(fx.StartStopHook(sweeper.Start, sweeper.Stop))
+	}),
 	fx.Invoke(func(sessions *sessions.Service, service *Service) { sessions.OnEnding(service.SessionsEnding) }),
 )

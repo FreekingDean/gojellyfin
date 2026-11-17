@@ -517,17 +517,7 @@ func (r *Room) waiting(request Request, previous State, seat *Seat) {
 	case Play:
 		r.waitingPlay(request, previous, seat)
 	case SetPlaylistItem:
-		r.ResumePlaying = true
-		found := r.Queue.setPlayingByPlaylistID(request.PlaylistItemID, r.now)
-		r.refreshRunTime()
-		r.restartCurrentItem()
-		r.PositionJumped = found
-		if !found {
-			r.restore(previous)
-			return
-		}
-		r.sendQueue(seat, allGroup, SetCurrentItem)
-		r.setAllBuffering(true)
+		r.waitingSetItem(request, previous, seat)
 	case Unpause:
 		r.waitingUnpause(request, previous, seat)
 	case Pause:
@@ -536,18 +526,7 @@ func (r *Room) waiting(request Request, previous State, seat *Seat) {
 	case Stop:
 		r.transition(Idle, request, seat)
 	case Seek:
-		switch previous {
-		case Playing:
-			r.ResumePlaying = true
-		case Paused:
-			r.ResumePlaying = false
-		}
-		r.PositionTicks = r.sanitize(request.PositionTicks)
-		r.LastActivity = r.now
-		r.PositionJumped = true
-		r.sendCommand(seat, allGroup, r.command(SeekCommand))
-		r.setAllBuffering(true)
-		r.sendState(seat, request.Type)
+		r.waitingSeek(request, previous, seat)
 	case Buffer:
 		r.waitingBuffer(request, previous, seat)
 	case Ready:
@@ -555,19 +534,52 @@ func (r *Room) waiting(request Request, previous State, seat *Seat) {
 	case NextItem, PreviousItem:
 		r.waitingStep(request, previous, seat)
 	case IgnoreWait:
-		r.setIgnoreWait(seat, request.IgnoreWait)
-		if r.isBuffering() {
-			return
-		}
-		if r.ResumePlaying {
-			r.become(Playing)
-			r.playing(Request{Type: Unpause}, Waiting, seat)
-			return
-		}
-		r.become(Paused)
+		r.waitingIgnoreWait(request, seat)
 	default:
 		r.common(request, seat)
 	}
+}
+
+func (r *Room) waitingSetItem(request Request, previous State, seat *Seat) {
+	r.ResumePlaying = true
+	found := r.Queue.setPlayingByPlaylistID(request.PlaylistItemID, r.now)
+	r.refreshRunTime()
+	r.restartCurrentItem()
+	r.PositionJumped = found
+	if !found {
+		r.restore(previous)
+		return
+	}
+	r.sendQueue(seat, allGroup, SetCurrentItem)
+	r.setAllBuffering(true)
+}
+
+func (r *Room) waitingSeek(request Request, previous State, seat *Seat) {
+	switch previous {
+	case Playing:
+		r.ResumePlaying = true
+	case Paused:
+		r.ResumePlaying = false
+	}
+	r.PositionTicks = r.sanitize(request.PositionTicks)
+	r.LastActivity = r.now
+	r.PositionJumped = true
+	r.sendCommand(seat, allGroup, r.command(SeekCommand))
+	r.setAllBuffering(true)
+	r.sendState(seat, request.Type)
+}
+
+func (r *Room) waitingIgnoreWait(request Request, seat *Seat) {
+	r.setIgnoreWait(seat, request.IgnoreWait)
+	if r.isBuffering() {
+		return
+	}
+	if r.ResumePlaying {
+		r.become(Playing)
+		r.playing(Request{Type: Unpause}, Waiting, seat)
+		return
+	}
+	r.become(Paused)
 }
 
 func (r *Room) waitingPlay(request Request, previous State, seat *Seat) {

@@ -302,66 +302,7 @@ var sortFields = map[string]string{
 }
 
 func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int, error) {
-	items := s.query(query.Viewer)
-
-	if query.LibraryID != nil {
-		items = items.Where(inLibrary(*query.LibraryID))
-	}
-	if query.TopLevel {
-		items = items.Where(itemmodel.ParentIDIsNil())
-	}
-	if query.ParentID != nil {
-		items = items.Where(itemmodel.ParentID(*query.ParentID))
-	}
-	if query.Kinds != nil {
-		items = items.Where(itemmodel.KindIn(query.Kinds...))
-	}
-	if len(query.ExcludeKinds) > 0 {
-		items = items.Where(itemmodel.KindNotIn(query.ExcludeKinds...))
-	}
-	if len(query.MediaTypes) > 0 {
-		items = items.Where(itemmodel.KindIn(kindsOf(query.MediaTypes)...))
-	}
-	if len(query.IDs) > 0 {
-		items = items.Where(itemmodel.IDIn(query.IDs...))
-	}
-	if len(query.ArtistIDs) > 0 {
-		items = items.Where(itemmodel.Or(
-			itemmodel.And(itemmodel.KindEQ(itemmodel.KindMusicAlbum), itemmodel.ParentIDIn(query.ArtistIDs...)),
-			itemmodel.And(itemmodel.KindEQ(itemmodel.KindAudio), itemmodel.HasParentWith(itemmodel.ParentIDIn(query.ArtistIDs...))),
-		))
-	}
-	if len(query.AlbumIDs) > 0 {
-		items = items.Where(itemmodel.ParentIDIn(query.AlbumIDs...))
-	}
-	if query.SearchTerm != "" {
-		items = items.Where(itemmodel.NameContainsFold(query.SearchTerm))
-	}
-	if query.NameStartsWith != "" {
-		items = items.Where(itemmodel.SortNameHasPrefix(sorted(query.NameStartsWith)))
-	}
-	if query.NameStartsWithOrGreater != "" {
-		items = items.Where(itemmodel.SortNameGTE(sorted(query.NameStartsWithOrGreater)))
-	}
-	if query.NameLessThan != "" {
-		items = items.Where(itemmodel.SortNameLT(sorted(query.NameLessThan)))
-	}
-	if query.Played != nil {
-		items = items.Where(marked(query.User, *query.Played, datamodel.Played(true)))
-	}
-	if query.Favorite != nil {
-		items = items.Where(marked(query.User, *query.Favorite, datamodel.IsFavorite(true)))
-	}
-	if query.Resumable {
-		items = items.Where(marked(query.User, true, datamodel.PlaybackPositionTicksGT(0)))
-	}
-	if query.Folder != nil {
-		folders := itemmodel.KindIn(folderKinds...)
-		if !*query.Folder {
-			folders = itemmodel.Not(folders)
-		}
-		items = items.Where(folders)
-	}
+	items := s.query(query.Viewer).Where(query.structure()...).Where(query.names()...).Where(query.marks()...)
 
 	total, err := items.Clone().Count(ctx)
 	if err != nil {
@@ -371,6 +312,100 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 		return []*Item{}, total, nil
 	}
 
+	items = query.order(items)
+
+	if query.StartIndex > 0 {
+		items = items.Offset(query.StartIndex)
+	}
+	if query.Limit != nil {
+		items = items.Limit(*query.Limit)
+	}
+
+	records, err := items.AllModels(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to query items: %w", err)
+	}
+
+	return records, total, nil
+}
+
+func (query ItemQuery) structure() []predicate.Item {
+	where := []predicate.Item{}
+	if query.LibraryID != nil {
+		where = append(where, inLibrary(*query.LibraryID))
+	}
+	if query.TopLevel {
+		where = append(where, itemmodel.ParentIDIsNil())
+	}
+	if query.ParentID != nil {
+		where = append(where, itemmodel.ParentID(*query.ParentID))
+	}
+	if query.Kinds != nil {
+		where = append(where, itemmodel.KindIn(query.Kinds...))
+	}
+	if len(query.ExcludeKinds) > 0 {
+		where = append(where, itemmodel.KindNotIn(query.ExcludeKinds...))
+	}
+	if len(query.MediaTypes) > 0 {
+		where = append(where, itemmodel.KindIn(kindsOf(query.MediaTypes)...))
+	}
+	if len(query.IDs) > 0 {
+		where = append(where, itemmodel.IDIn(query.IDs...))
+	}
+	if len(query.ArtistIDs) > 0 {
+		where = append(where, itemmodel.Or(
+			itemmodel.And(itemmodel.KindEQ(itemmodel.KindMusicAlbum), itemmodel.ParentIDIn(query.ArtistIDs...)),
+			itemmodel.And(itemmodel.KindEQ(itemmodel.KindAudio), itemmodel.HasParentWith(itemmodel.ParentIDIn(query.ArtistIDs...))),
+		))
+	}
+	if len(query.AlbumIDs) > 0 {
+		where = append(where, itemmodel.ParentIDIn(query.AlbumIDs...))
+	}
+	if query.Folder != nil {
+		folders := itemmodel.KindIn(folderKinds...)
+		if !*query.Folder {
+			folders = itemmodel.Not(folders)
+		}
+		where = append(where, folders)
+	}
+
+	return where
+}
+
+func (query ItemQuery) names() []predicate.Item {
+	where := []predicate.Item{}
+	if query.SearchTerm != "" {
+		where = append(where, itemmodel.NameContainsFold(query.SearchTerm))
+	}
+	if query.NameStartsWith != "" {
+		where = append(where, itemmodel.SortNameHasPrefix(sorted(query.NameStartsWith)))
+	}
+	if query.NameStartsWithOrGreater != "" {
+		where = append(where, itemmodel.SortNameGTE(sorted(query.NameStartsWithOrGreater)))
+	}
+	if query.NameLessThan != "" {
+		where = append(where, itemmodel.SortNameLT(sorted(query.NameLessThan)))
+	}
+
+	return where
+}
+
+func (query ItemQuery) marks() []predicate.Item {
+	where := []predicate.Item{}
+	if query.Played != nil {
+		where = append(where, marked(query.User, *query.Played, datamodel.Played(true)))
+	}
+	if query.Favorite != nil {
+		where = append(where, marked(query.User, *query.Favorite, datamodel.IsFavorite(true)))
+	}
+	if query.Resumable {
+		where = append(where, marked(query.User, true, datamodel.PlaybackPositionTicksGT(0)))
+	}
+
+	return where
+}
+
+func (query ItemQuery) order(items *store.ItemQuery) *store.ItemQuery {
 	direction := sql.OrderAsc()
 	if query.Descending {
 		direction = sql.OrderDesc()
@@ -386,19 +421,7 @@ func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int
 	}
 	items = items.Order(itemmodel.BySortName(direction))
 
-	if query.StartIndex > 0 {
-		items = items.Offset(query.StartIndex)
-	}
-	if query.Limit != nil {
-		items = items.Limit(*query.Limit)
-	}
-
-	records, err := items.AllModels(ctx)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to query items: %w", err)
-	}
-
-	return records, total, nil
+	return items
 }
 
 func (s *Service) NamedItem(ctx context.Context, viewer Viewer, kind Kind, name string) (*Item, error) {

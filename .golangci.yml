@@ -12,6 +12,7 @@ linters:
     - errname
     - errorlint
     - fatcontext
+    - funlen
     - gocheckcompilerdirectives
     - gocritic
     - makezero
@@ -30,6 +31,11 @@ linters:
     nolintlint:
       require-specific: true
   exclusions:
+    rules:
+      # Tests are #611's: a table test rewrite, not a split.
+      - path: _test\.go
+        linters:
+          - funlen
     paths:
       # Emitted by oapi-codegen and the local gen tool; not ours to lint.
       - internal/server/api
