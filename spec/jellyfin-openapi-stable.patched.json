@@ -48493,9 +48493,10 @@
         "type": "string",
         "enum": [
           "Shuffle",
-          "Sequential"
+          "Sequential",
+          "Interleave"
         ],
-        "description": "Shuffle reshuffles the titles on every pass; Sequential airs them in the order listed, a series by season and episode."
+        "description": "Shuffle reshuffles the titles on every pass; Sequential airs them in the order listed, a series by season and episode; Interleave takes turns between the titles listed, each series by season and episode, spread so a short series is not over before a long one has begun."
       }, "LiveChannels": {
         "type": "array",
         "items": {

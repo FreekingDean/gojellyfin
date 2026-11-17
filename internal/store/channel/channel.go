@@ -87,6 +87,7 @@ const DefaultOrder = OrderShuffle
 const (
 	OrderShuffle    Order = "Shuffle"
 	OrderSequential Order = "Sequential"
+	OrderInterleave Order = "Interleave"
 )
 
 func (_order Order) String() string {
@@ -96,7 +97,7 @@ func (_order Order) String() string {
 // OrderValidator is a validator for the "order" field enum values. It is called by the builders before save.
 func OrderValidator(_order Order) error {
 	switch _order {
-	case OrderShuffle, OrderSequential:
+	case OrderShuffle, OrderSequential, OrderInterleave:
 		return nil
 	default:
 		return fmt.Errorf("channel: invalid enum value for order field: %q", _order)

@@ -275,3 +275,33 @@ func TestUpdate_KeepsTheScheduleSeed(t *testing.T) {
 		t.Errorf("a second Delete answered %v", err)
 	}
 }
+
+func TestSchedule_InterleaveSpreadsEachTitle(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+
+	series := f.item(t, itemmodel.KindSeries, nil, 0, 0)
+	season := f.item(t, itemmodel.KindSeason, &series, 1, 0)
+	e1 := f.episode(t, itemmodel.KindEpisode, &season, 1, 1, 20)
+	e2 := f.episode(t, itemmodel.KindEpisode, &season, 1, 2, 20)
+	e3 := f.episode(t, itemmodel.KindEpisode, &season, 1, 3, 20)
+	movie := f.item(t, itemmodel.KindMovie, nil, 0, 100)
+
+	channel := f.create(t, Definition{Number: number(), Name: f.name, Order: channelmodel.OrderInterleave, ItemIDs: []uuid.UUID{series, movie}})
+
+	schedule, err := f.service.Schedule(ctx, channel)
+	if err != nil {
+		t.Fatalf("Schedule: %v", err)
+	}
+	airings := schedule.Between(channel.Epoch, channel.Epoch.Add(160*time.Minute))
+
+	want := []uuid.UUID{e1, e2, movie, e3}
+	if len(airings) != len(want) {
+		t.Fatalf("aired %d titles, want %d", len(airings), len(want))
+	}
+	for i, id := range want {
+		if airings[i].ItemID != id {
+			t.Errorf("airing %d is %s, want %s", i, airings[i].ItemID, id)
+		}
+	}
+}
