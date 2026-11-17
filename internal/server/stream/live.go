@@ -136,7 +136,7 @@ func (h *Handler) serveLiveSegment(w http.ResponseWriter, r *http.Request, sched
 	}
 
 	runtime := int64(piece.Slot.Length / tick)
-	segment := transcode.Segment{Path: path, Encode: true}
+	segment := transcode.Segment{Path: path, Encode: true, Preset: transcode.LivePreset}
 	var windows []transcode.Window
 	if playlist == mainPlaylist {
 		segment.Track = transcode.TrackVideo

@@ -104,6 +104,7 @@ type Segment struct {
 	Transfer  string
 	MaxHeight int32
 	Threads   int
+	Preset    string
 }
 
 func (s Segment) Valid() error {
@@ -213,7 +214,7 @@ func (s Segment) videoArgs() []string {
 		return args
 	}
 
-	encode := Spec{MaxHeight: s.MaxHeight, Transfer: s.Transfer, Threads: s.Threads}.videoEncode()
+	encode := Spec{MaxHeight: s.MaxHeight, Transfer: s.Transfer, Threads: s.Threads, Preset: s.Preset}.videoEncode()
 	for i, arg := range encode {
 		if arg == "-force_key_frames" {
 			encode[i+1] = fmt.Sprintf("expr:gte(t,%s+n_forced*%d)", seconds(s.Window.Start), keyframeSecs)
