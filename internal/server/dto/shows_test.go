@@ -13,7 +13,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	imagemodel "github.com/FreekingDean/gojellyfin/internal/store/image"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
-	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 )
 
 func TestItemDtos(t *testing.T) {
@@ -23,17 +22,9 @@ func TestItemDtos(t *testing.T) {
 
 	client := connection.Client()
 	name := t.Name() + "-" + uuid.NewString()
-	library, err := client.Library.Create().SetName(name).Save(ctx)
-	if err != nil {
-		t.Fatalf("failed to create the library: %v", err)
-	}
-
 	t.Cleanup(func() {
-		if _, err := client.Item.Delete().Where(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
+		if _, err := client.Item.Delete().Where(itemmodel.KeyHasPrefix("test:" + name)).Exec(context.Background()); err != nil {
 			t.Errorf("failed to delete the items: %v", err)
-		}
-		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the library: %v", err)
 		}
 	})
 

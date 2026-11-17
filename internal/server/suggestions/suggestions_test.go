@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	librarymodel "github.com/FreekingDean/gojellyfin/internal/store/library"
+
 	"github.com/FreekingDean/gojellyfin/internal/storetest"
 
 	"github.com/google/uuid"
@@ -15,7 +17,6 @@ import (
 	"github.com/FreekingDean/gojellyfin/internal/server/api"
 	"github.com/FreekingDean/gojellyfin/internal/store"
 	itemmodel "github.com/FreekingDean/gojellyfin/internal/store/item"
-	librarymembership "github.com/FreekingDean/gojellyfin/internal/store/libraryitem"
 	playlistmodel "github.com/FreekingDean/gojellyfin/internal/store/playlist"
 	"github.com/FreekingDean/gojellyfin/internal/users"
 )
@@ -34,20 +35,7 @@ func newFixture(t *testing.T) *fixture {
 
 	client := connection.Client()
 	prefix := t.Name() + "-" + uuid.NewString() + "-"
-	library, err := client.Library.Create().SetName(prefix).Save(context.Background())
-	if err != nil {
-		t.Fatalf("failed to create the library: %v", err)
-	}
-
-	t.Cleanup(func() {
-		ctx := context.Background()
-		if _, err := client.Item.Delete().Where(itemmodel.HasLibrariesWith(librarymembership.LibraryID(library.ID))).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the items: %v", err)
-		}
-		if err := client.Library.DeleteOne(library).Exec(ctx); err != nil {
-			t.Errorf("failed to delete the library: %v", err)
-		}
-	})
+	library := storetest.Library(t, client, librarymodel.CollectionTypeMixed)
 
 	server := New(items.New(client), libraries.New(client), allLibraries{})
 
