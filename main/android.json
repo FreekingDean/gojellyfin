@@ -1,0 +1,115 @@
+{
+  "slug": "android",
+  "title": "Android",
+  "stats": {
+    "startTime": "2026-11-21T16:17:01.089Z",
+    "duration": 1322772.828,
+    "expected": 9,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 2
+  },
+  "failing": [],
+  "shots": [
+    {
+      "key": "android/home.spec.js/home",
+      "dir": "shots/android/home.spec.js",
+      "name": "home",
+      "title": "browsing on a phone › lists the libraries on the home screen",
+      "state": "unchanged"
+    },
+    {
+      "key": "android/home.spec.js/home-recently-added",
+      "dir": "shots/android/home.spec.js",
+      "name": "home-recently-added",
+      "title": "browsing on a phone › shows what was added lately under the libraries",
+      "state": "unchanged"
+    },
+    {
+      "key": "android/home.spec.js/library",
+      "dir": "shots/android/home.spec.js",
+      "name": "library",
+      "title": "browsing on a phone › opens a library and lists its titles",
+      "state": "unchanged"
+    },
+    {
+      "key": "android/native-player.spec.js/native-playing",
+      "dir": "shots/android/native-player.spec.js",
+      "name": "native-playing",
+      "title": "playing on the phone app's own player › plays an episode whose sound the server converts",
+      "state": "unchanged"
+    },
+    {
+      "key": "android/playback.spec.js/after-skip",
+      "dir": "shots/android/playback.spec.js",
+      "name": "after-skip",
+      "title": "playing on a phone › plays a title and skips ahead in it",
+      "state": "unchanged"
+    },
+    {
+      "key": "android/playback.spec.js/details",
+      "dir": "shots/android/playback.spec.js",
+      "name": "details",
+      "title": "playing on a phone › plays a title and skips ahead in it",
+      "state": "unchanged"
+    },
+    {
+      "key": "android/playback.spec.js/details-resume",
+      "dir": "shots/android/playback.spec.js",
+      "name": "details-resume",
+      "title": "playing on a phone › resumes a title where it was left",
+      "state": "unchanged"
+    },
+    {
+      "key": "android/playback.spec.js/playing",
+      "dir": "shots/android/playback.spec.js",
+      "name": "playing",
+      "title": "playing on a phone › plays a title and skips ahead in it",
+      "state": "unchanged"
+    },
+    {
+      "key": "android/playback.spec.js/resumed",
+      "dir": "shots/android/playback.spec.js",
+      "name": "resumed",
+      "title": "playing on a phone › resumes a title where it was left",
+      "state": "unchanged"
+    },
+    {
+      "key": "android/signin.spec.js/home-after-password",
+      "dir": "shots/android/signin.spec.js",
+      "name": "home-after-password",
+      "title": "signing in on a phone › signs in with a password",
+      "state": "unchanged"
+    },
+    {
+      "key": "android/signin.spec.js/home-after-quickconnect",
+      "dir": "shots/android/signin.spec.js",
+      "name": "home-after-quickconnect",
+      "title": "signing in on a phone › signs in with a Quick Connect code another device approves",
+      "state": "unchanged"
+    },
+    {
+      "key": "android/signin.spec.js/login",
+      "dir": "shots/android/signin.spec.js",
+      "name": "login",
+      "title": "signing in on a phone › connects to the server by its address",
+      "state": "unchanged"
+    },
+    {
+      "key": "android/signin.spec.js/quickconnect",
+      "dir": "shots/android/signin.spec.js",
+      "name": "quickconnect",
+      "title": "signing in on a phone › signs in with a Quick Connect code another device approves",
+      "state": "unchanged"
+    },
+    {
+      "key": "android/signin.spec.js/welcome",
+      "dir": "shots/android/signin.spec.js",
+      "name": "welcome",
+      "title": "signing in on a phone › connects to the server by its address",
+      "state": "unchanged"
+    }
+  ],
+  "sha": "6b784cd0896a1056096aad38a0f316033c7534bc",
+  "at": "2026-11-21T16:39Z"
+}
