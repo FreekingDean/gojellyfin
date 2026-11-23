@@ -9,7 +9,7 @@ COPY admin ./
 COPY spec/jellyfin-openapi-stable.patched.json /src/spec/
 RUN npm run build
 
-FROM --platform=$BUILDPLATFORM golang:1.26 AS build
+FROM --platform=$BUILDPLATFORM golang:1.27 AS build
 
 WORKDIR /src
 
@@ -34,7 +34,7 @@ RUN GOARCH=$TARGETARCH go build \
       -ldflags "-X $STAMP.buildVersion=$VERSION -X $STAMP.buildCommit=$COMMIT -X $STAMP.buildDate=$DATE" \
       -o /out/ ./cmd/gojellyfin
 
-FROM arigaio/atlas:1.3.10 AS atlas
+FROM arigaio/atlas:1.4.1 AS atlas
 
 FROM alpine:3.24
 
