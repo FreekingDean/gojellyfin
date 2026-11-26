@@ -291,14 +291,18 @@ type ItemQuery struct {
 	Limit      *int
 }
 
-var sortFields = map[string]string{
-	"sortname":       itemmodel.FieldSortName,
-	"name":           itemmodel.FieldSortName,
-	"premieredate":   itemmodel.FieldPremiereDate,
-	"productionyear": itemmodel.FieldProductionYear,
-	"datecreated":    itemmodel.FieldCreatedAt,
-	"datemodified":   itemmodel.FieldDateModified,
-	"indexnumber":    itemmodel.FieldIndexNumber,
+var episodic = []string{itemmodel.FieldParentIndexNumber, itemmodel.FieldIndexNumber, itemmodel.FieldSortName}
+
+var sortFields = map[string][]string{
+	"sortname":          episodic,
+	"name":              episodic,
+	"airedepisodeorder": episodic,
+	"premieredate":      {itemmodel.FieldPremiereDate},
+	"productionyear":    {itemmodel.FieldProductionYear},
+	"datecreated":       {itemmodel.FieldCreatedAt},
+	"datemodified":      {itemmodel.FieldDateModified},
+	"indexnumber":       {itemmodel.FieldIndexNumber},
+	"parentindexnumber": {itemmodel.FieldParentIndexNumber},
 }
 
 func (s *Service) QueryItems(ctx context.Context, query ItemQuery) ([]*Item, int, error) {
@@ -415,11 +419,13 @@ func (query ItemQuery) order(items *store.ItemQuery) *store.ItemQuery {
 			items = items.Order(orderRandom)
 			continue
 		}
-		if field, ok := sortFields[strings.ToLower(sortBy)]; ok {
+		for _, field := range sortFields[strings.ToLower(sortBy)] {
 			items = items.Order(sql.OrderByField(field, direction).ToFunc())
 		}
 	}
-	items = items.Order(itemmodel.BySortName(direction))
+	for _, field := range episodic {
+		items = items.Order(sql.OrderByField(field, direction).ToFunc())
+	}
 
 	return items
 }
