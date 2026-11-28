@@ -1,0 +1,150 @@
+{
+  "slug": "androidtv",
+  "title": "Android TV",
+  "stats": {
+    "startTime": "2026-11-28T17:01:35.259Z",
+    "duration": 843990.816,
+    "expected": 11,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "failing": [],
+  "shots": [
+    {
+      "key": "androidtv/home.spec.js/home",
+      "dir": "shots/androidtv/home.spec.js",
+      "name": "home",
+      "title": "browsing on the television › lists the libraries on the home screen",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/home.spec.js/home-recently-added",
+      "dir": "shots/androidtv/home.spec.js",
+      "name": "home-recently-added",
+      "title": "browsing on the television › shows what was added lately under the libraries",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/home.spec.js/library",
+      "dir": "shots/androidtv/home.spec.js",
+      "name": "library",
+      "title": "browsing on the television › opens a library and lists its titles",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/playback.spec.js/after-skip",
+      "dir": "shots/androidtv/playback.spec.js",
+      "name": "after-skip",
+      "title": "playing on the television › plays a title and skips ahead in it",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/playback.spec.js/details",
+      "dir": "shots/androidtv/playback.spec.js",
+      "name": "details",
+      "title": "playing on the television › plays a title and skips ahead in it",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/playback.spec.js/details-resume",
+      "dir": "shots/androidtv/playback.spec.js",
+      "name": "details-resume",
+      "title": "playing on the television › resumes a title where it was left",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/playback.spec.js/playing",
+      "dir": "shots/androidtv/playback.spec.js",
+      "name": "playing",
+      "title": "playing on the television › plays a title and skips ahead in it",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/playback.spec.js/playing-hls",
+      "dir": "shots/androidtv/playback.spec.js",
+      "name": "playing-hls",
+      "title": "playing on the television › plays a title it has to encode, which reaches it as HLS",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/playback.spec.js/resumed",
+      "dir": "shots/androidtv/playback.spec.js",
+      "name": "resumed",
+      "title": "playing on the television › resumes a title where it was left",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/series.spec.js/continue-watching",
+      "dir": "shots/androidtv/series.spec.js",
+      "name": "continue-watching",
+      "title": "watching a series on the television › moves on to the next episode when one ends",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/series.spec.js/first-episode",
+      "dir": "shots/androidtv/series.spec.js",
+      "name": "first-episode",
+      "title": "watching a series on the television › moves on to the next episode when one ends",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/series.spec.js/second-episode",
+      "dir": "shots/androidtv/series.spec.js",
+      "name": "second-episode",
+      "title": "watching a series on the television › moves on to the next episode when one ends",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/signin.spec.js/home-after-password",
+      "dir": "shots/androidtv/signin.spec.js",
+      "name": "home-after-password",
+      "title": "signing in on the television › signs in with a password",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/signin.spec.js/home-after-quickconnect",
+      "dir": "shots/androidtv/signin.spec.js",
+      "name": "home-after-quickconnect",
+      "title": "signing in on the television › signs in with a Quick Connect code another device approves",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/signin.spec.js/home-after-scan",
+      "dir": "shots/androidtv/signin.spec.js",
+      "name": "home-after-scan",
+      "title": "signing in on the television › shows a QR that lands a phone on this television's code",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/signin.spec.js/quickconnect",
+      "dir": "shots/androidtv/signin.spec.js",
+      "name": "quickconnect",
+      "title": "signing in on the television › signs in with a Quick Connect code another device approves",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/signin.spec.js/quickconnect-qr",
+      "dir": "shots/androidtv/signin.spec.js",
+      "name": "quickconnect-qr",
+      "title": "signing in on the television › shows a QR that lands a phone on this television's code",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/signin.spec.js/server",
+      "dir": "shots/androidtv/signin.spec.js",
+      "name": "server",
+      "title": "signing in on the television › connects to the server by its address",
+      "state": "unchanged"
+    },
+    {
+      "key": "androidtv/signin.spec.js/welcome",
+      "dir": "shots/androidtv/signin.spec.js",
+      "name": "welcome",
+      "title": "signing in on the television › connects to the server by its address",
+      "state": "unchanged"
+    }
+  ],
+  "sha": "50d53fac99d3514ff138ad9db0b2ef278bcb48f1",
+  "at": "2026-11-28T17:20Z"
+}

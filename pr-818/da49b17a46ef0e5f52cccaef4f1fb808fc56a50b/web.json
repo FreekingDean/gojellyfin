@@ -1,0 +1,127 @@
+{
+  "slug": "web",
+  "title": "jellyfin-web",
+  "stats": {
+    "startTime": "2026-11-17T15:48:58.651Z",
+    "duration": 301116.514,
+    "expected": 61,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "failing": [],
+  "shots": [
+    {
+      "key": "web/about.spec.js/server-info",
+      "dir": "shots/web/about.spec.js",
+      "name": "server-info",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/collage.spec.js/movies-card",
+      "dir": "shots/web/collage.spec.js",
+      "name": "movies-card",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/collage.spec.js/shows-card",
+      "dir": "shots/web/collage.spec.js",
+      "name": "shows-card",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/continue-watching.spec.js/continue-watching",
+      "dir": "shots/web/continue-watching.spec.js",
+      "name": "continue-watching",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/home.spec.js/home",
+      "dir": "shots/web/home.spec.js",
+      "name": "home",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/home.spec.js/movies",
+      "dir": "shots/web/home.spec.js",
+      "name": "movies",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/latest.spec.js/new-releases",
+      "dir": "shots/web/latest.spec.js",
+      "name": "new-releases",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/latest.spec.js/recently-added-shows",
+      "dir": "shots/web/latest.spec.js",
+      "name": "recently-added-shows",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/latest.spec.js/recently-aired",
+      "dir": "shots/web/latest.spec.js",
+      "name": "recently-aired",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/link.spec.js/quickconnect-prefilled",
+      "dir": "shots/web/link.spec.js",
+      "name": "quickconnect-prefilled",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/link.spec.js/tv-quickconnect-qr",
+      "dir": "shots/web/link.spec.js",
+      "name": "tv-quickconnect-qr",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/login.spec.js/login",
+      "dir": "shots/web/login.spec.js",
+      "name": "login",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/request-page.spec.js/request-page",
+      "dir": "shots/web/request-page.spec.js",
+      "name": "request-page",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/requests.spec.js/requested-movie",
+      "dir": "shots/web/requests.spec.js",
+      "name": "requested-movie",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/requests.spec.js/wanted-movie",
+      "dir": "shots/web/requests.spec.js",
+      "name": "wanted-movie",
+      "title": "",
+      "state": "unchanged"
+    },
+    {
+      "key": "web/trending.spec.js/trending-movies",
+      "dir": "shots/web/trending.spec.js",
+      "name": "trending-movies",
+      "title": "",
+      "state": "unchanged"
+    }
+  ]
+}
